@@ -1,5 +1,4446 @@
-template-repository (1.0-1) unstable; urgency=medium
+r-base (4.3.1-4) unstable; urgency=medium
+
+  * debian/rules: Correct setting for i386 to always append flags
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 01 Aug 2023 09:58:54 -0500
+
+r-base (4.3.1-3.2304.0) lunar; urgency=medium
+
+  * PPA build for Ubuntu 23.04 "lunar"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 13 Jul 2023 14:33:06 -0500
+
+r-base (4.3.1-3) unstable; urgency=medium
+
+  * debian/control: Update Breaks: 			(Closes: #1040001)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 13 Jul 2023 14:13:20 -0500
+
+r-base (4.3.1-2.2304.0) lunar; urgency=medium
+
+  * PPA build for Ubuntu 23.04 "lunar"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 05 Jul 2023 07:03:48 -0500
+
+r-base (4.3.1-2) unstable; urgency=medium
+
+  * debian/rules: Omit debug info on 32-bit OSs to avoid memory limits
+    affecting eg rstan (thanks to Adrian Bunk) 		(Closes: #1037439)
+
+  * debian/control: Use libcurses-dev in Depends: of r-base-dev as in
+    Build-Depends: of package				(Closes: #1040037)
+
+  * debian/control: Add 'r-graphics-engine-${graphics_engine:Version}'
+    to the Provides: for r-base-core
+  * debian/rules: Compute graphics engine version based on GraphicsEngine.h
+  * debian/r-cran.mk: Extract graphics engine version from Provides:
+  							(Closes: #1040038)
+
+  * debian/control: Remove no-longer-needed libpcre3-dev entry in
+    Build-Depends and in Depends: of r-base-dev 	(Closes: #1040341)
+
+  * debian/control: Remove Provides: and Conflicts: for 'r-gnome (<=
+    2.3.1), r-cran-rcompgen (<= 0.1-17-1)' added in 2006
+
+  * debian/control: Remove Replaces:, Provides:, Conflicts: for
+    'r-base-latex' added in 2009
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 05 Jul 2023 06:36:26 -0500
+
+r-base (4.3.1-1.2304.0) lunar; urgency=medium
+
+  * PPA build for Ubuntu 23.04 "lunar"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 27 Jun 2023 14:37:15 -0500
+
+r-base (4.3.1-0.2304.0) lunar; urgency=medium
+
+  * PPA build for Ubuntu 22.04 "jammy"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 25 Jun 2023 11:37:42 -0500
+
+r-base (4.3.1-0.2204.0) jammy; urgency=medium
+
+  * PPA build for Ubuntu 22.04 "jammy"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 24 Jun 2023 05:54:28 -0500
+
+r-base (4.3.1-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 16 Jun 2023 07:08:32 -0500
+
+r-base (4.3.0-0.2204.0) jammy; urgency=medium
+
+  * PPA build for Ubuntu 22.04 "jammy"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 21 Apr 2023 07:44:05 -0500
+
+r-base (4.3.0-0.2004.0) focal; urgency=medium
+
+  * PPA build for Ubuntu 20.04 "focal"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 21 Apr 2023 07:43:11 -0500
+
+r-base (4.3.0-1) unstable; urgency=medium
+
+  * New upstream release (into 'experimental' while Debian is frozen)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 21 Apr 2023 07:24:22 -0500
+
+r-base (4.2.3.20230416-0.2204.0) jammy; urgency=medium
+
+  * PPA build for Ubuntu 22.04 "jammy"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 16 Apr 2023 09:10:48 -0500
+
+r-base (4.2.3.20230416-1) experimental; urgency=medium
+
+  * First rc release (svn r84266) of R 4.3.0 to be released April 25
+    (into 'experimental' while Debian is frozen)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 16 Apr 2023 08:45:55 -0500
+
+r-base (4.2.3-0.2204.0) jammy; urgency=medium
+
+  * PPA build for Ubuntu 22.04 "jammy"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 15 Mar 2023 07:46:14 -0500
+
+r-base (4.2.3-0.2004.0) focal; urgency=medium
+
+  * PPA build for Ubuntu 20.04 "focal"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 15 Mar 2023 07:44:27 -0500
+
+r-base (4.2.3-1) experimental; urgency=medium
+
+  * New upstream release (into 'experimental' while Debian is frozen)
+
+  * debian/control: Set Standards-Version: to current version
+
+  * debian/control: Adjust Build-Depends to lib{ncurses,tiff}-dev
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 15 Mar 2023 07:02:01 -0500
+
+r-base (4.2.2.20221110-2) unstable; urgency=medium
+
+  [ Dirk Eddelbuettel ]  
+  * debian/Renviron-R_LIBS.patch: Modified following helpful email discussion with Kurt Hornik
+  * debian/control: Remove Depends: on perl in light of change by Giole
+
+  [ Adrian Bunk ]
+  * debian/rules: Set -ffloat-store on i386
+
+  [ Giole Barabucci ]
+  * debian/r-base-core.postinst: Simplify one perl substitution call to sed
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 20 Jan 2023 10:49:27 -0600
+
+r-base (4.2.2.20221110-1) unstable; urgency=medium
+
+  * New upstream release R-patched 2022-11-10 with access to updated
+    Datetime code after discussions with upstream and fellow Debianites.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 11 Nov 2022 10:00:33 -0600
+
+r-base (4.2.2-0.2204.0) jammy; urgency=medium
+
+  * PPA build for Ubuntu 22.04 "jammy"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 31 Oct 2022 08:59:17 -0500
+
+r-base (4.2.2-0.2004.0) focal; urgency=medium
+
+  * PPA build for Ubuntu 20.04 "focal"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 31 Oct 2022 08:57:21 -0500
+
+r-base (4.2.2-1) unstable; urgency=medium
+
+  * New upstream release
+
+  * debian/control: Switch to virtual debhelper-compat (= 12)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 31 Oct 2022 08:17:52 -0500
+
+r-base (4.2.1-3) unstable; urgency=medium
+
+  * debian/rules: Disable LTO to avoid issue with complex Fortran routines,
+    and reported upstream. Thanks to Graham Inggs for the the heads-up.
+
+7 -- Dirk Eddelbuettel <edd@debian.org>  Fri, 14 Oct 2022 08:48:25 -0500
+
+r-base (4.2.1-2) unstable; urgency=medium
+
+  * debian/control: Remove dependency on 'install-info'
+  						(Closes: #1013854)
+
+  * Rebuilding to have gcc-12 libraries which should help the hppa arch
+  						(Closes: 1016880)
+                                                
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 09 Aug 2022 09:35:35 -0500
+
+r-base (4.2.1-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+  * debian/control: Set Standards-Version: to current version 
+  * debian/Renviron.site: Correct one-char typo removing extra apostrophe
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 23 Jun 2022 05:26:41 -0500
+
+r-base (4.2.0-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 22 Apr 2022 06:49:21 -0500
+
+r-base (4.1.3.20220415-1) unstable; urgency=medium
+
+  * First rc release (svn r82209) of R 4.2.0 to be released April 22
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 18 Apr 2022 21:04:09 -0500
+
+r-base (4.1.3.20220413-1) unstable; urgency=medium
+
+  * Second beta release (svn r82166) of R 4.2.0 to be released April 22
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 16 Apr 2022 07:48:37 -0500
+
+r-base (4.1.3.20220408-1) unstable; urgency=medium
+
+  * First beta release (svn r82134) of R 4.2.0 to be released April 22
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 10 Apr 2022 22:21:08 -0500
+
+r-base (4.1.3.20220405-1) unstable; urgency=medium
+
+  * Third alpha release (svn r82100) of R 4.2.0 to be released April 22
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 06 Apr 2022 06:59:34 -0500
+
+r-base (4.1.3.20220401-1) unstable; urgency=medium
+
+  * Third alpha release (svn r82059) of R 4.2.0 to be released April 22
+  
+  * debian/Renviron.site: Set R_LIBS_SITE here now, not in R_LIBS
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 02 Apr 2022 00:02:48 -0500
+
+r-base (4.1.3.20220328-1) unstable; urgency=medium
+
+  * Second alpha release (svn r82012) of R 4.2.0 to be released April 22
+
+  * debian/control: Remove -dbg package
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 29 Mar 2022 06:00:51 -0500
+
+r-base (4.1.3.20220324-1) unstable; urgency=medium
+
+  * Initial alpha release (svn r81978) of R 4.2.0 to be released April 22
+
+  * debian/source.lintian-overrides: Override for katex.js sources which are
+    at https://github.com/KaTeX/KaTeX
+
+  * debian/patches/series: No longer need 'use-fPIC-on-alpha'
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 24 Mar 2022 19:25:31 -0500
+
+r-base (4.1.3-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 10 Mar 2022 08:09:42 -0600
+
+r-base (4.1.2-2) unstable; urgency=medium
+
+  * debian/patches/use-fPIC-on-alpha: Applying patch to permit build on
+    alpha platform also by now applied upstream		(Closes: #1004747)
+  * debian/patches/series: Activated patch
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 02 Feb 2022 07:17:35 -0600
+
+r-base (4.1.2-1.2104.0.1) hirsute; urgency=medium
+
+  * PPA build for Ubuntu 21.04 "hirsute"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 02 Nov 2021 14:55:36 -0500
+
+r-base (4.1.2-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+  * debian/control: Set Standards-Version: to current version 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 01 Nov 2021 06:00:06 -0500
+
+r-base (4.1.1-2) unstable; urgency=medium
+
+  * Binary rebuild for unstable following Debian 11 release
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 15 Aug 2021 08:53:59 -0500
+
+r-base (4.1.1-1) experimental; urgency=medium
+
+  * New upstream version released this morning (still using 'experimental'
+    while Debian is frozen)
+
+  * debian/control: Updated versioned Build-Depends for gcc, g++, gfortan
+    to 4:4.9.2-2 (in oldstable); removed the one for liblapack-dev
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 10 Aug 2021 06:34:32 -0500
+
+r-base (4.1.0-1) experimental; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 18 May 2021 05:56:56 -0500
+
+r-base (4.0.5.20210511-1) experimental; urgency=medium
+
+  * First rc release (r80282) build of R 4.1.0 expected for May 18
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 11 May 2021 06:57:15 -0500
+
+r-base (4.0.5.20210504-1) experimental; urgency=medium
+
+  * First beta release (r80259) build of R 4.1.0 expected for May 18
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 04 May 2021 10:17:55 -0500
+
+r-base (4.0.5.20210426-1) experimental; urgency=medium
+
+  * Second alpha release (r80229) build of R 4.1.0 expected for May 18
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 27 Apr 2021 07:19:36 -0500
+
+r-base (4.0.5.20210419-1) experimental; urgency=medium
+
+  * Initial alpha release (r80191) of R 4.1.0 expected for May 18
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 19 Apr 2021 22:22:30 -0500
+
+r-base (4.0.5-1) experimental; urgency=medium
+
+  * New upstream version released this morning
+
+  [ Patch tested in informal PPA prebuilt and also sent upstream ]
+  * debian/icon-class-patch/R.desktop: Updated with StartupWMClass=R_x11
+  * debian/icon-class-patch/Rlogo.svg: Copy of the SVG logo for R
+  * debian/icon-class-patch/rlogo_icon.png.mpack: Updated with new log
+  * debian/patches/series: New patch
+  * debian/patches/x11-device-window-grouping: New patch thanks to Ivan Krylov
+  * debian/r-base-core.dirs: Create 48x48 icon dir
+  * debian/rules: Install svg logo too
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 31 Mar 2021 06:44:41 -0500
+
+r-base (4.0.4-1.2010.3) groovy; urgency=medium
+
+  * debian/r-base-core.dirs: Also create the directory
+    usr/share/icons/hicolor/scalable/apps for the svg logo
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 23 Mar 2021 11:05:17 -0500
+
+r-base (4.0.4-1.2010.2) groovy; urgency=medium
+
+  * icon-class-patch/R.desktop: Add 'StartupWMClass=R_x11'
+  * icon-class-patch/rlogo_icon.OLD.png.mpack: Renamed old icon
+  * icon-class-patch/rlogo_icon.png.mpack: New 48x48 png from svg
+  * icon-class-patch/Rlogo.svg: Copy of official logo
+  * debian/rules: Also install Rlogo.svg in 'scalable' icons dir
+
+  * debian/patches/series: Deactivate unneeded grouping patch 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 23 Mar 2021 10:27:43 -0500
+
+r-base (4.0.4-1.2010.1) groovy; urgency=medium
+
+  * PPA build on Ubuntu 20.10 "groovy"
+  * src/modules/X11/devX11.c: Apply patch by Ivan Krylov (posted to r-devel
+    on 2021-03-22) enabling grouping of x11 plot device windows
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 22 Mar 2021 21:33:09 -0500
+
+r-base (4.0.4-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+  * debian/r-base-core.postinst: Improved logic for /usr/local/lib/R
+    creation					(Closes: #982069)
+  * debian/watch: Updated
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 15 Feb 2021 06:58:58 -0600
+
+r-base (4.0.3-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 10 Oct 2020 07:04:31 -0500
+
+r-base (4.0.2.20201005-1) unstable; urgency=medium
+
+  * Initial rc release (r79292) of R 4.0.3 expected for Oct 10
+
+  * debian/control: Switch to virtual debhelper-compat (= 11)
+  * debian/compat: Removed
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 05 Oct 2020 07:22:43 -0500
+
+r-base (4.0.2-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 22 Jun 2020 05:54:36 -0500
+
+r-base (4.0.1-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 06 Jun 2020 06:06:09 -0500
+
+r-base (4.0.0.20200530-1) unstable; urgency=medium
+
+  * Initial rc release (r78619) of R 4.0.2 expected for Jun 06
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 01 Jun 2020 07:17:17 -0500
+
+r-base (4.0.0.20200528-1) unstable; urgency=medium
+
+  * Initial beta release (r78593) of R 4.0.1 expected for Jun 06
+
+  * debian/watch: Updated expression to look at R-4
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 28 May 2020 12:03:08 -0500
+
+r-base (4.0.0-3) unstable; urgency=medium
+
+  * unstable: New upload to start 'r-4.0' transition
+
+  * debian/rules: Extend ppc64el rule to ppc64 and powerpc
+  * debian/compat: Increase level to 10
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 13 May 2020 07:15:04 -0500
+
+r-base (4.0.0-2) experimental; urgency=medium
+
+  * debian/rules: Disable (for now) long double support on ppc64el as it
+    (currently) breaks the build; upstream is working on proper fix
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 30 Apr 2020 09:06:41 -0500
+
+r-base (4.0.0-1) experimental; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 24 Apr 2020 05:42:07 -0500
+
+r-base (3.6.3.20200416-1) experimental; urgency=medium
+
+  * Initial rc release (r78240) of R 4.0.0 expected for Apr 24
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 17 Apr 2020 00:05:51 -0500
+
+r-base (3.6.3.20200409-1) experimental; urgency=medium
+
+  * Initial beta release (r78186) of R 4.0.0 expected for Apr 24
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 10 Apr 2020 13:46:57 -0500
+
+r-base (3.6.3.20200402-1) experimental; urgency=medium
+
+  * Second alpha release (r78142) of R 4.0.0 expected for Apr 24
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 03 Apr 2020 09:30:12 -0500
+
+r-base (3.6.3.20200326-1) experimental; urgency=medium
+
+  * Initial alpha release (r78078) of R 4.0.0 expected for Apr 24
+
+  * debian/control: Update Provides: for r-base-core to 'r-api-4.0' as all
+    packages depedending on R will require a rebuild
+
+  * debian/patches/series: Comment-out powerpc_changes included upstream
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 27 Mar 2020 09:16:23 -0500
+
+r-base (3.6.3-2) unstable; urgency=medium
+
+  * debian/patches/powerpc_changes: Use __powerpc__ not __PPC64__ to also
+    cover 32-bit builds                                    (Closes: #946836)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 25 Mar 2020 06:40:47 -0500
+
+r-base (3.6.3-1) unstable; urgency=medium
+
+  * New upstream version released right now in Copenhagen at celebRtion 2020!
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 29 Feb 2020 03:13:14 -0600
+
+r-base (3.6.2.20200221-1) unstable; urgency=medium
+
+  * Initial rc release (r77847) of R 3.6.3 expected for Feb 29
+
+  * debian/control: Set Standards-Version: to current version 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 22 Feb 2020 07:25:19 -0600
+
+r-base (3.6.2-2) unstable; urgency=medium
+
+  * src/main/arithmetic.c: Small (upstream also) patch for PPC64
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 17 Dec 2019 07:27:57 -0600
+
+r-base (3.6.2-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 12 Dec 2019 04:57:27 -0600
+
+r-base (3.6.1.20191206-1) unstable; urgency=medium
+ 
+  * Initial rc release (r77545) of R 3.6.2 expected for Dec 12
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 09 Dec 2019 18:24:34 -0600
+
+r-base (3.6.1-7) unstable; urgency=medium
+
+  * debian/rules: Respect DEB_BUILD_OPTIONS setting 'nocheck' thanks to
+    patch by Chris Lamb 				(Closes: #942867)
+    
+  * debian/rules: Respect DEB_BUILD_OPTIONS setting 'nodoc' thanks to
+    patch by Chris Lamb 				(Closes: #942870)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 22 Oct 2019 20:03:02 -0500
+
+r-base (3.6.1-6) unstable; urgency=medium
+
+  * debian/control: Revised attempt for build=all to correctly generate
+    documentation packages				(Closes: #941152)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 25 Sep 2019 15:55:19 -0500
+
+r-base (3.6.1-5) unstable; urgency=medium
+
+  * debian/control: Add build-indep back to build target
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 19 Sep 2019 21:42:10 -0500
+
+r-base (3.6.1-4) unstable; urgency=medium
+
+  * debian/control: Add Breaks: for dozen+ packages: to unblock issue caused
+    by their auto-pkgtests (with thanks to Graham Inggs; Closes #927335)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 08 Aug 2019 18:55:34 -0500
+
+r-base (3.6.1-3) unstable; urgency=medium
+
+  * debian/control: Change Build-Depends: from texlive-generic-recommended
+    to texlive-plain-generic 				(Closes: #932972)
+
+  * debian/control: Set Standards-Version: to current version 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 25 Jul 2019 06:53:57 -0500
+
+r-base (3.6.1-2) unstable; urgency=medium
+
+  * debian/control: Add (Build-)Depends on libprce2-dev to accommodate
+    selinux (with thanks to Gianfranco Costamagna) (closes: #931547)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 08 Jul 2019 03:04:25 -0500
+
+r-base (3.6.1-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 05 Jul 2019 05:24:24 -0500
+
+r-base (3.6.0.20190628-1) unstable; urgency=medium
+
+  * Initial rc release (r76748) of R 3.6.1 expected for Jul 5
+
+  * debian/patches/series: Uncomment Fortran patch now upstream
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 05 Jul 2019 05:23:46 -0500
+
+r-base (3.6.0-2) unstable; urgency=medium
+
+  * debian/Renviron.site: Set variable _R_CHECK_COMPILATION_FLAGS_KNOWN_
+    to white-list compiler flags pulled in Debian's gcc configuration
+
+  * configure{,.ac}: Applied two upstream patches from this week to
+    accommodate gfortran 8 changes related to C to Fortran calls
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 11 May 2019 13:58:42 -0500
+
+r-base (3.6.0-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+  
+  * debian/control: Set Standards-Version: to current version 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 26 Apr 2019 05:27:14 -0500
+
+r-base (3.5.3.20190419-1) unstable; urgency=medium
+
+  * Initial rc release (r76404) of R 3.6.0 expected for Apr 26
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 19 Apr 2019 07:14:43 -0500
+
+r-base (3.5.3.20190412-1) unstable; urgency=medium
+
+  * Initial beta release (r76379) of R 3.6.0 expected for Apr 26
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 12 Apr 2019 06:23:06 -0500
+
+r-base (3.5.3.20190406-1) experimental; urgency=medium
+
+  * Initial alpha release (r76325) of R 3.6.0 expected for Apr 26
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 06 Apr 2019 07:36:10 -0500
+
+r-base (3.5.3-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 11 Mar 2019 05:33:30 -0500
+
+r-base (3.5.2.20190304-1) unstable; urgency=medium
+
+  * Initial rc release (r76198) of R 3.5.3 expected for Mar 11
+
+  * debian/control: Change Suggests: to elpa-ess	(Closes: #917246)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 05 Mar 2019 05:39:07 -0600
+
+r-base (3.5.2-1.1) unstable; urgency=medium
+
+  [testing only]
+  * src/library/utils/packages2.R: Proposed patch
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 18 Jan 2019 09:08:57 -0600
+
+r-base (3.5.2-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 20 Dec 2018 05:35:13 -0600
+
+r-base (3.5.1.20181215-1) unstable; urgency=medium
+
+  * Initial rc release (r75850) of R 3.5.2 expected for Dec 20
+
+  * debian/rules: Merge PR to pass more paths explicitly to configure
+    (with thanks to Andreas Henriksson via merge request)
+
+  * debian/rules: Added a few more explicit paths (with thanks to Kurt
+    Hornik via email following the merge request)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 10 Dec 2018 19:34:07 -0600
+
+r-base (3.5.1-2) unstable; urgency=medium
+
+  * Explicit rebuild as 3.1.5-1+b2 appears broken	(Closes: #913982)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 18 Nov 2018 12:46:17 -0600
+
+r-base (3.5.1-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+  * debian/Renviron.site: Added comment for R_LIBS_USER and %p and %v
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 02 Jul 2018 05:08:37 -0500
+
+r-base (3.5.0.20180627-1) unstable; urgency=medium
+
+  * Initial rc release (r74934) of R 3.5.1 expected for Jul 2
+  
+  * debian/control: r-base-dev no longer depends on dh-r (Closes: #901625)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 27 Jun 2018 20:10:11 -0500
+
+r-base (3.5.0-5) unstable; urgency=medium
+
+  * debian/control: Further refinement to Build-Depends for JDK
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 31 May 2018 11:38:37 -0500
+
+r-base (3.5.0-4) unstable; urgency=medium
+
+  * debian/control: Rewrite JDK dependency to suggest the default-jdk
+    first with fallback to openjdk-10 (thanks, Emilio Pozuelo Monfort)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 31 May 2018 05:39:16 -0500
+
+r-base (3.5.0-3) unstable; urgency=medium
+
+  * Rebuilding for Debian unstable to start the binary transition given
+    green light by the release team in #896667
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 30 May 2018 16:51:40 -0500
+
+r-base (3.5.0-2) experimental; urgency=medium
+
+  * debian/control: Set Build-Depends: to openjdk-10-jdk (Closes: #897319)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 01 May 2018 08:10:06 -0500
+
+r-base (3.5.0-1) experimental; urgency=medium
+
+  * New upstream version released this morning
+
+  * Still released into experimental as we need to coordinate a transition
+    for r-api-3.5
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 23 Apr 2018 06:10:13 -0500
+
+r-base (3.4.4.20180417-1) experimental; urgency=medium
+
+  * Initial rc release (r74611) of R 3.5.0 expected for Apr 23
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 16 Apr 2018 17:24:22 -0500
+
+r-base (3.4.4.20180411-1) experimental; urgency=medium
+
+  * Initial beta release (r74578) of R 3.5.0 expected for Apr 23
+  
+  * debian/control: Set Standards-Version: to current version 
+  * debian/control: Add Vcs-Browser: and Vcs-Git:
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 10 Apr 2018 22:37:20 -0500
+
+r-base (3.4.4.20180405-1) experimental; urgency=medium
+
+  * Initial alpha release (r74529) of R 3.5.0 expected for Apr 23
+
+  * debian/control: Update Provides: for r-base-core to 'r-api-3.5' as all
+    packages with compiled code require a rebuild
+    
+  * debian/control: Switch Suggests: for r-base-dev from cdbs to dh-r
+  							(Closes: #878061)
+                                                        
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 05 Apr 2018 07:59:28 -0500
+
+r-base (3.4.4-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 15 Mar 2018 06:28:51 -0500
+
+r-base (3.4.3.20180311-1) unstable; urgency=medium
+
+  * Initial rc build (r74380) of R 3.4.4 expected for March 15
+
+  * debian/Rprofile.site: Set CRAN cloud mirror as default CRAN repo
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 11 Mar 2018 08:41:22 -0500
+
+r-base (3.4.3-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 30 Nov 2017 06:19:52 -0600
+
+r-base (3.4.2.20171123-1) unstable; urgency=medium
+
+  * Initial rc build (r73776) of R 3.4.3 expected for November 30
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 23 Nov 2017 10:11:54 -0600
+
+r-base (3.4.2.20171120-1) unstable; urgency=medium
+
+  * Initial beta build (r73753) of R 3.4.3 expected for November 30
+
+  * debian/control: Set Standards-Version: to current version 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 20 Nov 2017 08:09:27 -0600
+
+r-base (3.4.2-2) unstable; urgency=medium
+
+  * debian/control: Use openjdk-9-jdk in Build-Depends as we generally
+    cannot run 'R CMD javareconf' in a pbuilder, and need Java 9
+  * debian/control: Two 'Priority: extra' are now 'optional' [lintian]
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 25 Oct 2017 06:54:13 -0500
+
+r-base (3.4.2-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 28 Sep 2017 05:13:49 -0500
+
+r-base (3.4.1.20170921-1) unstable; urgency=medium
+
+  * Initial rc build (r73337) of R 3.4.2 expected for Sep 28
+
+  * debian/control: Package r-base-core now 'Provides: r-api-3.4' per the
+    Debian Release team. I still consider this to be wrong (as there was
+    no API change) but my hands are tied here.
+
+  * debian/compat: Increased to 9
+  * debian/control: Set Standards-Version: to current version 
+
+  * debian/README.source: Added
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 23 Sep 2017 11:49:56 -0500
+
+r-base (3.4.1-2) unstable; urgency=medium
+
+  * etc/Renviron.in: No longer unset R_LIBS_USER	(Closes: #866768)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 07 Jul 2017 13:05:03 -0500
+
+r-base (3.4.1-1) unstable; urgency=medium
+
+  * New upstream release
+
+  * debian/source/format: Set to '3.0 (quilt)'
+ 
+  * etc/Renviron.in: Patched to not set R_LIBS_USER by default
+  * debian/Renviron.site: Mention possible R_LIBS_USER setting here
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 30 Jun 2017 03:46:12 -0500
+
+r-base (3.4.0.20170622-1) unstable; urgency=medium
+
+  * Initial beta build (r72852) of R 3.4.1 expected for June 30
+
+  * debian/source/format: Set to '3.0 (quilt)'
+ 
+  * etc/Renviron.in: Patched to not set R_LIBS_USER by default
+  * debian/Renviron.site: Mention possible R_LIBS_USER setting here
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 21 Jun 2017 16:04:14 -0500
+
+r-base (3.4.0-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 21 Apr 2017 05:03:24 -0500
+
+r-base (3.3.3.20170413-1) unstable; urgency=medium
+
+  * Initial rc build (r72510) of R 3.4.0 expected for April 21
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 13 Apr 2017 22:43:25 -0500
+
+r-base (3.3.3.20170406-1) experimental; urgency=medium
+
+  * Initial beta build (r72492) of R 3.4.0 expected for April 21
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 06 Apr 2017 21:03:42 -0500
+
+r-base (3.3.3-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 06 Mar 2017 05:06:20 -0600
+
+r-base (3.3.2.20170227-1) unstable; urgency=medium
+
+  * Initial rc build (r72279) of R 3.3.3 expected for March 6
+
+  * debian/control: Package r-base-dev now Depends: on pkg-config
+
+  * debian/r-cran.mk: xvfb-run now turns on GL extensions 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 27 Feb 2017 20:01:43 -0600
+
+r-base (3.3.2-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 31 Oct 2016 06:04:25 -0500
+
+r-base (3.3.1.20161024-1) unstable; urgency=medium
+
+  * Initial rc build (r71578) of R 3.3.2 expected for October 31
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 24 Oct 2016 20:59:54 -0500
+
+r-base (3.3.1.20161020-1) unstable; urgency=medium
+
+  * Initial beta build (r71547) of R 3.3.2 expected for October 31
+
+  * debian/rules: Tweaks to configure-stamp dependency (cf #812544)
+
+  * debian/r-base-core.maintscript: Move bash-completion config file from
+    old location, if still present			(Closes: #840506)
+    
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 20 Oct 2016 21:51:13 -0500
+
+r-base (3.3.1-2) unstable; urgency=medium
+
+  * Rebuilding under gcc-6
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 12 Aug 2016 12:23:55 -0500
+
+r-base (3.3.1-1.xenial.0) xenial; urgency=medium
+
+  * PPA build for Ubuntu 16.04 ("xenial")
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 22 Jun 2016 10:46:47 -0500
+
+r-base (3.3.1-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 21 Jun 2016 05:16:41 -0500
+
+r-base (3.3.0.20160615-1) unstable; urgency=medium
+
+  * Initial rc build (r70789) of R 3.3.1 expected for June 23
+  
+  * debian/control: Set Standards-Version: to current version 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 15 Jun 2016 20:04:57 -0500
+
+r-base (3.3.0-2) unstable; urgency=medium
+
+  * debian/control: Add libicu-dev to Depends: for r-base-dev
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 19 May 2016 07:35:03 -0500
+
+r-base (3.3.0-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 03 May 2016 06:05:36 -0500
+
+r-base (3.2.5.20160429-1) unstable; urgency=medium
+
+  * Second rc build (r70561) of R 3.3.0 expected for May 03
+
+  * debian/control: Remove remaining use of gcc-4.9 on mips	(Closes: #818781)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 29 Apr 2016 06:22:06 -0500
+
+r-base (3.2.5.20160428-1) unstable; urgency=low
+
+  * Initial rc build (r70556) of R 3.3.0 expected for May 03
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 28 Apr 2016 06:42:20 -0500
+
+r-base (3.2.5-1) unstable; urgency=low
+
+  * New upstream release made today (as the version scheme in
+    3.2.4-revised created issues for some systems)
+    
+  * debian/updated_x11_logo.patch: Applied again to src/modules/X11/ files
+    devX11.c and rlogo_icon.h to provide the new R logo
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 14 Apr 2016 11:58:11 -0500
+
+r-base (3.2.4.20160412-1) unstable; urgency=low
+
+  * Fourth beta build (r70470) of R 3.3.0 expected for May 03
+  
+  * debian/rules: Remove gcc-4.9 invocation for mips	(Closes: #818781)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 12 Apr 2016 22:06:54 -0500
+
+r-base (3.2.4.20160411-1) unstable; urgency=low
+
+  * Third beta build (r70465) of R 3.3.0 expected for May 03
+  
+  * debian/control: Remove use of gcc-4.9 on mips	(Closes: #818781)
+
+  * debian/r-core.shlibs: Removed			(Closes: #819343)
+  * debian/r-mathlib.shlibs: Ditto
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 11 Apr 2016 22:13:07 -0500
+
+r-base (3.2.4.20160406-1) unstable; urgency=medium
+
+  * Second beta build (r70427) of R 3.3.0 now expected for May 03
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 06 Apr 2016 09:00:27 -0500
+
+r-base (3.2.4.20160331-1) unstable; urgency=medium
+
+  * Initial beta build (r70404) of R 3.3.0 expected for April 14
+  
+  * debian/r-cran.mk: Also remove LICENSE		(Closes: #819344)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 31 Mar 2016 19:43:27 -0500
+
+r-base (3.2.4-revised-1) unstable; urgency=medium
+
+  * New upstream release this afternoon
+  
+  * debian/updated_x11_logo.patch: Applied again to src/modules/X11/ files
+    devX11.c and rlogo_icon.h to provide the new R logo
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 16 Mar 2016 16:40:51 -0500
+
+r-base (3.2.4-1) unstable; urgency=medium
+
+  * New upstream version released this morning
+
+  * debian/updated_x11_logo.patch: Applied again to src/modules/X11/ files
+    devX11.c and rlogo_icon.h to provide the new R logo
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 10 Mar 2016 06:04:56 -0600
+
+r-base (3.2.3.20160306-1) unstable; urgency=medium
+
+  * Second rc build (r70278) of R 3.2.4 expected for March 10
+
+  * debian/rules: Do not install bash_completion in /etc (Closes: #816531)
+
+  * debian/updated_x11_logo.patch: Applied again to src/modules/X11/ files
+    devX11.c and rlogo_icon.h to provide the new R logo
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 04 Mar 2016 06:29:56 -0600
+
+r-base (3.2.3.20160303-1) unstable; urgency=low
+
+  * Initial rc build (r70270) of R 3.2.4 expected for March 10
+
+  * debian/rules: Adding 'R_TEXI2DVICMD=emulation' to cope with texinfo 6.1
+
+  * debian/updated_x11_logo.patch: Applied again to src/modules/X11/ files
+    devX11.c and rlogo_icon.h to provide the new R logo
+
+  * debian/rules: Commented-out make check with does not find packages
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 03 Mar 2016 21:01:10 -0600
+
+r-base (3.2.3-6) unstable; urgency=low
+
+  * Rebuilding to now use openjdk-8-jdk (rather than openjdk-7-jdk) as
+    keep in sync with the change at the default-jdk package
+
+  * debian/rules: Added explicit 'cd doc/manual && $(MAKE) html)' 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 18 Feb 2016 07:00:11 -0600
+
+r-base (3.2.3-5) unstable; urgency=low
+
+  * debian/icon-class-patch/R.desktop: Add trailing ';' in Categories
+    (with thanks to Pino Toscano)			(Closes: #812475)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 24 Jan 2016 21:04:36 -0600
+
+r-base (3.2.3-4) unstable; urgency=low
+
+  * debian/r-base-core.postinst: Don't run mktexlsr
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 13 Jan 2016 22:14:27 -0600
+
+r-base (3.2.3-3) unstable; urgency=low
+
+  * debian/control: Also add 'gcc-4.9 [mips]' to Depends: for r-base-core
+    to ensure compiler is present on installed system (thanks, Sébastien)
+ 
+  * debian/rules: Set 'R_GZIPCMD=gzip -n' to avoid a Lintian warning about
+    gzip files with timestamps
+
+  * debian/rules: No longer install menu file (and we have a desktop file)
+    
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 12 Jan 2016 12:51:40 -0600
+
+r-base (3.2.3-2) unstable; urgency=low
+
+  [ Sébastien Villemot ]
+  * Use gcc-4.9 to compile C code on mips, as a workaround to a gcc-5 bug.
+    (Closes: #810357).
+  * Enable back optimization flags on mips and mipsel.
+
+  [ Dirk Eddelbuettel ]
+  * debian/control: Use Sebastien's patch and add gcc-4.9 for mips
+  * debian/rules: Use Sebastien's patch and enforce gcc-4.9 for mips, also
+    comment-out remaining suppression of optmization
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 10 Jan 2016 21:22:03 -0600
+
+r-base (3.2.3-1.wily.0) wily; urgency=low
+
+  * PPA build for Ubuntu 15.10 ("wily")
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 14 Dec 2015 13:08:31 -0600
+
+r-base (3.2.3-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+  * debian/updated_x11_logo.patch: Applied again to src/modules/X11/ files
+    devX11.c and rlogo_icon.h to provide the new R logo
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 10 Dec 2015 06:31:10 -0600
+
+r-base (3.2.2.20151203-1) unstable; urgency=low
+
+  * Initial rc build (r69731) of R 3.2.3 expected for December 10
+
+  * debian/updated_x11_logo.patch: Applied again to src/modules/X11/ files
+    devX11.c and rlogo_icon.h to provide the new R logo
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 03 Dec 2015 22:08:11 -0600
+
+r-base (3.2.2-1) unstable; urgency=low
+
+  * New upstream version released this morning
+  
+  * debian/updated_x11_logo.patch: Applied to refresh bitmap'ed logo; now
+    using second patch with reduced memory footprint and resolution
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 14 Aug 2015 05:12:26 -0500
+
+r-base (3.2.1.20150808-1vivid2) vivid; urgency=low
+
+  * PPA build for Ubuntu 15.04 ("vivid")
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 10 Aug 2015 11:56:02 -0500
+
+r-base (3.2.1.20150808-1) unstable; urgency=low
+
+  * Initial rc build (r68909) of R 3.2.2 expected for August 14
+
+  * debian/R.bash-completion: Updated from Deepayan's GH repo
+
+  * debian/updated_x11_logo.patch: Applied to refresh bitmap'ed logo; now
+    using second patch with reduced memory footprint and resolution
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 08 Aug 2015 11:24:33 -0500
+
+r-base (3.2.1.20150804-1) unstable; urgency=low
+  
+  * Initial beta build (r68823) of R 3.2.2 expected for August 14
+
+  * debian/updated_x11_logo.patch: Applied to refresh bitmap'ed logo
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 04 Aug 2015 16:24:59 -0500
+
+r-base (3.2.1-4) unstable; urgency=low
+
+  * src/main/datetime.c: One more change for the additional leapsecond
+
+  * debian/control: Add ca-certificates to Depends: for r-base-core to
+    support https via method "libcurl"
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 03 Jul 2015 03:40:19 -0500
+
+r-base (3.2.1-3) unstable; urgency=low
+
+  * src/library/base/R/zdatetime.R: Added additional leap second (also
+    included in R-patched and R-devel)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 01 Jul 2015 02:47:09 -0500
+
+r-base (3.2.1-2) unstable; urgency=low
+
+  * configure: Apply patch by Martin Michlmayr to ensure texi2any version
+    6 or later is not wrongly rejected as too old 	(Closes: #790436)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 29 Jun 2015 12:13:49 -0500
+
+r-base (3.2.1-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 18 Jun 2015 05:06:51 -0500
+
+r-base (3.2.0.20150613-1) unstable; urgency=low
+
+  * Initial rc build (r68509) of R 3.2.1 expected for June 18
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 13 Jun 2015 12:31:20 -0500
+
+r-base (3.2.0-4) unstable; urgency=low
+
+  * debian/rules: Set JAVA_HOME explicitly as suggested in a patch kindly
+    supplied by Emmanuel Bourg				(Closes: #745098)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 24 May 2015 08:17:33 -0500
+
+r-base (3.2.0-3vivid2) vivid; urgency=low
+
+  * PPA build for Ubuntu 14.10 ("vivid")
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 12 May 2015 17:11:11 -0500
+
+r-base (3.2.0-3vivid1) utopic; urgency=low
+
+  * PPA build for Ubuntu 14.10 ("vivid")
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 11 May 2015 06:51:17 -0500
+
+r-base (3.2.0-3) unstable; urgency=low
+
+  * debian/control: The r-base-core package now 'Provides: r-api-3' which
+    can be used to have r-cran-* depend on a particular API vintage.
+    							(Closes: #704805)
+
+  * debiab/r-cran.mk: Have the build-time API vintage encoded as a Depends
+    (with thanks to Julian Gilbey, Charles Plessy, and others for the patch)
+
+  * debian/control: Set Standards-Version: to current version 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 11 May 2015 06:08:12 -0500
+
+r-base (3.2.0-2) unstable; urgency=low
+
+  * debian/r-cran.mk: Apply (modified) patch by Philipp Rinn to set
+    built-time (if unset) based on timestamp in debian/changelog
+    							(Closes: #782764)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 21 Apr 2015 20:38:57 -0500
+
+r-base (3.2.0-1utopic1) utopic; urgency=low
+
+  * PPA build for Ubuntu 14.10 ("utopic")
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 09 Apr 2015 06:41:55 -0500
+
+r-base (3.2.0-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 16 Apr 2015 06:04:48 -0500
+
+r-base (3.1.3.20150413-1) unstable; urgency=low
+
+  * Third rc build (r68170) of R 3.2.0 expected for April 16
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 12 Apr 2015 21:38:03 -0500
+
+r-base (3.1.3.20150410-1) unstable; urgency=low
+
+  * Second rc build (r68169) of R 3.2.0 expected for April 16
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 09 Apr 2015 19:00:20 -0500
+
+r-base (3.1.3.20150409-1) unstable; urgency=low
+
+  * Initial rc build (r68161) of R 3.2.0 expected for April 16
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 08 Apr 2015 22:38:30 -0500
+
+r-base (3.1.3-1) unstable; urgency=low
+
+  * New upstream version released this morning
+ 
+  * debian/reproducibility-patch/*.patch: Added two patches submitted to R
+    upstream and already integrated into upcoming R 3.2.0 releases; these
+    help setting a timestamp for the DESCRIPTION file of a) base R package
+    via a new env var PKG_BUILT_TIME passed down from debian/rules, and
+    also b) r-cran-* package built via r-cran.mk through a new option to 
+    R CMD INSTALL                                    
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 09 Mar 2015 06:32:25 -0500
+
+r-base (3.1.2.20150306-1) unstable; urgency=low
+
+  * Second rc build (r67947) of R 3.1.3 expected for March 9
+  
+  * debian/reproducibility-patch/*.patch: Added two patches submitted to R
+    upstream and already integrated into upcoming R 3.2.0 releases; these
+    help setting a timestamp for the DESCRIPTION file of a) base R package
+    via a new env var PKG_BUILT_TIME passed down from debian/rules, and
+    also b) r-cran-* package built via r-cran.mk through a new option to 
+    R CMD INSTALL                                    
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 07 Mar 2015 09:51:04 -0600
+
+r-base (3.1.2.20150304-1) experimental; urgency=low
+
+  * Initial rc build (r67940) of R 3.1.3 expected for March 9
+
+  * debian/reproducibility-patch/*.patch: Added two patches submitted to R
+    upstream and already integrated into upcoming R 3.2.0 releases; these
+    help setting a timestamp for the DESCRIPTION file of a) base R package
+    via a new env var PKG_BUILT_TIME passed down from debian/rules, and
+    also b) r-cran-* package built via r-cran.mk through a new option to 
+    R CMD INSTALL                                    
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 04 Mar 2015 20:01:18 -0600
+
+r-base (3.1.2-3) experimental; urgency=low
+
+  * debian/reproducibility-patch/*.patch: Added two patches submitted to R
+    upstream and already integrated into upcoming R 3.2.0 releases; these
+    help setting a timestamp for the DESCRIPTION file of a) base R package
+    via a new env var PKG_BUILT_TIME passed down from debian/rules, and
+    also b) r-cran-* package built via r-cran.mk through a new option to 
+    R CMD INSTALL                                        (Closes: #774031)
+
+  * debian/rules: Added support for PKG_BUILT_TIME, but left commented-out
+  
+  * debian/r-cran.mk: Added support for --built-timestampe, also inactive
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 12 Jan 2015 21:03:42 -0600
+
+r-base (3.1.2-2) unstable; urgency=low
+
+  * debian/control: Upgrade Build-Depends: to tcl and tk 8.6
+  						(Closes: #768868)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 09 Nov 2014 14:05:44 -0600
+
+r-base (3.1.2-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 31 Oct 2014 05:04:22 -0500
+
+r-base (3.1.1.20141024-1) unstable; urgency=low
+
+  * Initial rc build (r66864) of R 3.1.2 expected for October 31
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 25 Oct 2014 14:16:00 -0500
+
+r-base (3.1.1-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 10 Jul 2014 05:04:12 -0500
+
+r-base (3.1.0.20140705-1) unstable; urgency=low
+
+  * Initial rc build (r66073) of R 3.1.1 expected for July 10
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 05 Jul 2014 10:48:31 -0500
+
+r-base (3.1.0-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 10 Apr 2014 06:04:45 -0500
+
+r-base (3.0.3.20140408-1) unstable; urgency=low
+
+  * Third rc build (r65383) of R 3.1.0 expected for April 10
+
+  * debian/rules: Also reflect 'dpkg-buildflags --get cppflags'
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 08 Apr 2014 14:56:36 -0500
+
+r-base (3.0.3.20140405-1) unstable; urgency=low
+
+  * Second rc build (r65382) of R 3.1.0 expected for April 10
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 06 Apr 2014 14:09:44 -0500
+
+r-base (3.0.3.20140403-1) unstable; urgency=low
+
+  * Initial rc build (r65367) of R 3.1.0 expected for April 10
+
+  * debian/rules: Also export ldflags variable
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 03 Apr 2014 18:48:57 -0500
+
+r-base (3.0.3.20140331-1) unstable; urgency=low
+
+  * Second beta build (r65345) of R 3.1.0 expected for April 10
+  
+  * debian/control: Added liblzma-dev to Depends: of r-base-dev 
+  						(Closes: #743076)
+
+  * debian/rules: Set optimflags, fcflags and ldflags via calls to
+    dpkg-buildflags with thanks to Julian Gilbey for the suggestion and
+    discussion					(Closes: #726913)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 31 Mar 2014 19:58:17 -0500
+
+r-base (3.0.3.20140328-1) unstable; urgency=low
+
+  * Initial beta build (r65330) of R 3.1.0 expected for April 10
+  
+  * debian/R.bash_completion: New version from Deepayan's repository
+  * debian/rules: Updated installation command for bash completion
+  * debian/control: Added bash-completion to Build-Depends:
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 28 Mar 2014 20:05:20 -0500
+
+r-base (3.0.3-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 06 Mar 2014 06:16:18 -0600
+
+r-base (3.0.2.20140301-1) unstable; urgency=low
+
+  * Second rc build (r65090) of R 3.0.3 expected for March 6
+
+  * debian/control: Re-enable Java on mips, mipsel as OpenJDK 7 is now
+    available for both.  Thanks to Niels Thykier for the follow-up.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 01 Mar 2014 11:18:10 -0600
+
+r-base (3.0.2.20140226-1) unstable; urgency=low
+
+  * Initial rc build (r65081) of R 3.0.3 expected for March 6
+
+  * debian/arm-perl-regexp.patch: Patch no longer needed as the change has
+    now been applied upstream
+
+  * debian/control: Remove Build-Depends: on texi2html which has been
+    deprecated as a standalone package.			(Closes: #726947)
+  * debian/control: Also remove Suggests: on texi2html for r-base-dev
+  
+  * debian/control: Added "!mipsel" to the Build-Depends as OpenJDK 7 is 
+    not available here (cf emails with Niels Thykier in #727805)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 26 Feb 2014 19:59:05 -0600
+
+r-base (3.0.2-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+  * debian/arm-perl-regexp.patch: Re-apply ARM patch for regexp 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 25 Sep 2013 05:55:00 -0500
+
+r-base (3.0.1.20130919-1) unstable; urgency=low
+
+  * Initial rc build (r63954) of R 3.0.2 expected for September 25
+
+  * debian/arm-perl-regexp.patch: Re-apply ARM patch for regexp 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 19 Sep 2013 21:53:29 -0500
+
+r-base (3.0.1.20130915-1) unstable; urgency=low
+
+  * Initial build (r63932) of R 3.0.2 expected for September 25
+  
+  * Version number scheme reverted to maj.min.pat.date rather than
+    maj.min.pat~date as the latex runs of the manuals once again break
+    when a tilde is present in the filename -- texi2dvi regression?
+
+  * debian/arm-perl-regexp.patch: Re-apply ARM patch for regexp 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 15 Sep 2013 08:07:40 -0500
+
+r-base (3.0.1-6) unstable; urgency=low
+
+  * debian/r-cran.mk: Undo brown paper bag error and add pipe symbol
+
+  * debian/rules: Do not run checks on kFreeBSD as it timed out
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 29 Jul 2013 19:35:24 -0500
+
+r-base (3.0.1-5) unstable; urgency=low
+
+  * debian/rules: Make a minor debian/rules clean more robust by using 
+    'rm -f' instead of plain 'rm'
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 26 Jul 2013 09:12:06 -0500
+
+r-base (3.0.1-4) unstable; urgency=low
+
+  * debian/rules: Set optimisation to -O2 on kFreeBSD	(Closes: #714506)
+  
+  * debian/r-cran.mk: Minor tweak to regexp in 'make clean' step
+
+  * debian/watch: Adjusted path to look in R-3/ directory
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 26 Jul 2013 06:24:24 -0500
+
+r-base (3.0.1-3) unstable; urgency=low
+
+  * debian/rules: Tweak the pdf creation to overcome error from missing
+    r-recommend packages sources which should be ignored, but is not
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 25 May 2013 12:41:01 -0500
+
+r-base (3.0.1-2) unstable; urgency=low
+
+  * doc/manual: Apply changes from upstream (SVN revs 62773 + 62778) to
+    permit compilation of the manuals under both texinfo 4 and texinfo 5
+
+  * debian/rules: No longer temporarily disabled moving info files now
+    that they build correctly with texinfo 5 as well.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 23 May 2013 21:36:21 -0500
+
+r-base (3.0.1-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+  * debian/arm-perl-regexp.patch: Re-apply ARM patch for regexp 
+
+  * debian/rules: Temporarily disabled moving info files. Not all help
+    files will be built as a result. We are looking into this.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 16 May 2013 06:05:31 -0500
+
+r-base (3.0.1~20130512-1) unstable; urgency=low
+
+  * Initial rc build (r62731) of R 3.0.1 expected for May 16
+
+  * debian/arm-perl-regexp.patch: Re-apply ARM patch for regexp 
+  
+  * debian/rules: Temporarily disabled moving info files
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 12 May 2013 14:47:49 -0500
+
+r-base (3.0.0-2) unstable; urgency=low
+
+  * debian/r-cran.mk: Revert recent patch to convert '.' in package names
+    to '-' as it breaks existing packages 		(Closes: #704606)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 03 Apr 2013 10:26:43 -0500
+
+r-base (3.0.0-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+  * debian/arm-perl-regexp.patch: Re-apply ARM patch for regexp 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 03 Apr 2013 05:19:08 -0500
+
+r-base (3.0.0~20130330-1) unstable; urgency=low
+
+  * Second rc build (r62448) of R 3.0.0 expected for April 3
+
+  * debian/arm-perl-regexp.patch: Re-apply ARM patch for regexp 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 30 Mar 2013 23:34:53 -0500
+
+r-base (3.0.0~20130327-1) unstable; urgency=low
+
+  * Initial rc build (r62427) of R 3.0.0 expected for April 3
+
+  * debian/rules: Explicitly call 'make javaconf;
+
+  * debian/arm-perl-regexp.patch: Re-apply ARM patch for regexp 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 27 Mar 2013 20:02:31 -0500
+
+r-base (3.0.0~20130324-1) unstable; urgency=low
+
+  * Initial beta build (r62384) of R 3.0.0 expected for April 3
+
+  * debian/arm-perl-regexp.patch: Re-apply ARM patch for regexp 
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 24 Mar 2013 08:54:05 -0500
+
+r-base (2.15.3-2) unstable; urgency=low
+
+  * debian/r-cran.mk: Applied patch by m.eik michalke to also convert '.'
+    in package names to '-'
+
+  * debian/arm-perl-regexp.patch: Re-apply ARM patch for regexp from 2.15.2
+    with big thanks to Luka Luca Falavigna 		(Closes: #702427)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 10 Mar 2013 10:04:12 -0500
+
+r-base (2.15.3-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 01 Mar 2013 06:23:30 -0600
+
+r-base (2.15.3~20130327-1) unstable; urgency=low
+
+  * Third rc build (rev62077) of R 2.15.3 expected March 1
+
+  * debian/r-base-core.postinst: Fix typo in /etc/R/Renviron mode correction
+    creation (thanks again, Don Armstrong!) 		(Closes: #701774)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 27 Feb 2013 15:09:55 -0600
+
+r-base (2.15.3~20130326-1) unstable; urgency=low
+
+  * Second rc build (rev62062) of R 2.15.3 expected March 1
+
+  * debian/r-base-core.postinst: Ensure /etc/R/Renviron is created with
+    proper 0644 modes (thanks, Don Armstrong!) 		(Closes: #701774)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 26 Feb 2013 16:56:17 -0600
+
+r-base (2.15.3~20130324-1) unstable; urgency=low
+
+  * Initial rc build (rev62054) of R 2.15.3 expected March 1
+  
+  * debian/rules: No longer patch the R script javareconf
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 24 Feb 2013 17:55:56 -0600
+
+r-base (2.15.2-2) unstable; urgency=low
+
+  * debian/control: Switch Build-Depends: from libtiff4-dev to libtiff5-dev
+
+  * debian/control: Set Standards-Version: to current version 
+
+  * debian/rules: Generate md5sums for all files 	(Closes: #700381)
+  * debian/r-base-core.postinst: Modied ucf file treatment to avoid
+    triggering md5sum changes (with thanks to Andreas Beckman)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 23 Feb 2013 11:11:51 -0600
+
+r-base (2.15.2-1) unstable; urgency=low
+
+  * New upstream release
+
+  * src/library/tools/R/install.R: Pass "perl = TRUE" parameter to sub()
+    function when defining SHLIB_* macros to work-around an erroneus
+    string replacement which causes build failures on arm* architectures
+    but make the change conditonal on actually being on arm*. 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 26 Oct 2012 06:17:58 -0500
+
+r-base (2.15.1-5) unstable; urgency=low
+
+  * debian/control: Switch Build-Depends: from openjdk-6-jdk to default-jdk
+							(Closes: #684285)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 08 Aug 2012 17:59:25 -0500
+
+r-base (2.15.1-4) unstable; urgency=low
+
+  * src/library/tools/R/install.R: Pass "perl = TRUE" parameter to sub()
+    really passing it to sub and not to grep		(Closes: #679180)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 15 Jul 2012 17:56:35 -0500
+
+r-base (2.15.1-3) unstable; urgency=low
+
+  * src/library/tools/R/install.R: Pass "perl = TRUE" parameter to sub()
+    and correcting error in logic of patch used in -2.	(Closes: #679180)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 15 Jul 2012 16:17:25 -0500
+
+r-base (2.15.1-2) unstable; urgency=low
+
+  * src/library/tools/R/install.R: Pass "perl = TRUE" parameter to sub()
+    function when defining SHLIB_* macros to work-around an erroneus
+    string replacement which causes build failures on arm* architectures
+    but make the change conditonal on actually being on arm*. 
+    With big thanks to Luca Falavigna for finding this fix. (Closes: #679180)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 14 Jul 2012 09:44:24 -0500
+
+r-base (2.15.1-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+  * src/X11/*: Applied revised patch by Philip Johnson to to set the X11
+    icon and window class for improved desktop experience; patch source
+    and support files are in debian/icon-class-patch/.
+  * debian/rules: Install icon png file and desktop file from Philip too
+  * debian/r-base-core.dirs: Add two directories for icon and desktop
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 22 Jun 2012 06:04:05 -0500
+
+r-base (2.15.1~20120617-1) unstable; urgency=low
+
+  * Initial rc build (rev59569) of R 2.15.1 expected June 22
+
+  * debian/control: Removed dpatch from Depends: for r-base-dev	[lintian]
+  
+  * src/X11/*: Applied patch posted by Philip Johnson to r-devel on June 7
+    to set the X11 icon and window class for improved desktop experience
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 17 Jun 2012 09:10:43 -0500
+
+r-base (2.15.0-2) unstable; urgency=low
+
+  * debian/rules: Test for gcc version 4.7.* and if found, reduce
+    optimisation to -O2 as gcc-4.7 fails to build R with -O3
+    (as per email discussions with Kurt Hornik of the R Core team)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 22 Apr 2012 09:46:28 -0500
+
+r-base (2.15.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 30 Mar 2012 07:42:33 -0500
+
+r-base (2.15.0~20120323-1) unstable; urgency=low
+
+  * Initial rc build (58802) of R 2.15.0 expected for March 30
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 23 Mar 2012 07:48:55 -0500
+
+r-base (2.15.0~20120317-1) unstable; urgency=low
+
+  * Initial beta build (r58769) of R 2.15.0 expected for March 30
+
+  * debian/R.bash_completion: New version from SVN (thanks, Deepayan!)
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 17 Mar 2012 13:27:32 -0500
+
+r-base (2.14.2-3) unstable; urgency=low
+
+  * debian/control: Really change Build-Depends: to libpng-dev this time
+  * debian/control: Also update Depends: for (virtual) r-base-dev
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 07 Mar 2012 14:52:20 -0600
+
+r-base (2.14.2-2) unstable; urgency=low
+
+  * debian/control: Change Build-Depends: to libpng-dev	(Closes: #662488)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 07 Mar 2012 14:27:40 -0600
+
+r-base (2.14.2-1) unstable; urgency=low
+
+  * New upstream release
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+  * debian/control: Set Standards-Version: to current version 
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 29 Feb 2012 06:52:40 -0600
+
+r-base (2.14.2~20120222-1) unstable; urgency=low
+
+  * Initial rc build (r58449) of R 2.14.2 expected for Feb 29
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+  
+  * debian/r-cran.mk: Include simple-patchsys.mk only if quilt not used
+    as requested by Andreas Tille		 	(Closes: #652456)
+  
+  * debian/r-cran.mk: Support "R:Depends" expansion in debian/substvars
+    as requested by Andreas Tille and Charles Plessy	(Closes: #659163)				
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 22 Feb 2012 08:51:46 -0600
+
+r-base (2.14.1-1) unstable; urgency=low
+
+  * New upstream release
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 22 Dec 2011 06:32:24 -0600
+
+r-base (2.14.1~20111215-1) unstable; urgency=low
+
+  * Initial rc build (r57901) of R 2.14.1 expected for Dec 22
+  
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+  * debian/control: Added the battery of texlive-* packages in
+    Build-Depends: to 'Suggests:' for r-base-dev so that users can build
+    all related documentation too
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 15 Dec 2011 21:57:29 -0600
+
+r-base (2.14.0-1) unstable; urgency=low
+
+  * New upstream release
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 31 Oct 2011 05:00:31 -0500
+
+r-base (2.14.0~20111027-1) unstable; urgency=low
+
+  * Initial rc build (r57443) of R 2.14.0 expected for Oct 31
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+  * debian/control: Set Standards-Version: to current version 
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 27 Oct 2011 12:59:54 -0500
+
+r-base (2.14.0~20111021-1) unstable; urgency=low
+
+  * Initial beta build (r57355) of R 2.14.0 expected for Oct 31
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 21 Oct 2011 14:56:51 -0500
+
+r-base (2.14.0~20111015-1) unstable; urgency=low
+
+  * Initial alpha release (r57258) of R 2.14.0 expected for Oct 31
+
+  * debian/rules: Setting '-std=gnu99' as part of CC, not CFLAGS (with
+    thanks to Kurt Hornik for the suggestion)
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 16 Oct 2011 00:39:15 -0500
+
+r-base (2.13.2-1) unstable; urgency=low
+
+  * New upstream release
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+  * debian/control: Added 'texlive-fonts-extra' to Build-Depends which R
+    2.14.0 will need for the inconsolate font used in vignettes.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 30 Sep 2011 07:02:04 -0500
+
+r-base (2.13.2~20110922-1) unstable; urgency=low
+
+  [ Dirk Eddelbuettel ]
+  * First rc build (r57046) of R 2.13.2 expected for Sep 30
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+  * Applied patch by Jonathan Nieder re 'make check'	(Closes: #638265)
+
+  [ Jonathan Nieder ] 
+  * debian/rules: Run tests in build target, not the install target (since
+    they do not require root privileges).
+  * debian/rules: Do not run tests when DEB_BUILD_OPTIONS contains
+    "nocheck".
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 23 Sep 2011 07:23:10 -0500
+
+r-base (2.13.1-1) unstable; urgency=low
+
+  * New upstream release
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 08 Jul 2011 06:17:17 -0500
+
+r-base (2.13.0-4) unstable; urgency=low
+
+  * debian/r-cran.mk: Make call to xvfb-run more robust by adding '-a'
+    option to allow automatic switching to free virtual server; with thanks
+    to Salvatore Bonaccorso for the suggestions		(Closes: #630869)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 22 Jun 2011 08:59:55 -0500
+
+r-base (2.13.0-3) unstable; urgency=low
+
+  * debian/control: Switch Build-Depends: (and Depends: for r-base-dev)
+    from libjpeg62-dev to libjpeg-dev for libjpeg8 transition -- with
+    thanks to Bill Allombert for the heads-up		(Closes: #629978)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 09 Jun 2011 17:43:27 -0500
+
+r-base (2.13.0-2) unstable; urgency=low
+
+  * debian/control: Add 'Depends: cdbs' to r-base-dev so that the r-cran-*
+    packages do not need to depend on it individually; it is a feature
+    of the r-cran.mk script sourced from r-base-dev 	(Closes: #627831)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 24 May 2011 19:28:19 -0500
+
+r-base (2.13.0-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 13 Apr 2011 06:24:26 -0500
+
+r-base (2.13.0~20110407-1) unstable; urgency=low
+
+  * First rc build (r55373) of R 2.13.0 expected for Apr 13
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 08 Apr 2011 12:10:17 -0500
+
+r-base (2.13.0~20110401-1) unstable; urgency=low
+
+  * First beta build (r55246) of R 2.13.0 expected for Apr 13
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 02 Apr 2011 07:38:54 -0500
+
+r-base (2.13.0~20110324-1) unstable; urgency=low
+
+  * Second alpha build (r55004) of R 2.13.0 expected for Apr 13
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 25 Mar 2011 07:15:21 -0500
+
+r-base (2.13.0~20110316-1) unstable; urgency=low
+
+  * Initial alpha release (r54827) of R 2.13.0 expected for Apr 13
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 17 Mar 2011 08:05:43 -0500
+
+r-base (2.12.2-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 25 Feb 2011 07:16:46 -0600
+
+r-base (2.12.2~20110218-1) unstable; urgency=low
+
+  * First rc built (r54487) of R 2.12.2 expected for Feb 25
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 19 Feb 2011 10:50:12 -0600
+
+r-base (2.12.2~20110215-1) unstable; urgency=low
+
+  * First beta built (r54439) of R 2.12.2 expected for Feb 25
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 15 Feb 2011 17:45:22 -0600
+
+r-base (2.12.1-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 16 Dec 2010 06:15:09 -0600
+
+r-base (2.12.1~20101208-1) unstable; urgency=low
+
+  * First rc built (r53817) of R 2.12.1 expected for Dec 16
+
+  * R/m4, configure: Override bzip2 test for 1.0.6 to let our patched
+    1.0.5 version pass as lintian does not like the embedded library
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 09 Dec 2010 06:44:18 -0600
+
+r-base (2.12.0-1) unstable; urgency=low
+
+  * New upstream version released this morning
+  
+  * As a new major release, this will go to unstable despite the freeze
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 15 Oct 2010 05:11:09 -0500
+
+r-base (2.12.0~20101007-1) experimental; urgency=low
+
+  * First rc built (r53048) of R 2.12.0 expected for Oct 15
+
+  * Distribution still set to 'experimental' as release freeze is ongoing
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 07 Oct 2010 20:44:50 -0500
+
+r-base (2.11.1-7) unstable; urgency=low
+
+  * debian/control: Add 'liblzma-dev' to Build-Depends	(Closes: #599120)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 04 Oct 2010 16:12:19 -0500
+
+r-base (2.12.0~20101002-1) experimental; urgency=low
+
+  * First beta built (r53048) of R 2.12.0 expected for Oct 15
+
+  * Distribution still set to 'experimental' as release freeze is ongoing
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 02 Oct 2010 14:27:42 -0500
+
+r-base (2.12.0~20100928-1) experimental; urgency=low
+
+  * Third alpha built (r53048) of R 2.12.0 expected for Oct 15
+
+  * Distribution still set to 'experimental' as release freeze is ongoing
+  
+  * debian/control: Added liblzma-dev to Build-Depends
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 28 Sep 2010 14:59:37 -0500
+
+r-base (2.12.0~20100924-1) experimental; urgency=low
+
+  * Second alpha built (r52983) of R 2.12.0 expected for Oct 15
+
+  * Distribution still set to 'experimental' as release freeze is ongoing
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 24 Sep 2010 09:28:16 -0500
+
+r-base (2.12.0~20100917-1) experimental; urgency=low
+
+  * Initial alpha release (r52529) of R 2.12.0 expected for Oct 15
+     
+  * Distribution set to 'experimental' as release freeze is ongoing
+
+  * R/m4, configure: Check zlib version for 1.2.3.4, not 1.2.3
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 17 Sep 2010 06:52:33 -0500
+
+r-base (2.11.1-6) unstable; urgency=low
+
+  * debian/control: Add [!mips] to the list architectures that do not have
+    a Build-Depends: on openjdk-6-jdk (per request of release team)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 15 Aug 2010 08:09:11 -0500
+
+r-base (2.11.1-5) unstable; urgency=low
+
+  * debian/rules: Also set ${cflags}, ${cxxflags}, ${fcflags} during 
+    configure in light of #590126
+  * debian/rules: Set FCFLAGS as well as FFLAGS
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 06 Aug 2010 07:10:57 -0500
+
+r-base (2.11.1-4) unstable; urgency=low
+
+  * debian/rules: Impose '-g0' for mips and mipsel in light of #590126
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 05 Aug 2010 13:06:00 -0500
+
+r-base (2.11.1-3) unstable; urgency=low
+
+  * m4/R.m4: Apply patch Arnaud Patard to suppress -g flag during
+    configure which currently upsets tcl/tk on the mips and mipsel
+    platform (see the release-critical bug report #590126).
+    A big thanks to Arnaud for the patch and detailed analysis.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 01 Aug 2010 13:50:21 -0500
+
+r-base (2.11.1-2) unstable; urgency=low
+
+  * debian/rules: Re-apply arm fixes from 2.11.0-2 below which 
+    inadvertently slipped. Thanks once again to Modestas for 
+    spotting this.					 (Closes: #581237)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 03 Jun 2010 17:19:17 -0500
+
+r-base (2.11.1-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 31 May 2010 06:52:52 -0500
+
+r-base (2.11.1~20100525-1) unstable; urgency=low
+
+  * Release Candidate (r52102) of R 2.11.1 expected for May 31
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 26 May 2010 06:48:15 -0500
+
+r-base (2.11.0-2) unstable; urgency=low
+
+  * debian/rules: Withdraw old hack to let armel build without system blas
+    and lapack as these now work. With special thanks to Modestas Vainius 
+    for spotting this and testing the fix.		 (Closes: #581237)
+
+  * debian/rules: Also withdraw setting of radical -O0 -g0 on armel
+    which was once needed due to poor Fortran compiler performance.
+    Once again thanks to  Modestas Vainius for spotting and checking!
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 12 May 2010 21:25:38 -0500
+
+r-base (2.11.0-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 22 Apr 2010 06:29:47 -0500
+
+r-base (2.11.0~20100419-1) unstable; urgency=low
+
+  * Initial rc release (r51778) of R 2.11.0 expected for April 22
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 20 Apr 2010 10:04:38 -0500
+
+r-base (2.11.0~20100409-1) unstable; urgency=low
+
+  * Initial beta release (r51661) of R 2.11.0 expected for April 22
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 10 Apr 2010 14:35:56 -0500
+
+r-base (2.11.0~20100402-1) unstable; urgency=low
+
+  * Initial alpha release (r51564) of R 2.11.0 expected for April 22
+
+  * debian/control: Fix typo / editing mistake in Description for r-base
+							(Closes: #563234)
+
+  * debian/rules: Add softlink from /usr/lib/R/lib/libR.so into /usr/lib
+    to make the R library visible as /etc/ld.so.conf.d/ is no longer used
+							(Closes: #575913)
+
+  * debian/control: Set Standards-Version: to current version 
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 03 Apr 2010 08:44:29 -0500
+
+r-base (2.10.1-2) unstable; urgency=low
+
+  * configure: Apply patch by Nobuhiro Iwamatsu to allow for builds
+    on the sh4 architecture				(Closes: #561180)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 14 Dec 2009 21:30:07 -0600
+
+r-base (2.10.1-1) unstable; urgency=low
+
+  * New upstream version released this morning
+  
+  * debian/control: For r-recommended, replace r-cran-vr with the four
+    unbundled packages r-cran-{mass,class,nnet,spatial}
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 14 Dec 2009 06:14:03 -0600
+
+r-base (2.10.1~20091210-1) unstable; urgency=low
+
+  * New upstream release candidate for R 2.10.1 expected for December 14
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 10 Dec 2009 13:42:48 -0600
+
+r-base (2.10.1~20091206-1) unstable; urgency=low
+
+  * New upstream beta release for R 2.10.1 expected for December 14
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 06 Dec 2009 15:27:49 -0600
+
+r-base (2.10.0-2) unstable; urgency=low
+
+  * debian/control: Replace Build-Depends: on xpdf-reader with xdg-utils
+    with thanks to Moritz Muehlenhoff
+
+  * debian/r-base-core.postinst: Switch from texhash to mktexlsr with
+    thanks to Julian Gilbey				(Closes: #555187)
+
+  * debian/control: Fix grammar error by switching to 'This package provides'
+    in five of the package entries (which still does not quite call for this
+    somewhat inflationary use of automated bug filing seen here ...)
+  	 (Closes: #557842 #557843 #557844 #557845 #557846 #557847 #55849)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 28 Nov 2009 03:37:58 -0600
+
+r-base (2.10.0-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 26 Oct 2009 07:31:30 -0500
+
+r-base (2.10.0~20091019-1) unstable; urgency=low
+
+  * First release candidate of R 2.10.0 expected for October 26
+
+  * debian/rules: Configure with R_BROWSER=xdg-open as default HTML browser
+  
+  * debian/control: As html documentation is now dynamically generated, the 
+    r-doc-html package is no longer six mb in size and can be promoted from
+    Suggested: to Recommended: (thanks to Michael Rutter for the suggestion).
+
+  * debian/control: Add Conflicts/Provides/Replaces for r-base-core 
+    on r-base-latex to uninstall existing (and now redundant) packages.
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 19 Oct 2009 10:15:03 -0500
+
+r-base (2.10.0~20091013-1) unstable; urgency=low
+
+  * First beta release of R 2.10.0 expected for October 26
+  
+  * debian/rules: No longer call 'make html' or 'make help' as starting 
+    with R 2.10.0, documentation is now rendered on-demand by the R engine
+  * debian/rules: No longer fix modes on help-{links,print}.sh as these
+    script are no longer shipped
+  
+  * debian/control: Removed entry for package r-base-latex
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 13 Oct 2009 12:41:48 -0500
+
+r-base (2.9.2-4) unstable; urgency=low
+
+  * configure: Re-insert xdg-open into list of pdf viewers tested
+    for at build time -- thanks to Sebastian P. Luque for the heads-up!
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 06 Oct 2009 17:21:20 -0500
+
+r-base (2.9.2-3) unstable; urgency=low
+
+  * debian/control: Also change Depends: in r-base-dev from
+    from 'libreadline5-dev' to 'libreadline-dev'
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 16 Sep 2009 20:56:57 -0500
+
+r-base (2.9.2-2) unstable; urgency=low
+
+  * debian/control: As requested by Matthias Klose, change 
+    Build-Depends: from 'libreadline5-dev' to 'libreadline-dev'
+
+  * debian/rules: Soft link from /usr/lib/R/COPYING against GPL-2
+    instead of GPL, with thanks to Isaac for spotting this.
+
+  * debian/control: Set Standards-Version: to current version 
+
+  * debian/control: Add Depends: for r-doc-info on 
+    'dpkg (>= 1.15.4) | install-info'
+  
+  * debian/rules: No longer install /etc/ld.so.conf.d/libR.conf
+  
+  * debian/r-base-core.postinst:  Call paperconf without prepended path
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 13 Sep 2009 20:27:45 -0500
+
+r-base (2.9.2-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+  * r-doc-{info,html}.{postinst,prerm}: Omit calls to install-docs
+    and install-info which is now handled by dpkg triggers.
+  * debian/control: Builds-Depends: on debhelper (>= 7.2.3)
+  
+  * debian/control: Add 'xdg-utils' to Depends: for r-base-core
+  
+  * debian/r-cran.mk: Improved find command in clean target
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 24 Aug 2009 06:15:24 -0500
+
+r-base (2.9.1-2) unstable; urgency=low
+
+  * Re-activated Java support using an updated ca-certificates-java 
+    package by Matthias Klose -- Thanks!
+  * debian/control: Build-Depends: on openjdk-6-jdk added back in
+
+  * debian/control: Update Standards-Version: to current value.
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 29 Jun 2009 19:20:13 -0500
+
+r-base (2.9.1-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+  * configure,m4/R.m4: Add xdg-open to set of pdf viewers checked by configure
+    (and this change has been committed upstream for 2.10.0 as well).
+
+  * As of this morning, the Debian Java toolchain is broken (#534520) so 
+    support for Java is disabled by temporarily removing 
+      openjdk-6-jdk [!arm !hppa !kfreebsd-i386 !kfreebsd-amd64 !hurd-i386]
+    from Build-Depends: --- a new upload will be provided once this problem
+    is fixed.
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 26 Jun 2009 09:34:58 -0500
+
+r-base (2.9.1~20090621-1) unstable; urgency=low
+
+  * First beta release of R 2.9.1 which should be released on June 26
+
+  * configure,m4/R.m4: Add xdg-open to set of pdf viewers checked by configure
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 21 Jun 2009 21:21:25 -0500
+
+r-base (2.9.1~20090618-1) unstable; urgency=low
+
+  * First beta release of R 2.9.1 which should be released on June 26
+
+  * debian/control: Switched (Build-)Depends: from xpdf-reader to xdg-utils; 
+    pdf files will now be opened with xdg-open to reflect desktop choices.
+  
+  * debian/README.Atlas: Further editing, added test script
+
+  * debian/r-cran.mk: Do not remove src/Makevars.in in clean step as this was 
+    seen to upset some packages when used by cran2deb for all of CRAN
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 18 Jun 2009 07:00:11 -0500
+
+r-base (2.9.0-4) unstable; urgency=low
+
+  * debian/r-cran.mk: Applied suggestion by Julian Gilbey to correct 
+    accidental lowercasing of CRAN package names which can prevent removal
+    ot extra license files				(Closes: #531224)
+  
+  * debian/README.Atlas: Updated to current packages	(Closes: #531223)
+  
+  * debian/r-cran.mk: Small correction to previously added 'clean' target
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 31 May 2009 21:15:27 -0500
+
+r-base (2.9.0-3) unstable; urgency=low
+
+  * debian/r-cran.mk: Applied patch by Steffen Moeller that adds a 
+    'clean' target which is useful if one builds outside of pbuilder.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 16 May 2009 18:07:02 -0500
+
+r-base (2.9.0-2) unstable; urgency=low
+
+  * debian/r-base-core.prerm: Remove /etc/R/Renviron on remove or purge to
+    not leave unowned files around. Also make sure ucf forgets all about it.
+    Special Thanks! to Holger Levsen.			(Closes: #527618)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 10 May 2009 19:00:28 -0500
+
+r-base (2.9.0-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+  * debian/rules: Turn optimisation back to -O3 on alpha (as elsewhere) 
+    with thanks to Kurt Roeckx for applying a fix to gcc
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 17 Apr 2009 06:56:48 -0500
+
+r-base (2.9.0~20090410-1) unstable; urgency=low
+ 
+  * First release candidate of R 2.9.0 expected for April 17
+
+  * debian/rules: Lower optimisation to -O2 on alpha
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 11 Apr 2009 16:10:24 -0500
+
+r-base (2.9.0~20090403-1) unstable; urgency=low
+
+  * First beta release of R 2.9.0 expected for April 17
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 04 Apr 2009 10:52:59 -0500
+
+r-base (2.9.0~20090327-1) unstable; urgency=low
+
+  * Second alpha release of R 2.9.0 expected for April 17
+
+  * debian/control: Update Standards-Version: to current value.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 28 Mar 2009 13:53:36 -0500
+
+r-base (2.9.0~20090320-1) unstable; urgency=low
+
+  * Initial alpha release of R 2.9.0 expected for April 17
+
+  * debian/control: Changed Section: of r-base, r-base-core, and r-base-dev to 
+    new section 'gnu-r'
+  
+  * debian/control: Add r-cran-matrix to r-recommended as the upstream package 
+    'Matrix' is part of the core R release as of 2.9.0.
+
+  * debian/control: Change Depends: on 'ucf' to 'ucf (>= 3.0)'	(Closes: #516508)
+  
+  * debian/rules: No longer apply build-help.pl.patch, and no longer install 
+    build-help.pl as the R help system was rewritten (mostly in R itself).
+  
+  * debian/{control,compat}: Switch to debhelper compat level 7, and hence
+    set Build-Depends: on 'debhelper (>= 7.0.0)'
+
+  * debian/r-doc-html.{postinst,prerm}: Created manually as debhelper seemingly
+    stopped creating these from dh_installdocs
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 21 Mar 2009 13:06:30 -0500
+
+r-base (2.8.1-2) unstable; urgency=low
+
+  * debian/control: Add another Build-Depends: exclusion for the 
+    'kfreebsd-i386 kfreebsd-amd64 hurd-i386' architecture to openjdk-6-jdk.
+    Thanks to Petr Salinger for the heads-up.		(Closes: 512324)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 19 Jan 2009 12:40:24 -0600
+
+r-base (2.8.1-1) unstable; urgency=low
+
+  * New upstream version released today
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 22 Dec 2008 20:10:19 -0600
+
+r-base (2.8.1~20081219-1) unstable; urgency=low
+
+  * Updated to Dec 19 release candidate of R 2.8.1 expected for Dec 22
+
+  * r-doc-pdf expected to be empty due to the tex/texinfo bug below
+  
+  * debian/control: Change Build-Depends: on openjdk-6-jdk to 
+    'openjdk-6-jdk [!arm !hppa]' as arm and hppa do not have one.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 20 Dec 2008 09:26:38 -0600
+
+r-base (2.8.1~20081212) unstable; urgency=low
+
+  * Initial beta release of R 2.8.1 expected for Dec 22
+  * Fixes 'dev2bitmap fails with gsexe related error'	(Closes: #505698)
+
+  * As #487974 is still open, the r-doc-pdf documentation package is again
+    almost empty due to the tilde in the Debian revision number which breaks
+    the texinfo-to-pdf conversions.  Users are advised to hold onto the
+    2.8.0 version of the package until 2.8.1 comes out in ten days.
+  
+  * debian/control: Added 'openjdk-6-jdk' to Build-Depends:
+  * debian/r-cran.mk:  Removed commented-out code that attempted to 
+    configure Java at package build-time, we now do that at R builds 
+
+  * debian/rules: Set softlinks for COPYING and COPYING.LIB to GPL-2 and 
+    LGPL-2.1, respectively, to ensure the correct versions are linked. 
+    Thanks to Deepayan Sarkar for the suggestion.
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 12 Dec 2008 11:36:22 -0600
+
+r-base (2.8.0-1) unstable; urgency=low
+
+  * New upstream version released a few hours ago
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 20 Oct 2008 06:07:59 -0500
+
+r-base (2.8.0~20081013-1) unstable; urgency=low
+
+  * Initial 'Release Candidate' package of R 2.8.0 expected for October 20
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 13 Oct 2008 10:07:47 -0500
+
+r-base (2.8.0~20081006-1) unstable; urgency=low
+
+  * Initial 'Beta' package of R 2.8.0 expected to be released on October 20
+
+  * debian/control: Updated Description: text; with thanks to Doug Bates
+    and Martin Maechler for helpful suggestions and comments.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 05 Oct 2008 15:15:44 -0500
+
+r-base (2.7.2-2) unstable; urgency=low
+
+  * debian/r-cran.mk: Switch from cdbs snippet dpatch.mk to simple-patchsys.mk
+
+  * debian/{Renviron.site,Rprofile.site}: Install simple stanza files with 
+    example usage into /etc/R/ with softlinks from $R_HOME/etc as for the
+    other config files. Thanks to Christian Hudon for the suggestion.
+  							(Closes: #498520)
+  
+  * src/library/base/R/dcf.R: Correct regexp for Debian-style control field
+    writing as per the one-line patch by Charles Blundell to r-devel / r-bugs
+    which should help us in cran2deb as well
+
+  * debian/control: Switched Build-Depends from tcl/tk 8.4 to 8.5 
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 13 Sep 2008 17:07:31 -0500
+
+r-base (2.7.2-1) unstable; urgency=low
+
+  * New upstream version released a few hours ago
+  
+  * src/scripts/javareconf: Replace use of /tmp with result of 
+    `mktemp -t -d` to avoid symlink attacks		(Closes: #496418)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 25 Aug 2008 06:37:14 -0500
+
+r-base (2.7.2~20080816-1) unstable; urgency=low
+
+  * Initial 'beta' release of R 2.7.2 expected to be released on August 25
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 17 Aug 2008 10:15:43 -0500
+
+r-base (2.7.1-2) unstable; urgency=low
+
+  * debian/r-doc-{info,html,pdf}: Added R-ints and R-admin manuals
+  * debian/r-doc-html.doc-base.ints: Added new doc-base file
+  
+  * debian/rules: Exclude usr/lib/R/etc/Renviron.ucf from md5sums
+							(Closes: #491637)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 21 Jul 2008 06:42:27 -0500
+
+r-base (2.7.1-1) unstable; urgency=low
+
+  * New upstream version released a few hours ago
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 23 Jun 2008 06:10:26 -0500
+
+r-base (2.7.1~20080621-1) unstable; urgency=low
+
+  * New 'rc' release of R 2.7.1 expected to be released on June 23
+  
+  * debian/{rules,r-base-core.postinst}: Changed to have /etc/R/Renviron
+    be handled by ucf, with thanks to Aaron M. Ucko	(Closes: #476420)
+  * debian/control: Added Depends: on ucf to r-base-core
+  
+  * debian/control: Build-Depends updated from 'x-dev, xbase-clients' to
+    'x11proto-core-dev, xauth'
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 21 Jun 2008 11:26:48 -0500
+
+r-base (2.7.1~20080614-1) unstable; urgency=low
+
+  * Initial 'beta' release of R 2.7.1 expected to be released on June 23
+
+  * debian/control: Added Homepage: field as suggested by Andreas Tille
+							(Closes: #481058)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 14 Jun 2008 11:45:22 -0500
+
+r-base (2.7.0-1) unstable; urgency=low
+
+  * New upstream version released a few hours ago
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 22 Apr 2008 08:40:44 -0500
+
+r-base (2.7.0~20080416-1) unstable; urgency=low
+
+  * Second 'rc' release of R 2.7.0 expected to be released on April 22
+
+  * debian/rules: Explicit rebuild and copying of Rscript to prevent seepage
+    of a bad R_HOME setting from build-time		(Closes: #475343)
+  
+  * debian/control: Add new package 'r-base-core-dbg' with stripped debugging 
+    symbols; thanks to Soeren for the suggestion	(Closes: #476345)
+  * debian/rules: Modified dh_strip call accordingly
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 16 Apr 2008 13:01:21 -0500
+
+r-base (2.7.0~20080415-1) unstable; urgency=low
+
+  * Initial 'rc' release of R 2.7.0 expected to be released on April 22
+
+  * debian/r-doc.html.doc-base.*: Changed section to 'Science/Data Analysis'
+  
+  * debian/control: Added 'xvfb, xbase-clients, xfonts-base' to Build-Depends:
+  * debian/rules: Change 'make check' into 'xvfb-run make check-all'
+
+  * debian/control: Replace 'tetex-bin, tetex-extra' in Build-Depends: with
+    'texlive-base, texlive-latex-base, texlive-generic-recommended, 
+     texlive-fonts-recommended, texlive-extra-utils, texlive-latex-recommended, 
+     texlive-latex-extra, texinfo, texi2html' 
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 15 Apr 2008 14:32:08 -0500
+
+r-base (2.7.0~20080408-1) unstable; urgency=low
+
+  * Initial 'beta' release of R 2.7.0 expected to be released on April 22
+  
+  * debian/rules: Configure and build with Debian's lapack
+  * debian/control: Upgraded Build-Depends: to liblapack-dev (>= 3.1.1)
+  
+  * debian/rules: Add new configure options --with-cairo and --with-pango
+  * debian/control: Added Build-Depends: on 'libpango1.0-dev, libcairo2-dev'
+  * debian/control: Revert Depends: for 'quasi-virtual' r-base-dev to 
+    'libblas-dev | libatlas-base-dev, liblapack-dev | libatlas-base-dev'
+    as the transition to gfortran-built lapack/blas/atlas is complete.
+  							(Closes: #473695)
+
+  * debian/control: r-recommended no longer Depends: on r-cran-rcompgen as
+    per upstream having integrated the rcomgen packaged into r-base-core.
+  * debian/control: Added Conflicts/Provides/Replaces for r-base-core 
+    on r-cran-rcompgen to uninstall existing (and now redundant) packages.
+
+  * debian/control: Added Build-Depends on 'libtiff4-dev'
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 08 Apr 2008 21:24:42 -0500
+
+r-base (2.6.2-2) unstable; urgency=low
+
+  * debian/{rules,control}: Reverting the use of Debian's lapack as we got 
+    a SVD-related bug report with a day -- thanks, Ben!	(Closes: #464833)
+     - remove 'liblapack-dev' from Build-Depends
+     - call configure with 
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 09 Feb 2008 10:05:24 -0600
+
+r-base (2.6.2-1) unstable; urgency=low
+
+  * New upstream version released this morning 
+  
+  * debian/control: Added 'liblapack-dev' to Build-Depends: to switch back 
+    to using Debian's Lapack rather than the version supplied by R.
+  * debian/rules: Dito, call configure with '--with-lapack'
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 08 Feb 2008 09:40:02 -0600
+
+r-base (2.6.1-2) unstable; urgency=low
+
+  * debian/control: Replace Build-Depends: on 'refblas3-dev | atlas3-base-dev' 
+    with 'libblas-dev' to use the new gfortran-built BLAS libraries. Thanks 
+    to Riku Voipio for the heads-up and patch.		(Closes: #461767)
+
+  * debian/control: Likewise set the Depends: for the quasi-virtual
+    r-base-dev on 'libblas-dev' to enfore use of the new BLAS.
+
+  * debian/control: Update Standards-Version: to current value.
+  
+  * debian/{r-base-core,r-recommended}.lintian: Add a few silencers for
+    the 'package-contains-empty-directory' warnings.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 20 Jan 2008 20:24:52 -0600
+
+r-base (2.6.1-1) unstable; urgency=low
+
+  * New upstream version released this morning
+  
+  * debian/rules: As gcc-4.2 is now, unset suffix '-4.2' on gcc et al
+  * debian/control: Likewise, removed '-4.2' from gcc et al in Build-Depends 
+    and Depends for r-base-dev and used versioned Depends (>= 4:4.1.0) 
+    which are also suitable for backports and Ubuntu port -- and Debian
+    will get 4.2 anyway as it is the default in testing and unstable
+
+  * debian/rules: Define FC=gfortran as the Fortran95 compiler for packages
+
+  * debian/r-base-core.shlibs: Point libR.so and libRlapack.so to r-base-core
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 26 Nov 2007 11:20:57 -0600
+
+r-base (2.6.0-4) unstable; urgency=medium
+  
+  * Urgency medium as a "Depends: tk8.4 (>= 8.4.16-2)" is needed to undo
+    the breakage introduced by the version in testing (tk8.4_8.4.16-1).
+    This build does not introduce any new code or configuration settings
+    and should migrate to testing as soon as possible.
+  
+  * Rebuild R to obtain Depends on newer Tk		(Closes: #451152)
+
+  * debian/shlibs.local: New file, added for Depends on newer tk8.4 which 
+    is not (yet) provided via the package's shlibs file, also filed a 
+    bugreport against tk8.4
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 13 Nov 2007 19:45:59 -0600
+
+r-base (2.6.0-3) unstable; urgency=low
+
+  * debian/r-cran.mk: Retiring the experimental javareconf support for now.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 10 Oct 2007 08:46:43 -0500
+
+r-base (2.6.0-2) unstable; urgency=low
+
+  * debian/r-cran.mk: Set Java (re-)conf. call to "R CMD javareconf -e ''" 
+    to not require write to Makeconf file 		(Closes: #445722)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 09 Oct 2007 14:20:12 -0500
+
+r-base (2.6.0-1) unstable; urgency=low
+
+  * New upstream version released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 03 Oct 2007 10:25:43 -0500
+
+r-base (2.6.0~20070930-1) unstable; urgency=low
+
+  * Second 'rc' release of R 2.6.0 expected to be released on October 3
+  
+  * debian/r-cran.mk:
+    - Apply patch by David Vernazobres to permit additional argument
+    - Add test for Java compiler and run R CMD javareconf if found
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 01 Oct 2007 16:38:49 -0500
+
+r-base (2.6.0~20070925-1) unstable; urgency=low
+
+  * Initial 'rc' release of R 2.6.0 expected to be released on October 3
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 26 Sep 2007 10:08:33 -0500
+
+r-base (2.6.0~20070918-1) unstable; urgency=low
+
+  * Initial 'beta' release of R 2.6.0 expected to be released on October 3
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 19 Sep 2007 09:50:17 -0500
+
+r-base (2.6.0~20070910-3) unstable; urgency=low
+
+  * debian/r-cran.mk: Fix another syntax error
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 12 Sep 2007 21:54:10 -0500
+
+r-base (2.6.0~20070910-2) unstable; urgency=low
+
+  * debian/r-cran.mk: Add missing escape to if/else/fi statement for xvfb-run
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 12 Sep 2007 21:01:19 -0500
+
+r-base (2.6.0~20070910-1) unstable; urgency=low
+
+  * Initial 'alpha' release of R 2.6.0 expected to be released on October 3
+
+  * Debian changes:
+    - debian/control: Added 'cdbs, debhelper' as Suggests: for r-base-dev
+
+    - r-cran.mk: If the xvfb-run script is found, use it to wrap the call
+      to 'R CMD INSTALL ...' to provide (virtual) X11 for packages that may
+      need it, this even works in a pbuilder setting. If not found, just
+      proceed as usual with a straight-up 'R CMD INSTALL ...'. Packages
+      using this feature need Build-Depends on xvfb, xbase-clients (for
+      xauth) and xfonts-base (for basic fonts).
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 11 Sep 2007 16:24:33 -0500
+
+r-base (2.5.1-2) unstable; urgency=low
+
+  * debian/control: Add r-cran-codetools to Depends: for r-recommends
+
+  * debian/r-base-core.menu: Section now "Applications/Science/Data Analysis"
+
+  * debian/Renviron-R_LIBS.patch: With R 2.5.*, modify R_LIBS_SITE not R_LIBS
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 18 Jul 2007 14:26:06 -0500
+
+r-base (2.5.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 28 Jun 2007 09:45:43 -0500
+
+r-base (2.5.1~20070625-1) unstable; urgency=low
+
+  * Second release candidate for R 2.5.1 expected for June 28
+
+  * To ensure successful builds involving Fortran, we need to explicitly 
+    select the gcc-4.2 versions of the the compiler suite in debian/rules, 
+    and per Build-Depends in debian/control as well as the Depends for 
+    r-base-dev.  Backporters will probably need to revert this to 4.1.
+    Thanks to Michael Ablassmeier and Lucas Nussbaum for the heads-up.
+
+  * debian/control: Changed Build-Depends from 'gcc (>= 4:4.0), 
+    gfortran (>= 4.0.2)' to 'gcc-4.2, g++-4.2, gfortran-4.2'
+  * debian/control: Changed Depends for r-base-dev from 'gfortran (>= 4.0.2), 
+    gcc (>= 4:4.0), g++ (>= 4:4.0)' to 'gcc-4.2, g++-4.2, gfortran-4.2'
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 26 Jun 2007 09:36:23 -0500
+
+r-base (2.5.1~20070622-1) unstable; urgency=low
+
+  * First release candidate for R 2.5.1 expected for June 28
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 23 Jun 2007 20:13:22 -0500
+
+r-base (2.5.1~20070618-1) unstable; urgency=low
+
+  * New beta release candidate for R 2.5.1 expected for June 28
+  
+  * debian/control: Add 'dpatch' to Depends: for r-base-dev to ensure
+    that the r-cran.mk stanza can use dpatch 		(Closes: #429464)
+
+  * debian/control: Switch from $Source-Version to $source:Version and
+    $binary:Version 					(lintian)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 18 Jun 2007 08:09:11 -0500
+
+r-base (2.5.1~20070614-1) unstable; urgency=low
+
+  * First 'beta' of R 2.5.1 expected to be released on June 28
+
+  * debian/r-cran.mk: Add dpatch.mk to debian/rules stanza
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 14 Jun 2007 21:36:05 -0500
+
+r-base (2.5.1~20070530-1) unstable; urgency=low
+
+  * R-patched as of 2007-05-30
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 31 May 2007 16:05:30 -0500
+
+r-base (2.5.1~20070513-1) unstable; urgency=low
+
+  * R-patched as of 2007-05-13
+  
+  * First release with new upstream support for DESTDIR 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 14 May 2007 08:57:08 -0500
+
+r-base (2.5.0-2) unstable; urgency=low
+
+  * src/nmath/standalone/Makefile.in,src/scripts/Makefile.in,
+    src/unix/Makefile.in: Applied patch by Martyn Plummer which 
+    brings R closer to standard GNU behaviour with respect to
+    'make install' redirection. In particular, this fixes the 
+    new binary /usr/bin/Rscript which was broken in 2.5.0-1, also
+    corrects /usr/pkgconfig/libR.pc, adds the a new file 
+    /usr/pkgconfig/libRmath.pc (for r-mathlib) and also corrects
+    /usr/bin/R which we used to patch post-'make install'.
+  
+  * debian/control: Added Depends: for r-recommended on r-cran-rcompgen
+    as this package is now in Debian unstable.
+  
+  * /etc/ld.so.conf.d/R.conf: Added new file so that libR.so and 
+    libRlapack.so will be known to ld.so
+
+  * debian/rules: Call configure with --enable-memory-profiling
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed,  2 May 2007 21:17:47 -0500
+
+r-base (2.5.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 24 Apr 2007 06:09:00 -0500
+
+r-base (2.5.0~20070422-1) unstable; urgency=low
+
+  * First 'rc' package of R 2.5.0 expected to be released next week
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 23 Apr 2007 08:12:25 -0500
+
+r-base (2.5.0~20070412-1) unstable; urgency=low
+
+  * First 'beta release of R 2.5.0 expected to be released later this month
+
+  * debian/r-cran.mk: Added test for value of 'Priority: in DESCRIPTION which 
+    is used for the choice of the install directory below $R_HOME
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 13 Apr 2007 14:14:41 -0500
+
+r-base (2.5.0~20070407-1) unstable; urgency=low
+
+  * First 'alpha' release of R 2.5.0 expected to be released later this month
+    
+  * debian/rules: Configure R to use original zip and unzip instead
+    of the 'mini' variant as some packages want a -q option for unzip.
+  * debian/control: Switch Depends: from zlib-bin to 'zip, unzip'
+
+  * debian/r-cran.mk: Allow for optional $(debRreposname) to allow
+    automated switching from CRAN builds to BioC builds. 
+    Thanks to Steffen Moeller for the patch.
+
+  * debian/r-cran.mk: Allow for options $(makeFlags) to be passed to
+    R CMD INSTALL -- for example the RQuantLib package makes use of this
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun,  8 Apr 2007 06:56:08 -0500
+
+r-base (2.4.1-2) unstable; urgency=low
+
+  * src/main.c: Applied patch provided by Samuel Thibault to allow builds
+    on hurd-i386 which (still) lacks SA_SIGINFO. Bug report also forwarded
+    upstream, and R 2.5.0 should have a fix too.	(Closes: #407358)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 27 Jan 2007 13:12:13 -0600
+
+r-base (2.4.1-1) unstable; urgency=low
+
+  * New upstream version released this morning
+  
+  * Debian package for 'unstable' as Debian 4.0 ('etch') is frozen
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 18 Dec 2006 08:53:09 -0600
+
+r-base (2.4.1~20061205-1) unstable; urgency=low
+
+  * First beta package of the upcoming R 2.4.1 scheduled for December 18
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed,  6 Dec 2006 22:51:18 -0600
+
+r-base (2.4.0.20061125-1) unstable; urgency=low
+
+  * New upstream version patch version dated 2006-11-03
+    -- a new R 2.4.1 release should arrive in just a few weeks
+  * debian/r-base-core.postinst: Rewrote paperconf handling one 
+    more, with thanks to Marc Glisse for another good suggestion
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 26 Nov 2006 18:21:16 -0600
+
+r-base (2.4.0.20061103-1) unstable; urgency=low
+
+  * New upstream version patch version dated 2006-11-03
+    -- a new R 2.4.1 release may arrive in a few weeks
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu,  2 Nov 2006 21:50:13 -0600
+
+r-base (2.4.0.20061029-2) unstable; urgency=low
+
+  * debian/r-cran.mk: Another brown paperbag fix, this time for the logic
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 29 Oct 2006 17:36:36 -0600
+
+r-base (2.4.0.20061029-1) unstable; urgency=low
+
+  * New upstream version patch version taken from svn as of 2006-10-29 
+    -- a new R 2.4.1 release may arrive in a few weeks
+  
+  * debian/r-cran.mk: Brown paperbag fix replacing space with tabs
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 29 Oct 2006 11:35:16 -0600
+
+r-base (2.4.0.20061027-1) unstable; urgency=low
+
+  * New upstream version patch version dated 2006-10-27
+    -- a proper R 2.4.1 is not expected until December 2006
+  
+  * debian/r-base-core.postinst: Rewrote paperconf handling (Closes: #394114)
+  * debian/R.bash_completion: use updated version from Deepayan Sarkar
+  * debian/r-cran.mk: If present, also install lintian overrides file
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 28 Oct 2006 20:11:10 -0500
+
+r-base (2.4.0-1) unstable; urgency=low
+
+  * New upstream version released this morning
+  
+  * debian/rules: Link /usr/share/texmf/tex/latex/R to ../../../R/share/texmf, 
+    instead of the older link into /usr/lib 		(Closes: #390751)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue,  3 Oct 2006 07:07:02 -0500
+
+r-base (2.4.0~rc20060926-1) unstable; urgency=low
+
+  * First release candidate of the upcoming R 2.4.0 planned for October 3
+
+  * debian/rules: Install ldpaths in /etc/R and link back to $R_HOME/etc
+  * debian/rules: Patch javareconf to use /etc/R instead of $R_HOME/etc
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 28 Sep 2006 20:15:03 -0500
+
+r-base (2.4.0~rc20060922-1) unstable; urgency=low
+
+  * First beta release of the upcoming R 2.4.0 planned for October 3
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 23 Sep 2006 10:59:39 -0500
+
+r-base (2.4.0~rc20060919-1) unstable; urgency=low
+
+  * First alpha release of the upcoming R 2.4.0 planned for October 3
+  
+  * debian/rules: Updated CFLAGS and FFLAGS to -O3, and set LDFLAGS 
+    to -Wl,-O1 as suggested by upstream.
+  * debian/rules: Additional LDFLAGS options '-Bdirect,--hash-style=both' 
+    will be added once binutils support them.
+  
+  * debian/control: Use a '>=' instead of '=' in Depends: on r-base-core 
+    for arch-independent package r-base, r-base-dev, r-recommend [lintian]
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 19 Sep 2006 14:51:47 -0500
+
+r-base (2.3.1-3) unstable; urgency=low
+
+  * debian/r-doc-html.preinst: Apply one-char fix suggested by 
+    Don Armstrong				 (Closes: #382696)
+  * debian/control: Added forgotten Conflicts: r-gnome
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 29 Aug 2006 19:35:07 -0500
+
+r-base (2.3.1-2) unstable; urgency=low
+
+  * debian/control: Removed obsolete and deprecated r-gnome entry
+  * debian/control: Added Conflicts:, Replaces: and Provides: for 
+    'r-gnome (<= 2.3.1)' to r-base-core to finally replace r-gnome
+
+  * debian/r-doc-html.preinst: Added file with test for symlink
+    /usr/share/doc/r-doc-html/manual/ which may be left over from
+    a previous installation and needs to be removed for a clean
+    current installation			(Closes: #376940)
+
+  * debian/rules: Correct softlink for /usr/share/doc/r-base-core/doc 
+    into /usr/share/R/doc			(Closes: #380126)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 28 Jul 2006 19:52:13 -0500
+
+r-base (2.3.1-1) unstable; urgency=low
+
+  * New upstream release released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu,  1 Jun 2006 06:14:26 -0500
+
+r-base (2.3.0.svn38197-1) unstable; urgency=low
+
+  * Second beta release of the upcoming R 2.3.1 scheduled for June 1
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 26 May 2006 06:09:03 -0500
+
+r-base (2.3.0.svn38119-1) unstable; urgency=low
+
+  * First beta release of the upcoming R 2.3.1 scheduled for June 1
+
+  * debian/control: Standards-Version: increased to 3.7.2
+  
+  * debian/r-cran.mk: Small improvements 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 19 May 2006 20:15:30 -0500
+
+r-base (2.3.0-1) unstable; urgency=low
+
+  * New upstream version 2.3.0 released this morning
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 24 Apr 2006 09:30:57 -0500
+
+r-base (2.2.1.svn37779-1) unstable; urgency=low
+
+  * Second beta release of the upcoming R 2.3.0 scheduled for April 24
+  
+  * src/main/version.c: Upstream fix for 'R --version' (Closes: #361968)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 15 Apr 2006 16:30:20 -0500
+
+r-base (2.2.1.svn37715-1) unstable; urgency=low
+
+  * First beta release of the upcoming R 2.3.0 scheduled for April 24
+  
+  * debian/rules: On ppc64, add -mminimal-toc to compiler flags
+    Thanks to Andreas Jochens for the patch.  		(Closes: #361604)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun,  9 Apr 2006 07:40:48 -0500
+
+r-base (2.2.1.svn37668-1) unstable; urgency=low
+
+  * Second alpha release of the upcoming R 2.3.0 planned for April 24
+
+  * configure{,.ac}: Upstream fix also selecting -fPIC on s390* which is
+    less invasive than the rushed and uncoordinated binary NMU below. Please
+    consider talking to the Debian maintainer, or R Core, before making 
+    undifferentiated wholesale changes to the build process. (Closes: #361219)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat,  8 Apr 2006 09:18:09 -0500
+
+r-base (2.2.1.svn37642-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Always build with -fPIC. (closes: #361219) 
+
+ -- Bastian Blank <waldi@debian.org>  Fri,  7 Apr 2006 08:59:15 +0000
+
+r-base (2.2.1.svn37642-1) unstable; urgency=low
+
+  * First alpha release of the upcoming R 2.3.0 planned for April 24
+  
+  * debian/r-cran.mk: New file to be used as debian/rules for r-cran-*
+  * debian/rules: Accomodate installation of cran.mk into r-base-dev
+  
+  * debian/control: Set gcc and gfortran Build-Depends: to version 4
+  * debian/control: Likewise for Depends: of r-base-dev
+  
+  * debian/rules:  Add -std=gnu99 to C compiler flags, and split and
+    slightly reorganize compiler flags and optimization options
+
+  * debian/{r-base-core,r-mathlib}.lintian: Added a few entries
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue,  4 Apr 2006 17:55:51 -0500
+
+r-base (2.2.1-6) unstable; urgency=medium
+
+  * debian/r-base-core.preinst: The symbolic link /usr/lib/R/share 
+    introduced in -4 prevents the directory added in -5 to be created
+    so remove if found in the preinst.
+
+  * Urgency still set up to medium so that testing and unstable users get 
+    the fix quickly. 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon,  6 Feb 2006 12:00:21 -0600
+
+r-base (2.2.1-5) unstable; urgency=medium
+
+  * debian/build-help.pl: Empty stanza to just print warning when called.
+  * debian/rules: Install that quasi-empty file debian/build-help.pl as 
+    /usr/lib/R/share/perl/build-help.pl  so that the not-yet-updated 
+    r-cran-* et al add-on packages for R do not fail now that the upstream
+    build-help.pl is install in /usr/share/R/share/perl/.  The softlink
+    solution introduced in 2.2.1-4 fails for upgrades on testing where
+    /usr/lib/R/share/ already exists as a directory.
+  
+  * Urgency set up to medium so that testing users get the fix quickly. 
+    No other changes than creation of the two-liner build-help.pl 
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon,  6 Feb 2006 09:23:14 -0600
+
+r-base (2.2.1-4) unstable; urgency=low
+
+  * debian/rules: Until the postinst and postrm calls in all r-cran-* 
+    packages have been updated, add a transitional link so we can call
+    /usr/lib/R/share/perl/build-help.pl			(Closes: #349637)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 24 Jan 2006 07:13:34 -0600
+
+r-base (2.2.1-3) unstable; urgency=low
+
+  * Re-wrote parts of debian/* to take advantage of recent upstream changes
+    permitting installation of (most) files outside of /usr/lib/R;
+  * debian/rules: Use configure options 
+      --datadir=/usr/share/R/share and 
+      --includedir=/usr/share/R/include
+    as well as 'make install' targets
+      rsharedir, rincludedir, and rdocdir
+  * debian/r-{base-html.{files,dirs}, doc-pdf.{files,links},
+    doc-html.{file,links}}:
+    updated accordingly to refer to /usr/share/R/* instead of /usr/lib/R
+  * For R itself (but not for packages), architecture-independent files 
+    of r-base-core now install below /usr/share/R 	(Closes: #300765)
+  
+  * debian/control: Added Build-Depends: for libx11-dev, libxt-dev, x-dev
+    (though the existing Build-Depends on tcl/tk effectively cover this).
+    Credits for the suggestion go to the xlibs-split-check script .
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 21 Jan 2006 18:14:37 -0600
+
+r-base (2.2.1-2) unstable; urgency=low
+
+  * debian/control: Remove Build-Depends: on libpaperg-dev as we do not
+    actually build against libpaper anyway 		(Closes: #346403)
+  * debian/control: Add Depends: on libpaper-utils to r-base-core, 
+    and remove different Suggests: of libpaperg
+
+  * debian/control: Update Standards-Version: to 3.6.2
+  * debian/control: Change Architecture: any for empty r-recommended
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat,  7 Jan 2006 20:18:06 -0600
+
+r-base (2.2.1-1) unstable; urgency=low
+
+  * New upstream version 2.2.1 released this morning
+  
+  * debian/control: Remove unnecessary f2c from Depends: in r-base-dev 
+  * debian/rules: Set DH_COMPAT=4
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 20 Dec 2005 06:18:38 -0600
+
+r-base (2.2.0.rc.20051214-1) unstable; urgency=low
+
+  * Second beta release of the upcoming R 2.2.1 planned for December 20
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 15 Dec 2005 16:25:43 -0600
+
+r-base (2.2.0.rc.20051206-1) unstable; urgency=low
+
+  * First beta release of the upcoming R 2.2.1 planned for December 20
+
+  * debian/rules: Install bash completion file debian/R.bash_completion 
+    by Deepayan Sarkar and announced to r-devel on 2005-11-30
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed,  7 Dec 2005 19:34:47 -0600
+
+r-base (2.2.0.final-4) unstable; urgency=low
+
+  * debian/rules: Really skip 'make check' on hppa	(Closes: #333462)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 24 Oct 2005 18:59:16 -0500
+
+r-base (2.2.0.final-3) unstable; urgency=low
+
+  * debian/rules: Skip 'make check' on hppa		(Closes: #333462)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 24 Oct 2005 08:53:22 -0500
+
+r-base (2.2.0.final-2) unstable; urgency=low
+
+  * Rebuilt with properly renamed .orig.tar.gz          (Closes: #332586)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri,  7 Oct 2005 21:20:16 -0500
+
+r-base (2.2.0.final-1) unstable; urgency=low
+
+  * New upstream version 2.2.0 released today, following six
+    Debian pre-releases  (and a repeat of a version number snafu made
+    years ago, hence the need for the '.final')
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu,  6 Oct 2005 21:18:53 -0500
+
+r-base (2.2.0.beta.20050929-1) unstable; urgency=low
+
+  * Second weekly beta release (using 2005-09-22 candidate) of R 2.2.0 
+
+  * debian/rules: Call configure with LIBnn=lib to enforce use of
+    /usr/lib everywhere, including amd64  		(Closes: #329952)
+
+  * share/perl/build-help.pl: Wrote patch to re-enable deprecated --htmllists
+    argument as a no-op so that our r-cran-* postinst files can call it.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 29 Sep 2005 21:45:12 -0500
+
+r-base (2.2.0.beta.20050922-2) unstable; urgency=low
+
+  * debian/rules:  Create softlink from R's TeX files (used for doc.
+    and Sweave) into the texmf hierarchy. (Thanks, Gregor Gorjanc)
+  * debian/r-base-core.dirs: Add 'usr/share/texmf/tex/latex'
+  * debian/r-base-core.postinst: Call texhash if it exists
+  
+  * Really re-apply the Perl fix (share/perl/{build-help.pl,R/Rdlists.pm)
+    to maintain compatibility with all the r-cran-* packages postinst
+    							(Closes: #330085)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 25 Sep 2005 16:07:07 -0500
+
+r-base (2.2.0.beta.20050922-1) unstable; urgency=low
+
+  * First beta release candidate (dated 2005-09-22) of R 2.2.0 
+
+  * Following prior practice, this release is designated for unstable
+    after the two first alpha releases in experiment. 
+
+  * share/perl/build-help.pl, share/perl/R/Rdlists.pm: As in the previous
+    snapshot, fall back to R 2.1.1 code to support other r-cran-* packages
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 22 Sep 2005 21:10:12 -0500
+
+r-base (2.2.0.alpha.20050915-1) experimental; urgency=low
+
+  * Second alpha release of the upcoming R 2.2.0 planned for October 6
+
+  * share/perl/build-help.pl, share/perl/R/Rdlists.pm: As in the previous
+    snapshot, fall back to R 2.1.1 code to support other r-cran-* packages
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 15 Sep 2005 19:37:11 -0500
+
+r-base (2.2.0.alpha.20050908-2) experimental; urgency=low
+
+  * debian/rules: Also re-set the newly added variables R_SHARE_DIR, 
+    R_INCLUDE_DIR and R_DOC_DIR in /usr/bin/R 		(Closes: #327446)
+
+  * share/perl/build-help.pl: Revert to the version from R 2.1.1 as
+    we need the now deprecated --htmllists argument in the postinst
+    and postrm scripts of several dozen r-cran-* packages.
+  * share/perl/R/Rdlists.pm: Carry build_htmlpkglists() and read_titles()
+    over from 2.1.1 to support the --htmllists code
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 10 Sep 2005 13:12:08 -0500
+
+r-base (2.2.0.alpha.20050908-1) experimental; urgency=low
+
+  * First alpha release of the upcoming R 2.2.0 planned for October 6
+
+  * debian/{control,rules}: Build-Depends switched to gcc-4.0 
+    by removing "gcc-3.4, g++-3.4, g77-3.4" 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu,  8 Sep 2005 22:35:50 -0500
+
+r-base (2.1.1-1) unstable; urgency=low
+
+  * New upstream version 2.1.1 released today
+  
+  * debian/control: Remove redundant Build-Depends on 'mawk | gawk | awk'
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 20 Jun 2005 18:50:41 -0500
+
+r-base (2.1.0.beta.20050613-1) unstable; urgency=low
+
+  * Upgraded to the R 2.1.1 beta release candidate dated 2005-06-13
+
+  * debian/rules: configure call with AWK="/usr/bin/awk" (Closes: #307683)
+  * debian/control: New Build-Depends on 'mawk | gawk | awk'
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 13 Jun 2005 21:04:50 -0500
+
+r-base (2.1.0-1) unstable; urgency=low
+
+  * New upstream version 2.1.0 released today
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 18 Apr 2005 20:24:26 -0500
+
+r-base (2.0.1.beta.20050410-1) unstable; urgency=low
+
+  * Upgraded to the R 2.1.0 beta release candidate dated 2005-04-10
+
+  * With R 2.1.0 scheduled to be released on April 18, this release
+    candidate will be uploaded to unstable to allow for wider testing
+  
+  * debian/rules: Also copy new file 'repositories' to /etc/R and link back
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 10 Apr 2005 21:12:25 -0500
+
+r-base (2.0.1.alpha.20050403-1) experimental; urgency=low
+
+  * Upgraded to the R 2.1.0 alpha release candidate dated 2005-04-03
+
+  * This upload is still slated for experimental; beta release 
+    candidates of 2.1.0 will go into unstable
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun,  3 Apr 2005 16:04:29 -0500
+
+r-base (2.0.1.alpha.20050322-1) experimental; urgency=low
+
+  * Initial attempt at packaging the upcoming R 2.1.0
+
+  * debian/rules: No longer install $RHOME/bin/Rdindex
+  
+  * debian/rules: No longer build the Gnome GUI which has been
+    unbundled upstream as it was never fully completed
+  * debian/control: Update r-gnome Description
+  * debian/control: r-gnome is now Binary: all, removed ${shlibs:Depends}
+    and versioned (= ${Source-Version}) part of Depends on r-base-core 
+  * debian/control: Reduce Build-Depends by libgnome-dev, libzvt-dev, 
+    libgtkxmhtml-dev, libglade-gnome0-dev
+  * debian/r-gnome.NEWS: New file with message about removeal of UI
+  
+  * debian/control: For r-base-dev, switched from the black magic
+    "g77 | m68k, f2c | not+m68k, type-handling" to "g77, f2c" as
+    type-handling no longer allows this (Closes: #296287)
+
+  * debian/r-mathlib.shlibs: Correct to 'libRmath 1 r-mathlib (>= 2.0)'
+    with thanks to Chris Lawrence
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 21 Mar 2005 21:20:09 -0600
+
+r-base (2.0.1-4) unstable; urgency=low
+
+  * Removed erroneously left-over doc-base file (Closes: #296194)
+  * debian/r-doc-{html,pdf}.links: Link individual files, not the
+    entire manual directory, in order to circumvent a dhelp bug 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 20 Feb 2005 17:24:07 -0600
+
+r-base (2.0.1-3) unstable; urgency=low
+
+  * debian/r-doc-html.doc-base.*: Added five doc-base control files
+    to register the html documentation with doc-base (Closes: #296089)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 20 Feb 2005 07:59:53 -0600
+
+r-base (2.0.1-2) unstable; urgency=low
+
+  * debian/control: Switch the Depends: on the helper package r-base-dev
+    to libreadline5-dev to help readline5 migration (Closes: #291655)
+  * debian/control: Also switch Build-Depends: to libreadline5-dev
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 23 Jan 2005 13:39:50 -0600
+
+r-base (2.0.1-1) unstable; urgency=medium
+
+  * New upstream release
+  * Urgency medium as this version contains numerous upstream fixes, 
+    as well as Debian fixes from 2.0.0-4 that have are not yet in testing 
+
+  * debian/control: Add r-recommended to Depends: for r-base
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 15 Nov 2004 09:39:01 -0600
+
+r-base (2.0.0-4) unstable; urgency=medium
+
+  * Urgency medium to get the fix into the testing distribution in which 
+    r-recommended currently has insufficiently detailed Depends:
+  * debian/control: Change Depends: for r-recommended to be versioned, and
+    impose a minimum standard of package versions rebuilt under R 2.0.0 
+    as required by the underlying lazyloading changes (Closes: #278528)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 27 Oct 2004 20:26:31 -0500
+
+r-base (2.0.0-3) unstable; urgency=low
+  
+  * Two improvements suggested by Kurt Hornik:
+    - debian/control: r-base now Depends: on r-base-core (= ${Source-Version})
+    - debian/control: Fix MASS book title in Description: of r-recommends
+
+  * Reorganisation of r-mathlib suggested and tested by Faheem Mitha:
+    - debian/control: r-mathlib now only Recommends: insteads of Depends:
+      on r-base-core and r-base-dev (Closes: #276038)
+    - debian/rules: Small changes to give r-mathlib its own doc directory
+    - debian/r-mathlib.links: Renamed to r-mathlib.links.unused disable
+  
+  * Update to use of Lapack code as suggested by Doug Bates:
+    - debian/rules: Set Lapack back to --with-lapack=no
+    - debian/control: Remove "lapack3-dev | atlas3-base-dev" from Build-Depends
+    - debian/control: Remove "lapack3-dev | atlas3-base-dev | liblapack-3.so"
+      from Depends for r-base-dev as well
+    - debian/rules: Turn 'make check' back on (outside of arm)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 13 Oct 2004 20:12:30 -0500
+
+r-base (2.0.0-2) unstable; urgency=low
+
+  * src/main/startup.c: Removed 'static' on RestoreAction declaration
+    as recommend by Brian Ripley in bug report follow-up (Closes: #275791)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 11 Oct 2004 09:55:11 -0500
+
+r-base (2.0.0-1) unstable; urgency=low
+
+  * New upstream release
+  
+  * src/library/tools/R/admin.R, src/scripts/INSTALL.in: Applied
+    small patch by Brian Ripley to address package build issues
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue,  5 Oct 2004 17:53:51 -0500
+
+r-base (1.9.1.beta.20040929-1) experimental; urgency=low
+
+  * Upgraded to the R 2.0.0 beta release candidate dated 2004-09-29
+  * Still uploading to 'experimental' to keep 1.9.1-3 in testing
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 29 Sep 2004 15:40:10 -0500
+
+r-base (1.9.1.beta.20040928-1) experimental; urgency=low
+
+  * Upgraded to the R 2.0.0 beta release candidate dated 2004-09-28
+  * Still uploading to 'experimental' to keep 1.9.1-3 in testing
+  * debian/rules: No longer install BUGS which is no longer in upstream sources
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 28 Sep 2004 22:22:52 -0500
+
+r-base (1.9.1.beta.20040925-1) experimental; urgency=low
+
+  * Upgraded to the R 2.0.0 beta release candidate dated 2004-09-25
+  * Still uploading to 'experimental' to keep 1.9.1-3 in testing
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 25 Sep 2004 08:43:01 -0500
+
+r-base (1.9.1.beta.20040921-1) experimental; urgency=low
+
+  * Upgraded to the R 2.0.0 beta release candidate dated 2004-09-21
+  * Still uploading to 'experimental' to keep 1.9.1-3 in testing
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 21 Sep 2004 21:00:41 -0500
+
+r-base (1.9.1.alpha.20040912-1) experimental; urgency=low
+
+  * Upgraded to the R 2.0.0 alpha release candidate dated 2004-09-12
+  * Still uploading to 'experimental' as 1.9.1-3 is not yet in testing
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 12 Sep 2004 15:44:38 -0500
+
+r-base (1.9.1.alpha.20040906-1) experimental; urgency=low
+
+  * Upgraded to the initial R 2.0.0 alpha release candidate dated 2004-09-06 
+
+  * Distribution set to 'experimental' as we would like the previous release
+    1.9.1-3 to migrate to 'testing' first; as that has happened we will make
+    alpha and/or beta releases of 2.0.0 to 'unstable' prior to the formal 
+    release  
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon,  6 Sep 2004 22:00:56 -0500
+
+r-base (1.9.1-3) unstable; urgency=low
+
+  * debian/control: Expanded Depends for r-base-dev to include virtual
+    packages libblas-3.so and liblapack-3.so as final alternatives.
+  * debian/copyright: Author list updated as suggested by Kurt Hornik
+  * src/modules/gnome/system.c: Change 'R_Interactive = 1' instead of the 
+    isatty() call, as suggested by Brian D. Ripley (Closes: #269107)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 31 Aug 2004 21:49:39 -0500
+
+r-base (1.9.1-2) unstable; urgency=low
+
+  * debian/r-base-core.postinst: Papersize code conditional on paperconf
+  * debian/control: Added Suggests for libpaper-utils
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 22 Jun 2004 06:33:26 -0500
+
+r-base (1.9.1-1) unstable; urgency=low
+
+  * Upgraded to version 1.9.1 released today
+
+  * debian/rules: Configure with R_PAPERSIZE='letter' 
+  * debian/r-base-core.postinst: Re-wrote papersize setting code
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 21 Jun 2004 09:31:02 -0500
+
+r-base (1.9.0.beta.20040614-1) unstable; urgency=low
+
+  * Upgraded to the initial 1.9.1 beta release candidate of 2004-06-14
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 14 Jun 2004 15:02:14 -0500
+
+r-base (1.9.0.alpha.20040607-1) unstable; urgency=low
+
+  * Upgraded to the initial 1.9.1 alpha release candidate of 2004-06-07
+
+  * Contains upstream fix for version number in search entry of CRAN
+    packages, with thanks to Kurt Hornik (Closes: #248430)
+  
+  * debian/Renviron-R_PAPERSIZE.patch: New patch to set R_PAPERSIZE in 
+    /etc/R/Renviron by respecting both a prior setting and the value
+    in /etc/papersize, with thanks to Matej Cepl  (Closes: #245525)
+
+  * debian/control: Remove unversioned g++ from Build-Depends [ lintian ]
+  * debian/control: r-mathlib, r-recommended get versioned Depends
+    on r-base-core as doc directories are symlinked [ lintian ]
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue,  8 Jun 2004 07:00:41 -0500
+
+r-base (1.9.0-1) unstable; urgency=low
+
+  * Upgraded to version 1.9.0 released today
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 12 Apr 2004 07:30:12 -0500
+
+r-base (1.8.1.cvs.20040410-1) unstable; urgency=low
+
+  * Upgraded to beta release candidate 2004-04-10 of R 1.9.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 11 Apr 2004 22:27:32 -0500
+
+r-base (1.8.1.cvs.20040331-1) unstable; urgency=low
+
+  * Upgraded to beta release candidate 2004-03-31 of R 1.9.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu,  1 Apr 2004 14:50:52 -0600
+
+r-base (1.8.1.cvs.20040321-1) unstable; urgency=low
+
+  * Upgraded to beta release candidate 2004-03-21 of R 1.9.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 21 Mar 2004 18:35:03 -0600
+
+r-base (1.8.1.cvs.20040314-1) unstable; urgency=low
+
+  * Upgraded to release candidate 2004-03-14 of R 1.9.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 14 Mar 2004 17:37:03 -0600
+
+r-base (1.8.1.cvs.20040307-1) unstable; urgency=low
+
+  * Upgraded to release candidate 2004-03-07 of R 1.9.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun,  7 Mar 2004 08:29:00 -0600
+
+r-base (1.8.1.cvs.20040229-2) unstable; urgency=low
+
+  * debian/control: Declare Replaces: r-recommended as well for r-base-html
+    and r-base-latex as they contain parts of 'grid' which used to be in
+    r-recommended, but is now in r-base-core and these two (Closes: #235891)
+  
+  * debian/rules: Do not ship usr/share/info/dir(.old) (Closes: #235713)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue,  2 Mar 2004 20:33:18 -0600
+
+r-base (1.8.1.cvs.20040229-1) unstable; urgency=low
+
+  * Upgraded to release candidate 2004-02-29 of R 1.9.0
+  
+  * debian/rules changes to configure call
+     --without-r-recommended (as r-recommended is now a meta-package)
+     --with-bzlib to override default of no
+     --with-pcre to override default of no
+     --with-zlib to override default of no
+     R_BROWSER=sensible-browser to not depend on mozilla
+
+  * debian/control: r-base-core Replace r-recommended (<= 1.8.1-1) as 
+    the grid package moved 
+  
+  * debian/control: r-recommended is now a metapackage that depends on the
+    individual packages which are now part of the Debian distribution; 
+    and added appropriate Depends for all of them
+  * debian/rules: Hence 'configure [...] --without-recommended-packages	[...]'
+  * debian/control: Added Conflicts: r-recommended (<< 1.9.0) to r-base-core
+  
+  * debian/rules: In make-arch target, now call "make docs" with 
+    R_CMD_BUILD_HELP_OPTS="--txt --example" to build only the documentation 
+    needed for binary-arch targets (thanks to Kurt Hornik for enabling this)
+  
+  * debian/rules: configure with PAGER=/usr/bin/pager as all the good
+    reasons pointed out in #230524 regarding octave2.1 apply to R too
+  
+  * debian/control: Depends for r-base-dev changed from the imperfect 
+    "g77 | f2c" to to "g77 | m68k, f2c | not+m68k, type-handling" with 
+    thanks to Wouter Verhelst
+  
+  * debian/control: Changed Build-Depends from 'blas-dev (>=1.0-9),lapack-dev'
+     to 'refblas3-dev | atlas3-base-dev, lapack3-dev | atlas3-base-dev'
+  * debian/control: Dito for Depends: for r-base-dev 
+  * debian/rules: Set configure arguments for refblas3/atlas3 and 
+    lapack3/atlas3, respectively, instead of blas/atlas v2.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 29 Feb 2004 16:55:55 -0600
+
+r-base (1.8.1-2) unstable; urgency=low
+
+  * debian/control: Added to Build-Depends
+     libpaper-utils for paperconf
+     libjpeg62-dev for jpeg (thanks to Kurt Hornik for the suggestion)
+     libprce3-dev for pcre
+     linpng12-dev for png
+     zlib1g-dev for zlib
+    
+  * debian/control: Added to Depends for r-base-dev
+     libjpeg62-dev, libpcre3-dev  (thanks to Kurt Hornik for the suggestion)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 19 Jan 2004 10:45:47 -0600
+  
+r-base (1.8.1-1) unstable; urgency=low
+
+  * Upgraded to version 1.8.1 released today
+  
+  * debian/control: Move r-base-html and r-base-latex from the Depends: for
+    r-base to Recommends: as one cannot depend on packages of lower priority
+  * debian/rules: Use --without-blas on arm
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 21 Nov 2003 10:09:48 -0600
+
+r-base (1.8.0.cvs.20031114-1) unstable; urgency=low
+
+  * Upgraded to the initial 1.8.1 beta release of 2003-11-14
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 14 Nov 2003 19:13:43 -0600
+
+r-base (1.8.0.cvs.20031107-1) unstable; urgency=low
+
+  * Upgraded to the initial 1.8.1 alpha release of 2003-11-07
+  * debian/rules: Configure with R_PRINTCMD=/usr/bin/lpr (Closes: #219419)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri,  7 Nov 2003 19:56:48 -0600
+
+r-base (1.8.0.cvs.20031101-1) unstable; urgency=low
+
+  * Upgraded to 1.8.0 patched aka pre-1.8.1 as of 2003-11-01
+  * Also upgraded R-recommended via rsync
+  * debian/rules: make docs has to be called when binary-arch is built 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat,  1 Nov 2003 18:58:09 -0600
+
+r-base (1.8.0.cvs.20031024-1) unstable; urgency=low
+
+  * Upgraded to 1.8.0 patched as of 2003-10-24
+  * Also upgraded R-recommended via rsync
+  * To avoid possible upgrade conflicts with pre-releases of 1.8.1, we 
+    use previously used ".cvs.YYYYMMDD" naming convention for the package
+  * debian/rules: 'make {docs,help,html}' are now called in binary-indep
+    which was not possible with earlier versions of R; however as make
+    recommended implies make doc, we manually descend into its top dir.
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 23 Oct 2003 15:21:35 -0500
+
+r-base (1.8.0-2) unstable; urgency=low
+
+  * With a big thanks to Camm Maguire for investigating this problem,
+    we are reverting back to the previously used setup of defaulting to 
+    Blas while automagically switching to Atlas where installed:
+    - debian/rules: Patch R.sh.in to disable use of R_LD_LIBRARY_PATH (beyond
+      the required $R_HOME/nbin) which conflicts with Debian's transparent 
+      switch of Atlas for Blas (as /usr/lib/libblas would be found instead)
+    - debian/rules: Configure again with --with-blas=blas
+    - debian/control: Hence remove Depends: on atlas2-base-dev | atlas2-dev
+    - debian/shlibs.local: Remove, no longer needed
+    - debian/rules: No longer need to postprocess Depends
+    - debian/rules: Other small cleanups
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 16 Oct 2003 20:13:32 -0500
+
+r-base (1.8.0-1) unstable; urgency=low
+
+  * Upgraded to version 1.8.0 released today
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed,  8 Oct 2003 10:10:41 -0500
+
+r-base (1.7.1.cvs.20031004-1) unstable; urgency=low
+
+  * Upgraded to release candidate 1.8.0beta_2003-10-04 of R 1.8.0
+  * debian/control: Change Depends: to atlas2-base-dev | atlas2-dev 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat,  4 Oct 2003 07:39:13 -0500
+
+r-base (1.7.1.cvs.20030927-1) unstable; urgency=low
+
+  * Upgraded to release candidate 1.8.0beta_2003-09-27 of R 1.8.0
+  * debian/control: Add Depends: on atlas2-dev for r-base-dev
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 27 Sep 2003 15:58:45 -0500
+
+r-base (1.7.1.cvs.20030920-1) unstable; urgency=low
+
+  * Upgraded to release candidate 1.8.0alpha_2003-09-20 of R 1.8.0
+  * debian/{r-base-core,r-gnome}.menu: Small beautifications
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 20 Sep 2003 08:02:54 -0500
+
+r-base (1.7.1.cvs.20030913-1) unstable; urgency=low
+
+  * Upgraded to release candidate 1.8.0alpha_2003-09-13 of R 1.8.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 13 Sep 2003 09:59:45 -0500
+
+r-base (1.7.1.cvs.20030906-1) unstable; urgency=low
+
+  * Upgraded to release candidate 2003-09-06 of R 1.8.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat,  6 Sep 2003 15:21:02 -0500
+
+r-base (1.7.1.cvs.20030830-1) unstable; urgency=low
+
+  * Upgraded to release candidate 2003-08-30 of R 1.8.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 30 Aug 2003 09:56:10 -0500
+
+r-base (1.7.1.cvs.20030822-1) unstable; urgency=low
+
+  * Upgraded to release candidate 2003-08-22 of R 1.8.0
+  * debian/control: Standards-Version increased to 3.6.1.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 22 Aug 2003 20:25:52 -0500
+
+r-base (1.7.1.cvs.20030814-1) unstable; urgency=low
+
+  * Upgraded to release candidate 2003-08-14 of R 1.7.2 (or 1.8.0)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 14 Aug 2003 20:39:05 -0500
+
+r-base (1.7.1.cvs.20030808-1) unstable; urgency=low
+
+  * Upgraded to release candidate 2003-08-08 of R 1.7.2 (or 1.8.0)
+  * Upstream release candidate sources do not contain the source for the
+    r-recommended package so tools/rsync-recommended was used to obtain
+    these and a new, Debian-only, orig.tar.gz of both was created
+  * debian/control: r-base-dev now has a versioned Depends on r-base-core
+    which requires equal version numbers between the two (Closes: #199295)
+  * debian/control: Upgraded Standards-Version to 3.6.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri,  8 Aug 2003 20:08:49 -0500
+
+r-base (1.7.1-1) unstable; urgency=low
+
+  * New upstream version 1.7.1 released today
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 16 Jun 2003 19:36:45 -0500
+
+r-base (1.7.0.cvs.20030607-1) unstable; urgency=low
+
+  * Upgraded to initial release candidate (dated 2003-06-07) of R 1.7.1
+  * debian/{control,rules}: Switch back to default compiler version as 3.3 
+    is in unstable and testing; m68k still needs f2c for Fortan code
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat,  7 Jun 2003 12:23:59 -0500
+
+r-base (1.7.0.cvs.20030602-1) unstable; urgency=low
+
+  * Upgraded to initial release candidate (dated 2003-06-02) of R 1.7.1
+  * debian/{rules,control}: Try f2c on m68k as a last resort
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon,  2 Jun 2003 21:31:42 -0500
+
+r-base (1.7.0.cvs.20030526-1) unstable; urgency=low
+
+  * Upgraded to release candidate 2003-05-26 of R 1.7.1
+  * Manually rsync'ed r-recommendeds sources as R-patched pre-release do
+    not comprise r-recommended, also manually re-built upstream tarball
+  * debian/control: Require gcc/g++/g77-3.2 as version 3.3 is in unstable
+    gcc 3.2 works fine everywhere with the exception of m68k (Closes: #194175)
+  * debian/shlibs.local: Have libatlas imply either the actual atlas2-base 
+    or the virtual atlas2 provided by tuned libraries (Closes: #193831)
+  * debian/control: Added 'xpdf-reader | pdf-viewer' to Build-Depends
+  * debian/control: Upgraded Standards-Version to 3.5.10
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 26 May 2003 19:47:20 -0500
+
+r-base (1.7.0-3) unstable; urgency=low
+
+  * debian/rules: No longer configure for use of an external lapack library
+    as some numerical infelicities have come up on shore.
+  * debian/rules: Now call configure --with-blas=atlas for Atlas / Blas 
+  * debian/shlibs.local: add '| blas | blas2' to 'libatlas 2 atlas2-base'
+  * debian/control: r-gnome Recommends: r-cran-gtkdevice (Closes: #190735)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 28 Apr 2003 20:56:54 -0500
+
+r-base (1.7.0-2) unstable; urgency=low
+
+  * debian/control: r-recommended Description updates w.r.t. MASS edition
+  * debian/rules: Remove Depends of r-recommended on atlas2-base as it is 
+    neither 'virtual' nor required as r-recommnded itself depends on 
+    r-base-core so that we get its Depends on atlas2-base | blas2 | blas
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 20 Apr 2003 20:18:56 -0500
+
+r-base (1.7.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Wed, 16 Apr 2003 10:43:57 -0500
+
+r-base (1.6.2.cvs.20030413-1) unstable; urgency=low
+
+  * Upgraded to release candidate dated 2003-04-13 of R 1.7.0
+  * debian/control: Section set to gnome for r-gnome
+  * debian/r-recommended.preinst: rm doc dir (Closes: #188995)
+ 
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 14 Apr 2003 20:35:32 -0500
+
+r-base (1.6.2.cvs.20030409-1) unstable; urgency=low
+
+  * Upgraded to release candidate dated 2003-04-09 of R 1.7.0
+  * debian/rules: Hack result of dh_shlibdeps with Perl to remove the
+    double atlas2 entry caused by the virtual depends on blas and lapack
+  * debian/rules: Small improvement to R_LIBS patch to conform with
+    standard of respecting prior settings, if any, of the variable
+  * debian/control: Upgraded Standards-Version to 3.5.9
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed,  9 Apr 2003 23:09:00 -0500
+
+r-base (1.6.2.cvs.20030405-1) unstable; urgency=low
+
+  * Upgraded to release candidate dated 2003-04-05 of R 1.7.0
+  * debian/rules: Configure with --with-blas, not --with-blas=blas
+  * debian/r-base-core.prerm: s/treu/true/
+  * debian/rules: Link $R_HOME/doc into /usr/share/doc/r-base-core, rather
+    than its subdirectories doc and manual as e.g. manual link could be
+    dangling if r-doc-pdf is not installed (Closes: #187573)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Sat,  5 Apr 2003 08:35:37 -0600
+
+r-base (1.6.2.cvs.20030403-1) unstable; urgency=low
+
+  * Upgraded to release candidate dated 2003-04-03 of R 1.7.0
+  * debian/rules: Add R_LIBS setting to /etc/R/Renviron such that 
+    user-installed packages will be in /usr/local/lib/R/site-library,
+    Debian packages will install into /usr/lib/R/site-library and
+    the r-base-core and r-recommended packages will use the standard
+    /usr/lib/R/library directory
+  * debian/r-base-core.dirs: Add /usr/lib/R/site-library
+  * debian/r-base-core.postinst: Add failsafe creation of directory
+    /usr/local/lib/R/site-library as per Policy section 10.1.2
+  * debian/r-base-core.prerm: Add failsafe creation of directory
+    /usr/local/lib/R/site-library as per Policy section 10.1.2
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu,  3 Apr 2003 10:16:06 -0600
+
+r-base (1.6.2.cvs.20030331-1) unstable; urgency=low
+
+  * Upgraded to release candidate dated 2003-03-30 of R 1.7.0
+  * debian/control: Added lapack-dev to Depends for r-base-dev
+  * debian/rules: Removed rrecommended tests
+   
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 31 Mar 2003 09:01:22 -0600
+
+r-base (1.6.2.cvs.20030330-1) unstable; urgency=low
+
+  * Upgraded to release candidate dated 2003-03-30 of R 1.7.0
+  * Upstream sources fix the problem reported in #186857 (Closes: #186857)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Sun, 30 Mar 2003 16:08:48 -0600
+
+r-base (1.6.2.cvs.20030326-1) unstable; urgency=low
+
+  * Upgraded to release candidate dated 2003-03-26 of R 1.7.0
+  * debian/rules: Configure with --with-lapack
+  * debian/control: Build-Depends on lapack-dev
+  * debian/rules: Explicitly use gcc/g77/g++-3.2 for builds on testing
+  * debian/r-gnome.menu: The Needs: entry was corrected to "x11"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 26 Mar 2003 09:19:07 -0600
+
+r-base (1.6.2-2) unstable; urgency=low
+
+  * Rebuilding on Debian unstable with gcc/g++/g77 as the new default
+  * debian/control: Depends g77 (>= 3.2.2), g++ (>= 3.2.2) for r-base{,-dev}
+  * debian/rules: Adjusted accordingly by defaulting to gcc, g++, g77
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 18 Jan 2003 20:21:21 -0600
+
+r-base (1.6.2-1) unstable; urgency=low
+
+  * New upstream version 1.6.2 released today
+  * debian/r-base-core.lintian: Added exceptions for 
+    image-file-in-usr-lib usr/lib/R/doc/html/{left,logo,logosm,right,up}.jpg
+  * debian/rules: Substitute Perl path to /usr/bin/perl for 
+    usr/lib/R/bin/{Rdconv,Rdindex,Rprof,Sd2Rd,build,check}
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 10 Jan 2003 20:30:26 -0600
+
+r-base (1.6.1.cvs.20030103-1) unstable; urgency=low
+
+  * Upgraded to release candidate dated 2003-01-03 of R 1.6.2
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Fri,  3 Jan 2003 09:42:18 -0600
+
+r-base (1.6.1.cvs.20021230-1) unstable; urgency=low
+
+  * Upgraded to release candidate dated 2002-12-30 of R 1.6.2
+  * Added Douglas Bates as an Uploader following email discussion with Dirk
+  
+ -- Douglas Bates <bates@stat.wisc.edu>  Mon, 30 Dec 2002 20:43:24 -0600
+
+r-base (1.6.1-3) unstable; urgency=low
+
+  * debian/{control,rules}: Configure switch from f2c to g77 for m68k
+  * debian/{control,rules}: Configure switch from tcl/tk8.3 to tcl/tk8.4
+  * debian/control: Added libpaperg-dev to Build-Depends (Closes: #168259)
+  * debian/r-base-control: Substitute result from paperconf call 
+    into $R_HOME/etc/Renviron, not /usr/bin/R 
+  * debian/rules: Move $R_HOME/etc/* files into /etc/R/ (Closes: #170018)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 28 Nov 2002 07:49:49 -0600
+
+r-base (1.6.1-2) unstable; urgency=low
+
+  * Rebuilt with support for bzip2 (compression) and pcre (reg.expressions)
+  * debian/control: Added libbz2-dev and libpcre3-dev to Build-Depends
+  * debian/rules: Set R_BROWSER to /usr/bin/mozilla in $R_HOME/etc/Renviron
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 11 Nov 2002 13:26:27 -0600
+
+r-base (1.6.1-1) unstable; urgency=low
+
+  * Upgraded to R version 1.6.1 released today
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri,  1 Nov 2002 16:56:50 -0600
+
+r-base (1.6.0.rel.20021024-1) unstable; urgency=low
+
+  * Upgraded to release candidate dated 2002-10-24 of R 1.6.1
+  * debian/control: Set section for r-base-dev to devel
+  * debian/r-doc-info.prerm: Add upgrade target
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 24 Oct 2002 21:01:49 -0500
+
+r-base (1.6.0.rel.20021017-1) unstable; urgency=low
+
+  * Upgraded to first release candidate (dated 2002-10-17) of R 1.6.1
+  * Since 1.6.0, the R Core upstream stream now bundles the sources 
+    of the r-recommended package directly in the r-base sources -- thus 
+    the source package r-recommended will be replaced by a binary 
+    package derived from these sources
+  * debian/control: Added new package r-recommended
+  * debian/r-recommended.{files,links}: Defined accordingly
+  * debian/copyright: Include the copyright file from r-recommended
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 17 Oct 2002 20:53:49 -0500
+
+r-base (1.6.0.rel-1) unstable; urgency=low
+
+  * Upgraded to new upstream release 1.6.0 [ which we need to rename
+    1.6.0.rel so that is sorts higher than 1.6.0.rc.20020927 ]
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue,  1 Oct 2002 21:18:52 -0500
+
+r-base (1.6.0.rc.20020927-1) unstable; urgency=low
+
+  * Upgraded to new release candidate of R 1.6.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 26 Sep 2002 20:49:34 -0500
+
+r-base (1.6.0.rc.20020917-1) unstable; urgency=low
+
+  * Upgraded to new release candidate of R 1.6.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 16 Sep 2002 20:41:58 -0500
+
+r-base (1.6.0.rc.20020910-1) unstable; urgency=low
+
+  * First release candidate of R 1.6.0 which is scheduled to be released on
+    October 1, 2002 -- this release corresponds to the first feature freeze
+  * debian/control: More Suggests: of the r-doc-* packages
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon,  9 Sep 2002 20:53:41 -0500
+
+r-base (1.5.1-0woody1) woody-proposed-updates; urgency=low
+
+  * Backport for woody built against atlas with corrected virtual Depends 
+    on blas/atlas to prevent bugs like #150253 and #152284 in woody
+  * debian/rules: Use "-O0 -g0" on arm and m68k to shorten compile time
+  * debian/control: Added lib{ncurses5,readline4}-dev to r-base-dev Depends 
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 15 Jul 2002 21:19:51 -0500
+
+r-base (1.5.1-1) unstable; urgency=low
+
+  * Upgraded to new upstream release 1.5.1
+  * debian/rules: Also create link from libRmath.so to libRmath.so.1
+  * debian/rules: Include test.c example in r-mathlib (Closes: #149723)
+  * debian/README.mathlib: Added, includes src/nmath/standalone/README
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 17 Jun 2002 19:24:59 -0500
+
+r-base (1.5.0-3) unstable; urgency=low
+
+  * debian/r-doc-html.links: Link into /usr/lib/R/doc/manual (Closes: #148628)
+  * debian/r-doc-pdf.links: Idem
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat,  8 Jun 2002 11:52:14 -0500
+
+r-base (1.5.0-2) unstable; urgency=low
+
+  * debian/rules: Remove usr/share/info/dir{,.old} (Closes: #148054)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 27 May 2002 15:31:22 -0500
+
+r-base (1.5.0-1) unstable; urgency=low
+
+  * Upgraded to new upstream release 1.5.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon, 29 Apr 2002 18:23:59 -0500
+
+r-base (1.4.1.cvs20020421-1) unstable; urgency=low
+
+  * Upgraded to new release candidate 2002-04-21 of R 1.5.0
+  * debian/control: Added virtual fortran77-compiler, c-compiler to the
+    list of alternative compilers that r-base-dev Depends: on
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 21 Apr 2002 19:01:57 -0500
+
+r-base (1.4.1.cvs20020414-1) unstable; urgency=low
+
+  * Upgraded to new release candidate 2002-04-14 of R 1.5.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 13 Apr 2002 20:48:59 -0500
+
+r-base (1.4.1.cvs20020407-1) unstable; urgency=low
+
+  * Upgraded to new release candidate 2002-04-07 of R 1.5.0
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun,  7 Apr 2002 07:59:43 -0500
+
+r-base (1.4.1.cvs20020331-1) unstable; urgency=low
+
+  * Upgraded to new release candidate 2002-03-23 of R 1.5.0
+
+  * debian/control: Build-Depends on texinfo (>= 4.1-2) to ensure that 
+    we will not be bitten by the epsf.tex bug 
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 31 Mar 2002 08:55:08 -0600
+
+r-base (1.4.1.cvs20020323-1) unstable; urgency=low
+
+  * Upgraded to new release candidate 2002-03-23 of R 1.5.0
+
+  * debian/control: New packages r-base-core, r-base-html, r-base-latex 
+    and r-doc-info have been split from the old r-base package which now 
+    Depends: on these, but can also be removed -- this adds some extra
+    flexibility and can save over eight megabytes of installed files.
+  * debian/control: Replaces: r-base (<= 1.4.1-1) for the new packages
+
+  * debian/rules: Fortan compiler selection adapted to new upstream configure
+  * debian/control: r-base Suggests: r-base-dev instead of gcc
+  * debian/copyright: Updated and included current COPYRIGHTS file ...
+  * debian/rules: ... and therefore do not install COPYRIGHTS separately
+  * debian/control: Added Build-Depends on texi2html (split from tetex-bin)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 23 Mar 2002 11:17:48 -0600
+
+r-base (1.4.1-1) unstable; urgency=low
+
+  * Upgraded to new upstream release 1.4.1
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 30 Jan 2002 18:50:34 -0600
+
+r-base (1.4.0.cvs20020124-1) unstable; urgency=low
+
+  * Upgraded to the R-patched_2002-01-24 release candidate for 1.4.1
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 24 Jan 2002 19:38:34 -0600
+
+r-base (1.4.0-1) unstable; urgency=low
+
+  * Upgraded to new upstream release 1.4.0
+  * debian/control: Add lib{zvt,gtkxmhtml}-dev to Build-Depends [thanks, Doug]
+  * debian/control: Fixed hppa Build-Depends [thanks, Matthew Wilcox]
+  * debian/rules: Minor cleanup regarding configuration options
+  * debian/control: Changed Priority: from extra to optional
+  * debian/control: Corrected r-doc-html Description [thanks, Doug Bates]
+  * debian/control: Spelling corrections (Closes: #125300)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Wed, 19 Dec 2001 18:47:46 -0600
+
+r-base (1.3.1-6) unstable; urgency=low
+
+  * debian/rules: Also apply s/-lg2c/-lg2c-pic/ on etc/Makeconf
+  * debian/control: Revert to Arch: all for doc packages, no Depends r-base
+  * debian/control: r-base-dev Depends remodelled on r-base Build-Depends
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Mon,  3 Dec 2001 21:58:40 -0600
+
+r-base (1.3.1-5) unstable; urgency=low
+
+  * debian/rules: Unset CPPFLAGS, LIBS before calling configure to not
+    leave traces of /usr/local. Thanks, Kurt Hornik (Closes: #71917)
+  * debian/rules: More s/-lg2c/-lg2c-pic/ substitution in src/library/
+  * debian/control: Added new package r-mathlib (Closes: #119701)
+  * debian/control: Added new package r-doc-html (R manuals in html format)
+  * debian/rules: Added suitable rules for r-mathlib and r-doc-html
+  * debian/rules: Rewritten/cleaned for DH_COMPAT=3
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 16 Nov 2001 20:43:24 -0600
+
+r-base (1.3.1-4) unstable; urgency=low
+
+  * debian/control: Corrected maintainer email
+  * debian/rules: Do not run 'make check' on arm as it stumbles over the
+    Bessel example; this known misfeature has long been reported upstream
+  * debian/README.Atlas: Updated to reflect autoMAGIC loading of Atlas lib
+    with ldconfig from libc6_2.2.4-5 or later -- thanks, Ben Collins!
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Sun, 11 Nov 2001 11:19:10 -0600
+
+r-base (1.3.1-3) unstable; urgency=low
+
+  * New maintainer
+  * debian/rules: Substitute -lg2c-pic for -lg2c in Makeconf [Thanks, Jeff!]
+  * debian/control: Following advice from the Release Manager, let r-doc-pdf
+    and r-base-dev be Arch: any as they Depends: on r-base itself 
+  * debian/rules: configure with tkConfig.sh,tclConfig.sh for 8.3 support
+  * debian/control: Build-Depends on tcl8.3-dev and tk8.3-dev
+  * debian/rules: Let ia64 use gcc-3.0, g77-3.0, g++-3.0
+  * debian/control: Build-Depends adjusted accordingly
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri,  9 Nov 2001 20:17:43 -0600
+
+r-base (1.3.1-2) unstable; urgency=low
+
+  * Non-maintainer upload, coordinated with the maintainer
+  * Fixed local teTeX issue so that pdf manuals are built (Closes: #112184)
+  * debian/*.links: link r-doc-pdf, r-gnome, r-base-dev doc dir to r-base
+  * debian/*.preinst: rm doc dir for r-doc-pdf, r-gnome, r-base-dev 
+  * debian/control: r-base-dev and r-doc-pdf now depend on r-base
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 14 Sep 2001 21:53:24 -0500
+
+r-base (1.3.1-1) unstable; urgency=low
+
+  * Non-maintainer upload, coordinated with the maintainer
+  * Upgraded to new upstream release 1.3.1
+  * src/scripts/R.sh.in: Modified to detect libs from /etc/ld.so.conf so
+    that Atlas is now used automatically when installed, providing very
+    significant performance gains. Thanks for Kurt Hornik for the sed magic. 
+  * debian/control: Build-Depends for f2c on m68k, g77 everywhere else
+  * debian/rules: Use f2c on m68k, g77 everywhere else
+  * debian/rules: Compile with -O on m68k, -O2 everywhere else. Thanks 
+    to Christian Steigies for countless m68k tests and compilations 
+  * debian/r-base.lintian: Added Lintian excpeptions clauses:
+    -- for files not under md5sum creation as their content changes
+    -- for spurious 'extra license' on license() command documentation
+  * debian/rules: Also remove redundant /usr/lib/R/COPYING.LIB, but add
+    soft links for both GPL (to COPYING) and LGPL (to COPYING.LIB)
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue,  4 Sep 2001 22:28:49 -0500
+
+r-base (1.3.0-4) unstable; urgency=low
+
+  * Non-maintainer brown-bag release
+  * debian/control: Revert back to tcl and tk version 8.0
+  * debian/rules: Split off distinct configure and make targets
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Fri, 24 Aug 2001 09:30:17 -0500
+
+r-base (1.3.0-3) unstable; urgency=low
+
+  * Non-maintainer upload, coordinated with the maintainer
+  * debian/rules: Default to --with-blas=blas (available on 9 architectures), 
+    Atlas can dynamically override this where available (Closes: #105366)
+  * debian/control: Changed atlas reference to blas for Build-Depends,
+    requires versioned Build-Depends on blas-dev (>= 1.0-9) 
+  * debian/rules: Added link for manual below r-base/doc (Closes: #106315)
+  * debian/control: Upgraded Build-Depends: on tk and tcl to versions 8.3
+  * debian/control: Upgraded Standards-Version: to 3.5.0
+  * debian/control: Added r-recommended to Suggests:
+  * debian/rules: Remove modules/*.so on clean
+  * debian/README.Atlas: Added simple README file on Atlas
+  * doc/manual/Makefile.in: Added --no-split to makeinfo --html calls
+  * config.site: gcc-3.0 removed in -2 (Closes: #109030)
+  * debian/control: Make was added to Depends in -2 (Closes: #102831)
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 21 Aug 2001 22:33:00 -0500
+
+r-base (1.3.0-2) unstable; urgency=low
+
+  * Changed compiler back to gcc from gcc-3.0
+  * Added dependency of r-base-dev on make (Closes: #102831)
+  * Removed dependency of r-base-dev on wget|lynx
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Fri,  6 Jul 2001 17:33:20 -0500
+
+r-base (1.3.0-1) unstable; urgency=low
+
+  * New upstream release
+  * Changed build-depends on groff to groff-base
+  * Changed build of r-gnome package for R's new module architecture
+  * Added Dirk E.'s changes to rules and control so atlas is used only on
+    selected architectures.
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Fri, 29 Jun 2001 09:29:47 -0500
+
+r-base (1.2.3-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Sun, 20 May 2001 20:51:58 -0500
+
+r-base (1.2.2-2) unstable; urgency=low
+
+  * Corrected format of Closes line (see 1.2.2-1). (Closes: #83876)
+  * Added more build-depends entries.  (Closes: #89267)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Sun, 11 Mar 2001 10:26:36 -0600
+
+r-base (1.2.2-1) unstable; urgency=low
+
+  * New upstream release.
+  * Added build-depends entries. (Closes #83876)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Tue, 27 Feb 2001 12:50:13 -0600
+
+r-base (1.2.1-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Mon, 15 Jan 2001 07:01:21 -0600
+
+r-base (1.2.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * Added the r-base-dev package to create the correct dependencies for
+    installing R packages from CRAN (Comprehensive R Archive Network)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Fri, 15 Dec 2000 07:20:51 -0600
+    
+r-base (1.1.0-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Sat, 17 Jun 2000 13:11:26 -0500
+
+r-base (1.0.1-1) unstable; urgency=low
+
+  * New upstream release.
+  * Includes fix for problem with xaxt and yaxt (Closes #61984)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Sun, 16 Apr 2000 13:50:06 -0500
+
+r-base (1.0.0-2) unstable; urgency=low
+
+  * The pdf documentation is now in a new package r-doc-pdf
+  * A GNOME-enabled version is available in a new package r-gnome (Closes #44503)
+  * debian/{rules,control}: Modified accordingly
+  * Thanks to Dirk Eddelbuettel who did most of the work for this.
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Thu, 16 Mar 2000 16:28:07 -0600
+
+r-base (1.0.0-1) unstable; urgency=low
+
+  * New upstream version
+  * Fixed names of info files, readline support (Closes: #57774)
+  * Added pdf files to doc directory (Closes: #20227)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Thu,  9 Mar 2000 16:28:29 -0600
+
+r-base (0.99.0-2) unstable; urgency=low
+
+  * Small but important bug fixes in upstream sources
+  * Removed dependence on atlas2 - using blas1 instead
+  * Recompiled to use the readline library
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Sun, 13 Feb 2000 14:23:25 -0600
+
+r-base (0.99.0-1) unstable; urgency=low
+
+  * New upstream release
+  * Added creation and installation of info documentation
+  * Created the PDF documentation and added it to the doc directory
+  * Added dependence on the atlas2 package and used the atlas blas
+  * Added /usr/bin/X11 to the path before configuring so imake is found
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Mon,  7 Feb 2000 10:36:44 -0600
+
+r-base (0.90.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Tue, 14 Dec 1999 10:51:10 -0600
+
+r-base (0.90.0-2) unstable; urgency=low
+
+  * added Conflicts: r-cran in control (Closes: #51673)
+  * Reinstated -Xfoo flags in call to dh_md5sums for Bug#35744
+  * Set up --mandir so package builds with -rfakeroot (Closes: #51901)
+  * Undid Dirk's marking of Rd2txt.1 Rdindex.1 Sd2Rd.1 as undocumented
+    (the manual pages are symbolic links to the Rdconv.1 page)
+  
+ -- Douglas Bates <bates@stat.wisc.edu>  Sun,  5 Dec 1999 15:03:52 -0600
+
+r-base (0.90.0-1) unstable; urgency=low
+
+  * Non-maintainer upload dealing with the usr/doc to usr/share/doc
+    transition, as well as a  few other lintian errors and warnings 
+  * debian/postinst: added #DEBHELPER# stub
+  * debian/rules: configure with mandir=/usr/share/man
+  * debian/rules: remove extra licenses 
+  * debian/rules: also install docs BUGS PLATFORMS VERSION Y2K
+  * debian/rules: mark Rd2txt.1 Rdindex.1 Sd2Rd.1 as undocumented
+  * debian/dirs: change usr/doc to usr/share/doc
+  
+ -- Dirk Eddelbuettel <edd@debian.org>  Thu, 25 Nov 1999 20:46:56 -0500
+
+r-base (0.90.0-0) unstable; urgency=low
+
+  * new upstream release
+  * Added a "suggests" entry in control for the ess package
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Thu, 25 Nov 1999 13:08:19 -0600
+
+r-base (0.65.1-2) unstable; urgency=low
+
+  * Changed from use of zip/unzip to minizip/miniunzip (Bug#48742)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Sat, 30 Oct 1999 15:04:42 -0500
+
+r-base (0.65.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Fri, 8 Oct 1999 10:04:55 -0500
+
+r-base (0.65.0-1) unstable; urgency=low
+
+  * New upstream release
+  * Added dependency on unzip package
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Fri, 27 Aug 1999 09:30:14 -0500
+
+r-base (0.64.2-1) unstable; urgency=low
+
+  * New upstream release
+  * Changed dependency from perl to perl5 as per new policy.	
+	
+ -- Douglas Bates <bates@stat.wisc.edu>  Thu,  1 Jul 1999 09:05:03 -0500
+
+r-base (0.64.1-1) unstable; urgency=low
+
+  * New upstream release
+  * Change definition of RHOME in /usr/lib/R/bin/R shell script (Bug#37339)
+  * Add links so /usr/lib/R/doc/manual .tex files can be LaTeX'd (Hubert Palme)
+  * Re-introduced md5sum's but with files that can change removed (Bug#35744)
+  * Removed arbitrary --vsize and --nsize flags in R script.
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Wed, 12 May 1999 11:48:22 -0500
+    
+r-base (0.64.0-2) unstable; urgency=low
+
+  * removed md5sums from control information (Bug#35744)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Thu,  8 Apr 1999 08:48:32 -0500
+
+r-base (0.64.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Thu,  1 Apr 1999 11:03:17 -0600
+
+r-base (0.63.3-2) unstable; urgency=low
+
+  * Recompile for glibc2.1 to fix __setfpucw bug (Bug#34598)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Wed, 17 Mar 1999 13:42:41 -0600
+
+r-base (0.63.3-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Thu,  4 Mar 1999 09:20:41 -0600
+
+r-base (0.63.2-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Fri, 15 Jan 1999 09:25:20 -0600
+
+r-base (0.63.1-1) unstable; urgency=low
+
+  * New upstream release
+  * Linked html directory to /usr/doc/r-base/doc/html (Dirk Eddelbuettel)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Fri,  4 Dec 1998 14:22:19 -0600
+
+r-base (0.63.0-2) unstable; urgency=low
+
+  * recompiled against libc6-dev_2.0.7u-6 for __register_frame_info fix
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Sun, 29 Nov 1998 15:39:48 -0600
+
+r-base (0.63.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Wed, 18 Nov 1998 13:33:58 -0600
+
+r-base (0.62.4-1) frozen unstable; urgency=low
+
+  * New upstream release
+  * Fixed link to html directory in /usr/doc (Closes: Bug#26444)
+  * Check for /usr/bin/paperconf in postinst and set default R_PAPERSIZE (Closes: #26447)
+  * Remove src/lib directory in debian/rules clean (Closes: #28545)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Mon,  2 Nov 1998 09:29:20 -0600
+
+r-base (0.62.3-0) unstable; urgency=low
+
+  * New upstream release
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Wed, 19 Aug 1998 10:38:08 -0500
+
+r-base (0.62.2-2) unstable; urgency=low
+
+  * Cleaned up the build process by removing redundancies in config.site
+    and debian/rules.
+  * Changed C compiler to gcc instead of egcs.
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Fri, 14 Aug 1998 13:52:34 -0500
+
+r-base (0.62.2-1) unstable; urgency=low
+
+  * Re-configured to include the readline library
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Fri, 14 Aug 1998 11:38:35 -0500
+
+r-base (0.62.2-0) unstable; urgency=low
+
+  * New upstream version
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Tue, 14 Jul 1998 13:36:15 -0500
+
+r-base (0.62.1-2) unstable; urgency=low
+
+  * Corrected definition of RHOME in /usr/bin/R (bug#23621)
+  
+  * Changed default heap size to 8 Mb. and number of cons cells to 400000
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Wed, 17 Jun 1998 11:48:28 -0500
+
+r-base (0.62.1-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Tue, 16 Jun 1998 10:03:49 -0500
+
+r-base (0.61.3-0) unstable; urgency=low
+
+  * new upstream release
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Mon,  4 May 1998 12:05:53 -0500
+
+r-base (0.61.2-2) frozen unstable; urgency=low
+
+  * recompiled against xlib6g (bug #21027)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Mon, 13 Apr 1998 14:05:33 -0500
+
+r-base (0.61.2-1) frozen unstable; urgency=low
+
+  * Added symbolic link for /usr/lib/R/library in /usr/doc/r-base/ (bug#20190)
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Thu, 26 Mar 1998 14:01:57 -0600
+
+r-base (0.61.2-0) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Mon,  9 Mar 1998 15:22:31 -0600
+
+r-base (0.61.1-5) unstable; urgency=low
+
+  * Removed call to dh_du in build rules.
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Fri,  6 Mar 1998 13:47:54 -0600
+
+r-base (0.61.1-4) unstable; urgency=low
+
+  * Removed unnecessary call to dh_makeshlibs in build rules
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Mon, 16 Feb 1998 13:49:44 -0600
+
+r-base (0.61.1-3) unstable; urgency=low
+
+  * Re-compiled to add readline support.
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Sat, 17 Jan 1998 17:06:52 -0600
+
+r-base (0.61.1-2) unstable; urgency=low
+
+  * Ensured that libraries for the modules are dynamically linked.
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Wed, 14 Jan 1998 08:31:53 -0600
+
+r-base (0.61.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Mon, 12 Jan 1998 09:30:04 -0600
+
+r-base (0.61.0-3) unstable; urgency=low
+
+  * Went through all the warnings reported by -Wall to produce a patch
+    file for the developers.
+  * Applied Thomas Lumley's patch for problem with c() applied to ordered.
+  * Changed debian/rules to delete the .in files for autoconf from the
+    package
+  
+  * Changed priority to "optional"
+  * Modified to use pristine original sources.
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Sun,  4 Jan 1998 14:54:04 -0600
+
+r-base (0.61.0-2) unstable; urgency=low
+
+  * Modified the format of the orig.tar.gz file
+
+ -- Douglas Bates <bates@stat.wisc.edu>  Tue, 23 Dec 1997 12:02:09 -0600
+
+r-base (0.61.0-1) unstable; urgency=low
 
   * Initial release
 
- -- Tsic404 <liuheng@deepin.org>  Sat, 28 Jan 2023 13:46:49 +0800
+ -- Douglas Bates <bates@stat.wisc.edu>  Tue, 23 Dec 1997 10:01:21 -0600
+  

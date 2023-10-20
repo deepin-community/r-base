@@ -1,0 +1,22 @@
+--- r-base-2.13.1.orig/configure
++++ r-base-2.13.1/configure
+@@ -32899,7 +32899,7 @@
+ #endif
+ int main() {
+     char *ver = BZ2_bzlibVersion();
+-    exit(strcmp(ver, "1.0.6") < 0);
++    exit(0); /* edd: override, Debian's 1.0.5 is patched  strcmp(ver, "1.0.6") < 0); */
+ }
+ 
+ _ACEOF
+--- r-base-2.13.1.orig/m4/R.m4
++++ r-base-2.13.1/m4/R.m4
+@@ -3049,7 +3049,7 @@
+ #endif
+ int main() {
+     char *ver = BZ2_bzlibVersion();
+-    exit(strcmp(ver, "1.0.6") < 0);
++    exit(0); /* edd: override, Debian's 1.0.5 is patched  strcmp(ver, "1.0.6") < 0); */
+ }
+ ]])], [r_cv_have_bzlib=yes], [r_cv_have_bzlib=no], [r_cv_have_bzlib=no])
+ LIBS="${r_save_LIBS}"

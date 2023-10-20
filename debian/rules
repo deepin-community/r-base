@@ -1,4 +1,784 @@
 #!/usr/bin/make -f
+# debian/rules file for the Debian GNU/Linux r-base package
+# Copyright 1997-2003  Douglas Bates <bates@stat.wisc.edu>
+# Copyright 1998-2023  Dirk Eddelbuettel <edd@debian.org>
+#
+# $Id: rules,v 1.3 2007/05/06 17:13:23 edd Exp edd $
 
-%:
-	dh $@
+corepackage	= r-base-core
+devpackage	= r-base-dev
+#latexpackage	= r-base-latex
+pdfpackage	= r-doc-pdf
+htmlpackage	= r-doc-html
+nmathpackage	= r-mathlib
+infopackage	= r-doc-info
+recdpackage	= r-recommended
+dbugpackage	= r-base-core-dbg
+
+# for the standalone library, no sonames are assigned in the upstream Makefiles
+somaj		= 1
+somin		= 0
+sorel		= 0
+libver		= $(somaj).$(somin).$(sorel)
+
+debbase		:= $(CURDIR)/debian
+debtmp		:= $(debbase)/$(corepackage)
+debdoc		:= $(debbase)/$(corepackage)/usr/share/doc/$(corepackage)
+debmat		:= $(debbase)/$(nmathpackage)
+debetc		:= $(debbase)/$(corepackage)/usr/lib/R/etc
+debinf		:= $(debbase)/$(infopackage)
+debcnf		:= $(debbase)/$(corepackage)/etc/R
+
+## edd 24 Oct 2005 use DEB_BUILD_GNU_CPU, not DEB_BUILD_GNU_TYPE
+##                 updated rules throughout
+arch		:= $(shell dpkg-architecture -qDEB_BUILD_GNU_CPU)
+buildarch	:= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+## edd 26 Jul 2013 also use DEB_HOST_ARCH_OS to catch kFreeBSD
+buildos         := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS)
+#export DH_VERBOSE = 1
+
+# edd 15 Aug 2001  default to blas, atlas can override it
+#atlas		= --with-blas=blas
+# dmb 04 Apr 2003  better to use no specify blas
+# atlas			= --with-blas
+# edd 28 Apr 2003  try configuring with atlas
+# atlas		= --with-blas=atlas
+# edd 16 Oct 2003  back to older default
+#atlas		= --with-blas=blas
+# edd 26 Feb 2004  point to refblas3
+#atlas		= --with-blas=-lblas-3
+# edd 05 Feb 2008  default blas
+atlas           = --with-blas
+
+# edd 08 Mar 2003  use the new lapack feature
+# edd 27 Apr 2003  Set this to =no as we currently see numerical errors
+#lapack		= --with-lapack=no
+# edd 26 Feb 2004  point to lapack3
+#lapack		= --with-lapack=-llapack-3
+# edd 13 Oct 2004  Set this once again to =no as we still see numerical errors
+#lapack		= --with-lapack=no
+# edd 05 Feb 2008  switched back
+# edd 05 Feb 2008  oh, no switch back to internal lapack -- see #464833
+#lapack		= --with-lapack=no
+# edd 05 Mar 2008  with lapack as we can now use lapack 3.1 in unstable
+lapack		= --with-lapack
+
+# edd 02 Sep 2001  default to g77 but let m68k use f2c
+# edd 06 Mar 2003  enforce 3.2 versions explicitly
+#		   so that on testing we will pick them over 2.95
+# edd 07 Jun 2003  let's fall back to the default compilers
+# edd 08 Sep 2005  real defaults, i.e. remove -3.4 strings
+# edd 03 Apr 2006  switch to gfortran
+# edd 04 Apr 2006  use optimflags, build per-compiler flags later
+# edd 26 Jun 2007  need 4.2 for fortran linking
+# edd 26 Nov 2007  4.2 is now default, so no longer set -4.2 explictly; also add f95compiler
+# edd 11 Oct 2011  setting -std=gnu99 with compiler (thanks, Kurt Hornik)
+fortrancompiler	= F77=gfortran
+f95compiler     = gfortran
+# edd 10 Jan 2016  mips currently needs gcc-4.9 (cf #810357) and big thanks to Sébastien Villemot
+# edd 12 Apr 2016  mips treatment removed again after kernel fix on
+# edd 11 Nov 2021  undo -std=gnu99
+#ifeq ($(arch),mips)
+#compiler	= "gcc-4.9 -std=gnu99"
+#else
+compiler	= gcc
+#endif
+cxxcompiler	= g++
+
+## Adrian Bunk 20 Jan 2023  workaround excess precision of x87
+ifneq (,$(filter $(DEB_HOST_ARCH), i386))
+export DEB_CFLAGS_MAINT_APPEND += -ffloat-store
+endif
+
+## Adrian Bunk 18 Jun 2023  so debug info on 32bit to workaround 2-4 GB address space limitation
+ifeq ($(DEB_HOST_ARCH_BITS), 32)
+export DEB_CFLAGS_MAINT_APPEND += -g1
+endif
+
+## edd 31 Mar 2014
+## edd 14 Oct 2022  disable LTO per email with Graham Inggs
+#optimflags	= -O3 -pipe
+optimflags      = `DEB_BUILD_MAINT_OPTIONS=optimize=-lto dpkg-buildflags --get CFLAGS`
+## edd 08 Apr 2014  add CPPFLAGS
+optimflags      += $(shell DEB_BUILD_MAINT_OPTIONS=optimize=-lto dpkg-buildflags --get CPPFLAGS)
+
+# edd 22 Apr 2012  gcc-4.7 needs -O2 to build R (also #67359)
+# edd 11 Nov 2021  commented out as gcc-4.7 is long gone :)
+#ifneq "$(shell gcc --version | head -1 | cut -d' ' -f4 | grep '^4.7')" ""
+#optimflags = -O2 -pipe
+#endif
+
+# edd 04 Sep 2001  default compiler flags, lowered for m68k
+#compilerflags	= -O2
+# m68k barks when using g77, and when gcc use -O2
+# edd 26 Nov 2002  switched back to g77
+# edd 02 Jun 2003  switched back
+# cts 04 Jun 2003  use -O1 on m68k
+#ifeq ($(arch),m68k)
+#fortrancompiler	= F2C=f2c
+#compilerflags	= -O1
+#endif
+
+# edd 14 Nov 2003  turn blas off on arm
+# edd 12 May 2010  no longer needed -- thx to Modestas Vainius
+#ifeq ($(arch),arm)
+#atlas		= --without-blas
+#endif
+
+## edd 09 Nov 2001  ia64 needs gcc-3.0, hppa gets it by default
+#ifeq ($(arch),ia64)
+#fortrancompiler = F77=g77-3.0
+#compiler	= gcc-3.0
+#cxxcompiler	= g++-3.0
+#compilerflags	= -O2
+#endif
+
+## lamont@debian.org 06 Dec 2001  hppa needs -ffunction-sections
+ifeq ($(arch),hppa)
+optimflags	= -O2 -ffunction-sections
+endif
+
+## edd 20 Jun 2002	no optimisation or debugging on baby systems
+## edd 02 Jun 2003	use this on arm only
+## edd 12 May 2010	no longer use it on arm either -- thx Modestas
+## edd 04 Aug 2010	on mips and mipsel, don't use -g
+## edd 10 Jan 2016      turn all off again
+##ifneq "$(findstring $(arch), m68k arm)" ""
+#ifneq "$(findstring $(arch), arm)" ""
+#ifneq "$(findstring $(arch), mips mipsel)" ""
+#optimflags	= -g0
+##optimflags	= -O0 -g0
+#endif
+
+## edd 04 Apr 2009	Alpha dies on deriv.c, trying will less optimisation
+## edd 16 Apr 2009      commented-out as Kurt Roeckx applied a gcc patch
+#ifeq ($(arch),alpha)
+#optimflags	= -O2 -g0
+#endif
+
+## edd 09 Apr 2006	per patch from Andreas Jochens in #361604
+ifeq ($(arch),powerpc64)
+optimflags	+= -mminimal-toc
+endif
+
+## edd 26 Jul 2013	kFreeBSD wants -O2 per #714506
+ifeq ($(buildos),kfreebsd)
+optimflags	= -O2 -pipe
+endif
+
+## edd 30 Apr 2020      ppc64el aka powerpc64le has weird long double behavior breaking build
+##                      so default to longdouble everywhere, but on powerpc64le
+##                      also include powerpc64 and ppc64
+longdouble      = --enable-long-double
+ifneq "$(findstring $(arch), powerpc64le powerpc64 ppc64)" ""
+longdouble      = --disable-long-double
+endif
+
+## edd 04 Apr 2006	generalize from old compilerflags to per-compiler
+## edd 11 Oct 2011      -std=gnu goes to CC (thanks to Kurt Hornik)
+cflags		= $(optimflags)
+cxxflags	= $(optimflags)
+## edd 31 Mar 2014      with thanks to Julian Gilbey in #726913
+## edd 14 Oct 2022      disable LTO per email with Graham Inggs
+#fcflags		= $(optimflags)
+fcflags 	= $(shell DEB_BUILD_MAINT_OPTIONS=optimize=-lto dpkg-buildflags --get FFLAGS)
+
+## edd 17 Sep 2006	suggested by Brian Ripley in email dated 15 Sep 2006
+#ldflags		= -Wl,-O1,-Bdirect,--hash-style=both
+#ldflags		= -Wl,-O1
+## edd 06 May 2007  try it
+## edd 05 Feb 2008  still no go under gcc 4.3
+#ldflags		= -Wl,-O1,-Bdirect,--hash-style=both
+## edd 31 Mar 2014
+ldflags		= $(shell dpkg-buildflags --get LDFLAGS)
+
+## edd 16 Apr 2008	add -g to optim flags to allow for -dbg package
+#optimflags	+= -g
+
+## 12 Jan 2015
+## Support for #774031 uncomment the two assignment to pass a non-empty string for this to hold
+#builttime       := $(shell dpkg-parsechangelog -l$(CURDIR)/debian/changelog | awk -F': ' '/Date/ {print $$2}')
+#builttimestamp  := "$(builttime)"
+buildtimestamp  := ""
+
+#arch = kfreebsd-amd64
+maketest:
+	@echo "Hi $(arch)"
+	@echo "$(findstring $(arch), i486 hppa arm)"
+ifeq "$(findstring $(arch), kfreebsd-amd64 x86_64 hppa arm)" ""
+	@echo "**** TRUE if the arch is NOT in the list as !find == '' ***"
+endif
+ifneq "$(findstring $(arch), kfreebsd-amd64 x86_64 i486 hppa arm)" ""
+	@echo "**** TRUE if the arch is in list as find != '' is TRUE ***"
+endif
+	@echo Bye
+
+get-orig-source: upstream
+upstream:
+        #links http://cran.us.r-project.org/src/base
+	links http://cran.r-project.org/src/base/?M=D
+
+upstreamdevel:
+	links ftp://ftp.stat.math.ethz.ch/Software/R
+        #links http://cran.us.r-project.org/src/base
+        #rsync -vaC rsync.r-project.org::r-devel .
+
+prerelease:
+	links http://cran.r-project.org/src/base-prerelease
+
+denmark:
+	links http://www.biostat.ku.dk/~pd/R-release
+
+
+## edd 24 Oct 2003  build is invoked by the buildd, so we would prefer to
+##		    not imply build-indep; unfortunately R does not build
+##		    properly without it, so we have to stick with it
+## edd 15 Jan 2004  trying again on build only build: build-arch build-indep
+##		    the main hook is to then have binary depend on both
+##		    binary-arch and binary-indep, and those on their builds
+## edd 19 Sep 2019  for source uploads also build build-indep
+build: build-arch build-indep
+
+build-arch: make-arch
+
+build-indep: make-indep
+
+configure: configure-stamp
+configure-stamp:
+	@echo "*** configure ***"
+
+        # we have to disable use of the expanded R_LD_LIBRARY_PATH as it
+        # conflicts with Debian's Atlas-can-replace-Blas scheme
+        # so set R_LD_LIBRARY_PATH to the minimal value R_HOME/bin
+        # and discard what configure finds for it on this machine
+        ## edd 06 May 2007  no longer used in R.sh.in
+        #perl -p -i -e 's|:\@R_LD_LIBRARY_PATH\@||' src/scripts/R.sh.in
+
+        # edd 15 Dec 2009  the sh4 architecture needs newer configure than
+        #                  R Core uses, so following Kurt's recommendation to
+        #                  simply re-run configure here
+        # edd 03 Apr 2010  added automake
+        #                  nope, commented both out
+	#automake
+	#autoconf
+
+	dh_testdir
+	R_SHELL=/bin/bash				\
+        mkdir_p="/bin/mkdir -p"                         \
+	MKDIR_P="/bin/mkdir -p"                         \
+	R_TEXI2DVICMD=emulation				\
+	R_PAPERSIZE=letter				\
+	R_BROWSER=xdg-open				\
+	R_BZIPCMD=/bin/bzip2				\
+	R_GZIPCMD="/bin/gzip -n"			\
+	PAGER=/usr/bin/pager				\
+	PERL=/usr/bin/perl				\
+	JAVA_HOME=/usr/lib/jvm/default-java             \
+	R_UNZIPCMD=/usr/bin/unzip			\
+	R_ZIPCMD=/usr/bin/zip				\
+	R_PRINTCMD=/usr/bin/lpr				\
+	TAR=/bin/tar					\
+	LIBnn=lib					\
+	AWK=/usr/bin/awk                                \
+	DD=/bin/dd					\
+	GREP=/bin/grep					\
+	FGREP="/bin/grep -F"				\
+	EGREP="/bin/grep -E"				\
+	SED=/bin/sed					\
+	GETWD="/bin/pwd"				\
+	CC=$(compiler)					\
+	CXX=${cxxcompiler}						\
+	${fortrancompiler}					\
+	FC=${f95compiler}					\
+	CFLAGS="$(cflags)"				\
+	CXXFLAGS="$(cxxflags)"				\
+	FFLAGS="$(fcflags)"				\
+	FCFLAGS="$(fcflags)"				\
+	CPPFLAGS=					\
+	LDFLAGS="$(ldflags)"				\
+	FLIBS=						\
+	rsharedir=/usr/share/R/share			\
+	rincludedir=/usr/share/R/include		\
+	rdocdir=/usr/share/R/doc			\
+	./configure --prefix=/usr			\
+		    --with-cairo			\
+		    --with-jpeglib			\
+		    --with-readline			\
+		    --with-tcltk			\
+		    --mandir=/usr/share/man		\
+		    --infodir=/usr/share/info		\
+		    --datadir=/usr/share/R/share	\
+		    --includedir=/usr/share/R/include	\
+		    $(atlas)		\
+		    $(lapack)		\
+		    $(longdouble)       \
+		    --enable-R-profiling		\
+		    --enable-R-shlib			\
+		    --enable-memory-profiling		\
+		    --without-recommended-packages	\
+		    --build $(buildarch)
+
+        ## Old options now ignore: --with-pango, --with-png, --without-gnome
+
+	touch configure-stamp
+
+make-arch: make-arch-stamp
+make-arch-stamp: configure-stamp
+	@echo "*** make-arch ***"
+	$(MAKE)		CFLAGS="$(cflags)"			\
+			CXXFLAGS="$(cxxflags)"			\
+			FFLAGS="$(fcflags)"			\
+			FCFLAGS="$(fcflags)"			\
+			CC=${compiler}				\
+			CXX=${cxxcompiler}			\
+			${fortrancompiler}			\
+			LDFLAGS="$(ldflags)"			\
+			PKG_BUILT_STAMP="$(buildtimestamp)"	\
+			R_GZIPCMD="/bin/gzip -n"		\
+			R
+
+        # the top-level 'make stamp-recommended' target implies 'make docs'
+        # which (for the buildds) implies a lot of time wasted generating
+        # output we already take from the initial i386 build
+#	$(MAKE)		CFLAGS="$(compilerflags)"		\
+#			CXXFLAGS="$(compilerflags)"		\
+#			FFLAGS="$(compilerflags)"		\
+#			CC=${compiler}				\
+#			CXX=${cxxcompiler}			\
+#			${fortrancompiler}			\
+#			stamp-recommended
+
+        # make standalone math lib
+	(cd src/nmath/standalone;				\
+		$(MAKE)	CFLAGS="$(cflags) -D_REENTRANT"		\
+			CXXFLAGS="$(cxxflags) -D_REENTRANT"	\
+			FFLAGS="$(fcflags) -D_REENTRANT"	\
+			CC=${compiler}				\
+			CXX=${cxxcompiler}			\
+			${fortrancompiler}			\
+			R_GZIPCMD="/bin/gzip -n"		\
+			libRmath_la_LDFLAGS=-Wl,-soname,libRmath.so.$(somaj) \
+			shared static )
+
+        # edd 25 Jan 2004  make install needs html docs
+        # edd 03 Feb 2004  new test, try without
+        #make docs
+        # edd 15 Jan 2004  make install needs html docs
+        # edd 25 Jan 2004  not needed as we have 'make docs'
+        ## make html
+ifeq (,$(filter nodoc,$(DEB_BUILD_OPTIONS)))
+	R_GZIPCMD="/bin/gzip -n" \
+		$(MAKE) docs R_CMD_BUILD_HELP_OPTS="--txt --example"
+endif
+
+        # edd 26 Mar 2013
+	$(MAKE) javaconf
+
+	touch make-arch-stamp
+
+make-indep: make-indep-stamp
+make-indep-stamp: configure-stamp
+	@echo "*** make-indep ***"
+        ## edd 12 Jan 2004 uncommenting 'make docs' to split binary all/any
+        ##	  now that recommended packages aren't made
+        ## edd 25 Jan 2004 make docs and make html are made in make-arch
+        ## edd 05 Feb 2004 finally, this works in pre-1.9.0 with Kurt's
+        ##		   R_CMD_BUILD_HELP_OPTS
+ifeq (,$(filter nodoc,$(DEB_BUILD_OPTIONS)))
+	$(MAKE) -k docs
+	(cd doc/manual && $(MAKE) html)
+#	$(MAKE) html
+#	$(MAKE) help
+	$(MAKE) info
+	(cd doc/manual && \
+		$(MAKE) refman.pdf R-admin.pdf R-data.pdf R-exts.pdf \
+			R-FAQ.pdf R-intro.pdf R-ints.pdf R-lang.pdf)
+	$(MAKE) -k pdf
+endif
+	$(MAKE) -k vignettes
+	touch make-indep-stamp
+
+make: make-stamp
+make-stamp: make-arch make-indep
+
+#check: make-arch check-stamp
+check: make-stamp check-stamp
+check-stamp:
+	@echo "*** check ***"
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+#ifneq	($(arch),arm)
+## edd 11 Oct 2005  also disable on hppa
+## edd 15 Apr 2008  call inside of xvfb-run for virtual x11, and switch to check-all
+ifeq "$(findstring $(arch), hppa arm)" ""
+## edd 29 Jul 2013  also disable on kFreeBSD
+ifneq ($(buildos),kfreebsd)
+	-xvfb-run make check-all
+endif
+endif
+endif
+	touch check-stamp
+
+clean:
+	@echo "*** clean ***"
+	dh_testdir
+	dh_testroot
+	rm -f	configure-stamp \
+		build-stamp build-indep-stamp build-arch-stamp \
+		make-stamp make-arch-stamp make-indep-stamp \
+		install-indep-stamp install-arch-stamp \
+		check-stamp
+	[ ! -f Makefile ] || $(MAKE) distclean
+	-rm -f `find . -name "*~"`
+	-rm -rf debian/tmp debian/files debian/files* core debian/substvars debian/files
+	-rm -f doc/html/function.html doc/html/packages.html
+	-rm -f modules/*.so src/unix/Rscript
+        # left over in CVS from r-base --> r-base-core transition
+        #(cd debian; rm -vf r-base.dirs r-base.files r-base.lintian \
+        #		r-base.menu r-base.postinst)
+	dh_clean
+
+install: install-arch install-indep
+
+install-arch: build-arch install-arch-stamp
+install-arch-stamp:
+	@echo "*** install-arch ***"
+	dh_testdir
+	dh_testroot
+	dh_prep -a
+	dh_installdirs -A
+	@echo $(debtmp)
+
+	$(MAKE) DESTDIR=$(debtmp) install
+
+        # edd 16 Apr 2008  make Rscript _again_ as the build is broken
+        #                  and we need an explicit RHOME
+	(cd src/unix; 						\
+		rm -vf Rscript $(debtmp)/usr/bin/Rscript;	\
+		$(MAKE)	CFLAGS="$(cflags) -D_REENTRANT"		\
+			CXXFLAGS="$(cxxflags) -D_REENTRANT"	\
+			FFLAGS="$(fcflags) -D_REENTRANT"	\
+			CC=${compiler}				\
+			CXX=${cxxcompiler}			\
+			${fortrancompiler}			\
+			RHOME=/usr/lib/R			\
+			DESTDIR=$(debtmp)			\
+			install-Rscript )
+	#ls -ltr $(debtmp)/usr/bin/
+	#strings src/unix/Rscript
+	cp -vax src/unix/Rscript $(debtmp)/usr/bin/
+	#ls -ltr $(debtmp)/usr/bin/
+	#strings $(debtmp)/usr/bin/Rscript
+
+	(cd src/nmath/standalone;				\
+		$(MAKE) DESTDIR=$(debtmp) install )
+
+        # fix permissions (Lintian)
+        # edd 15 Jan 2006 now under /usr/share/R
+        # edd 13 Oct 2009 no longer have help-{links,print}.sh
+	chmod a+x	$(debtmp)/usr/share/R/share/sh/echo.sh
+#			$(debtmp)/usr/share/R/share/sh/help-links.sh	\
+#			$(debtmp)/usr/share/R/share/sh/help-print.sh
+
+        # remove unneeded license file, but link them back
+	rm -v	$(debtmp)/usr/lib/R/COPYING
+	(cd $(debtmp)/usr/lib/R/; \
+		ln -s ../../share/common-licenses/GPL-2 COPYING)
+	rm -v	$(debtmp)/usr/share/R/doc/COPYING
+	(cd $(debtmp)/usr/share/R/doc; \
+		ln -s ../../../share/common-licenses/GPL-2 COPYING)
+
+        # edd 15 Jul 2002 reduce compile load on small machines
+#ifneq "$(findstring $(arch), m68k arm)" ""
+#	perl -p -i -e 's/-g -O2/-g0 -O0/g' $(debtmp)/usr/lib/R/etc/Makeconf
+#endif
+
+        # edd 10 Jan 2003 fix Perl interpreter path
+        # edd 05 May 2005  no longer needed
+# 	(cd $(debtmp)/usr/lib/R/bin;					\
+# 	    for file in Rdconv Rprof Sd2Rd build check; do	\
+# 		perl -p -i -e "s|/usr/local/bin/perl|/usr/bin/perl|"	\
+# 		   $${file};						\
+# 	done)
+
+ifeq (,$(filter nodoc,$(DEB_BUILD_OPTIONS)))
+        # edd 25 Sep 2005  link TeX files into texmf
+        # edd 03 Oct 2006  use link into /usr/share/, not /usr/lib/
+	(cd $(debtmp)/usr/share/texmf/tex/latex && 	\
+	    ln -s ../../../R/share/texmf R)
+
+        # that being done, now install in different sub-packages
+
+        # move files for r-recommended
+
+        # move the html manual files in r-doc-html.files into r-doc-html
+        # these get built in make-arch too ...
+	dh_movefiles	--sourcedir=debian/$(corepackage) -p$(htmlpackage)
+
+        # move files for r-base-html
+	dh_movefiles	--sourcedir=debian/$(corepackage) -pr-base-html
+        # move files for r-base-latex
+        #dh_movefiles	--sourcedir=debian/$(corepackage) -pr-base-latex
+
+	make		prefix=$(debtmp)/usr			\
+			rdocdir=$(debtmp)/usr/share/R/doc	\
+			install-pdf
+
+        # the indep package r-doc-info is made now
+	make		prefix=$(debtmp)/usr  \
+			infodir=$(debtmp)/usr/share/info	install-info
+
+        # move the pdf manual files listed in r-doc-pdf.files into r-doc-pdf
+	dh_movefiles	--sourcedir=debian/$(corepackage) -p$(pdfpackage)
+
+        # move the html manual files in r-doc-html.files into r-doc-html
+	dh_movefiles	--sourcedir=debian/$(corepackage) -p$(htmlpackage)
+
+        # edd 06 Dec 2006 lintian wants them compressed with -9, and R
+        #                 seems to pre-zip them lower
+	gunzip -9v $(debtmp)/usr/share/info/*.gz
+        # move files for r-doc-info
+	dh_movefiles	--sourcedir=debian/$(corepackage) -p$(infopackage)
+        # deal with stupid automake / install-info issue (cf #235713)
+	rm -vf	$(debinf)/usr/share/info/dir		\
+		$(debinf)/usr/share/info/dir.old
+endif
+	touch install-indep-stamp
+
+        # move all the rest into r-base-core
+        # edd 10 Sep 2005  no longer needed as we install into r-base-core
+        # dh_movefiles	-p$(corepackage)
+
+        # for the standalone library package, move the two libs
+        # as 'make install' ignores these, we have to do it by hand
+	dh_installdirs -p$(nmathpackage) usr/include usr/lib \
+					usr/share/lintian/overrides \
+					usr/lib/pkgconfig
+        # move the libraries made and installed by R, and the pkgconfig file
+	dh_movefiles	--sourcedir=debian/$(corepackage) -p$(nmathpackage)
+        # move the library to a lib*.so.major.0.0, then link
+	(cd $(debmat)/usr/lib; \
+			ls -l ; \
+			mv -v  libRmath.so 	     libRmath.so.$(libver); \
+			ln -sv libRmath.so.$(libver) libRmath.so.$(somaj); \
+			ln -sv libRmath.so.$(somaj)  libRmath.so)
+
+        # and create a link for Rmath.h
+        # rather copy directly into the more independent package r-mathlib
+	install -m 0644 src/include/Rmath.h			\
+			$(debmat)/usr/include
+
+        # now deal with $R_HOME/etc <--> /etc/R
+        # edd 03 Apr 2003  patch Renviron for new R_LIBS standard
+        # edd 24 Apr 2004  patch Renviron for R_PAPERSIZE (bug #245525)
+        # edd 16 Jun 2004	 nope, doesn't work
+        # edd 09 Apr 2005  also move the new file repositories to /etc/R
+        # edd 24 Sep 2006  idem for ldpaths
+        # edd 21 Jun 2008  do not move Renviron to /etc/R as ucf will handle this,
+        #                  but still provide the softlink from /etc/R here
+        # edd 13 Sep 2008  install Rprofile.site and Renviron.site and link back
+        # edd 29 Mar 2009  set /usr/local/lib/R/site-path in Renviron.site, do not patch Renviron below
+        # edd 20 Jan 2023  patch etc/Renviron.in directly, no longer mod Renviron.site
+	install -m 0644 debian/Rprofile.site $(debcnf)
+	install -m 0644 debian/Renviron.site $(debcnf)
+	(cd $(debetc); \
+		mv Makeconf repositories ldpaths ../../../../etc/R/;	\
+		mv Renviron Renviron.ucf;				\
+		ln -s  /etc/R/Makeconf	.;				\
+		ln -s  /etc/R/Renviron	.;				\
+		ln -s  /etc/R/Renviron.site .;				\
+		ln -s  /etc/R/Rprofile.site .;				\
+		ln -s  /etc/R/ldpaths   .;                              \
+		ln -s  /etc/R/repositories .				)
+#		cat $(debbase)/Renviron-R_PAPERSIZE.patch | patch --verbose;
+#	        cat $(debbase)/Renviron-R_LIBS.patch | patch --dry-run;	\
+
+        # deal with build.help.pl's --htmllists argument
+        # edd 29 Jan 2009  Not needed as of R 2.9.0
+        #(cd $(debtmp)/usr/share/R/share/perl; \
+        #	cat $(debbase)/build-help.pl.patch | patch --verbose )
+
+        # edd 28 Sep 2006  patch javareconf to modify in /etc/R
+        # edd 24 Feb 2013  disabled for R 2.15.3
+        #(cd $(debtmp)/usr/lib/R/bin; \
+        #	cat $(debbase)/javareconf.patch | patch --verbose )
+
+        # edd 24 Jan 2006  deal with old postinst/postrm scripts
+        #                  calling the old /usr/lib/R/share/perl path
+        #(cd $(debtmp)/usr/lib/R && ln -s ../../share/R/share . )
+        # edd 06 Feb 2006  softlink fails with upgrades from older versions
+        # edd 29 Jan 2009  Not needed as of R 2.9.0
+        # dh_installdirs -p$(corepackage) usr/lib/R/share/perl
+        # install -m 0644 debian/build-help.pl	\
+        #	debian/$(corepackage)/usr/lib/R/share/perl/
+
+        # add tab completion by Deepayan
+        #install -m 0644 debian/R.bash_completion	\
+        #	debian/$(corepackage)/etc/bash_completion.d/R
+        # edd 24 Mar 2014  now installs via dh_bash-completion
+	dh_bash-completion
+	# edd 12 Jan 2016  new location
+	#install -m 0644 debian/R.bash-completion \
+	#	debian/$(corepackage)/usr/share/bash-completion/completions/R
+
+        # edd 02 May 2007  add libR.conf for ld.so
+        # edd 13 Sep 2009  no more under Policy 3.8.3
+#	install -m 0644 debian/libR.conf \
+#		debian/$(corepackage)/etc/ld.so.conf.d/libR.conf
+        # edd 03 Apr 2010  add a link from usr/lib
+	(cd $(debtmp)/usr/lib/; \
+		ln -sv R/lib/libR.so . )
+
+        # edd 21 Jun 2012  add icon and desktop file from Philip Johnson's patch
+        # edd 23 Mar 2021  add svg logo and updated R.desktop with StartupWMClass hint
+	(cd debian/icon-class-patch && munpack rlogo_icon.png.mpack)
+	install -m 0644 debian/icon-class-patch/rlogo_icon.png	\
+		debian/$(corepackage)/usr/share/icons/hicolor/48x48/apps
+	install -m 0644 debian/icon-class-patch/Rlogo.svg	\
+		debian/$(corepackage)/usr/share/icons/hicolor/scalable/apps/rlogo_icon.svg
+	install -m 0644 debian/icon-class-patch/R.desktop	\
+		debian/$(corepackage)/usr/share/applications
+	rm debian/icon-class-patch/rlogo_icon.png
+
+	touch install-arch-stamp
+
+#install-indep: make-arch make-indep install-arch install-indep-stamp
+install-indep: build-indep install-indep-stamp
+install-indep-stamp:
+	@echo "*** install-indep ***"
+	dh_testdir
+	dh_testroot
+	dh_prep -a
+	dh_installdirs -A
+
+#	make		prefix=$(debtmp)/usr			install-pdf
+#
+#	 # the indep package r-doc-info is made now
+#	make		prefix=$(debtmp)/usr  \
+#			infodir=$(debtmp)/usr/share/info	install-info
+#
+#	 # move the pdf manual files listed in r-doc-pdf.files into r-doc-pdf
+#	dh_movefiles	-p$(pdfpackage)
+#	 # move the html manual files in r-doc-html.files into r-doc-html
+#	dh_movefiles	-p$(htmlpackage)
+#	touch install-indep-stamp
+#	 # move files for r-doc-info
+#	dh_movefiles	-p$(infopackage)
+
+        # but clean up dir and old.dir
+	rm -vf		$(debbase)/$(infopackage)/usr/share/info/dir \
+			$(debbase)/$(infopackage)/usr/share/info/dir.old
+
+	touch install-indep-stamp
+
+
+# Build architecture-independent files here.
+# edd  5 Feb 2004 binary-indep: build-indep install-indep
+# edd 25 Sep 2019 also enforce arch to avoid build=all under source upload
+binary-indep: build-arch install-arch build-indep install-indep
+	@echo "*** binary-indep ***"
+	dh_testdir -i
+	dh_testroot -i
+	dh_link -i
+        #dh_installdebconf -i
+	dh_installdocs -i
+	dh_installdocs -v -p$(htmlpackage)
+        #dh_installexamples -i
+        #dh_installmenu -i
+        #dh_installemacsen -i
+        #dh_installpam -i
+        #dh_installmime -i
+        #dh_installinit -i
+        #dh_installcron -i
+        #dh_installmanpages -i
+        #dh_installinfo -i
+        #dh_undocumented -i
+	dh_installchangelogs -i
+        # install lintian "silencer"
+        # edd 13 Oct 2009  this package is no longer needed / created
+#	install -p -m 0644  debian/$(latexpackage).lintian $(debbase)/$(latexpackage)/usr/share/lintian/overrides/$(latexpackage)
+
+	dh_installdirs -p$(devpackage) usr/share/R/debian
+	install -p -m 0755  debian/r-cran.mk \
+		$(debbase)/$(devpackage)/usr/share/R/debian
+
+	dh_compress -i
+	dh_fixperms -i
+        #dh_suidregister -i
+	dh_installdeb -i
+        #dh_perl -i
+	dh_gencontrol -i
+	dh_md5sums -i
+	dh_builddeb -i
+
+# Build architecture-dependent files here.
+binary-arch: build-arch install-arch
+	@echo "*** binary-arch ***"
+	dh_testdir -a
+	dh_testroot -a
+        #dh_installdebconf -a
+        # edd 04 Apr 2006	AUTHORS RESOURCES THANKS Y2K FAQ all gone
+	dh_installdocs -p$(corepackage) doc/NEWS.* README \
+					debian/README.Atlas \
+					debian/README.mathlib
+	dh_installdocs -p$(nmathpackage)  doc/NEWS.* README \
+					debian/README.mathlib
+#	dh_installdocs -p$(dbugpackage)
+        #dh_installexamples -a
+        #dh_installexamples -p$(corepackage)	src/nmath/standalone/test.c
+	dh_installexamples -p$(nmathpackage)	src/nmath/standalone/test.c
+        #dh_installmenu -a
+        #dh_installemacsen -a
+        #dh_installpam -a
+        #dh_installmime -a
+        #dh_installinit -a
+        #dh_installcron -a
+        #dh_installmanpages -a	-p$(corepackage) getline.3
+        #dh_installman		-p$(corepackage) doc/R.1
+        ## dh_installinfo -a	-n doc/manual/R-*.info*
+        ## edd 04 Apr 2004 manual is dangling unless r-doc-pdf is installed ...
+        ##(cd $(debdoc)/doc && ln -s ../../../../lib/R/doc/html .)
+        ##(cd $(debdoc)/doc && ln -s ../../../../lib/R/doc/manual .)
+        # ... so install doc as a link, as we already did with library
+        # (cd $(debdoc) && ln -s ../../../lib/R/doc .)
+	(cd $(debdoc) && ln -s ../../R/doc .)
+	(cd $(debdoc) && ln -s ../../../lib/R/library .)
+        # install lintian "silencer"
+	install -p -m 0644  debian/$(corepackage).lintian \
+	   $(debbase)/$(corepackage)/usr/share/lintian/overrides/$(corepackage)
+	install -p -m 0644  debian/$(recdpackage).lintian \
+	   $(debbase)/$(recdpackage)/usr/share/lintian/overrides/$(recdpackage)
+	install -p -m 0644  debian/$(nmathpackage).lintian \
+	   $(debbase)/$(nmathpackage)/usr/share/lintian/overrides/$(nmathpackage)
+#	install -p -m 0644  debian/$(dbugpackage).lintian \
+#	   $(debbase)/$(dbugpackage)/usr/share/lintian/overrides/$(dbugpackage)
+        #dh_undocumented -a
+	dh_installchangelogs -a	-k doc/NEWS
+	dh_strip -a
+#	dh_strip --dbg-package=r-base-core-dbg
+	dh_compress -a
+	dh_fixperms -a
+        #dh_suidregister -a
+	dh_link -a
+	dh_makeshlibs -a
+	dh_installdeb -a
+	dh_perl -a
+	dh_shlibdeps -a -l $(debbase)/$(corepackage)/usr/lib/R/lib
+#	@echo "*** Pruning shlibdeps result from double atlas entry ***"
+#	cat debian/r-base-core.substvars
+#	perl -p -i -e 's/atlas2-base, //' debian/r-base-core.substvars
+#	cat debian/r-base-core.substvars
+#	@echo "*** Pruning atlas from r-recommended shlibdeps ***"
+#	cat debian/r-recommended.substvars
+#	perl -p -i -e 's/atlas2-base, //' debian/r-recommended.substvars
+#	cat debian/r-recommended.substvars
+#	echo "*** Done ***"
+	@echo "*** Getting graphics engine version from 'GraphicsEngine.h' header"
+	echo R_GE_version | cpp -I ./src/include/ -include R_ext/GraphicsEngine.h | tail -n1 | sed 's/^/graphicsengine:Version=/' >> debian/r-base-core.substvars
+	dh_gencontrol -a
+	dh_md5sums -a
+	dh_builddeb -a
+
+#binary: binary-indep binary-arch install-arch install-indep
+binary: make-stamp check binary-arch binary-indep
+
+.PHONY: build clean binary-indep binary-arch binary install install-arch install-indep

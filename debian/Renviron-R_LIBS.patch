@@ -1,0 +1,14 @@
+--- Renviron.orig	2003-04-04 06:52:22.000000000 -0500
++++ Renviron	2003-04-04 06:49:05.000000000 -0500
+@@ -33,6 +33,11 @@
+ PERL=${PERL-'/usr/bin/perl'}
+ TAR=${TAR-'tar'}
+ 
++# edd Apr 2003  Allow local install in /usr/local, also add a directory for
++#               Debian packaged CRAN packages, and finally the default dir 
++# edd Jul 2007  Now use R_LIBS_SITE, not R_LIBS
++R_LIBS_SITE=${R_LIBS_SITE-'/usr/local/lib/R/site-library:/usr/lib/R/site-library:/usr/lib/R/library'}
++
+ ### Local Variables: ***
+ ### mode: sh ***
+ ### sh-indentation: 2 ***

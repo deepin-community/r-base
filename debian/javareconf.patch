@@ -1,0 +1,18 @@
+--- javareconf.orig	2008-08-25 06:26:13.000000000 -0500
++++ javareconf	2008-08-25 06:30:49.000000000 -0500
+@@ -292,9 +295,13 @@
+ 
+ test "${dry_run}" = yes && exit 0
+ 
+-echo "Updating Java configuration in ${R_HOME}"
++## edd 28 Sep 2006  Debian's R config is in /etc/R, so overrride where R_HOME was used
+ 
+-files="${R_HOME}/etc${R_ARCH}/Makeconf ${R_HOME}/etc${R_ARCH}/ldpaths"
++#echo "Updating Java configuration in ${R_HOME}"
++echo "Updating Java configuration in /etc/R"
++
++#files="${R_HOME}/etc${R_ARCH}/Makeconf ${R_HOME}/etc${R_ARCH}/ldpaths"
++files="/etc/R/Makeconf /etc/R/ldpaths"
+ for file in $files; do
+     ${SED-sed} -e "s|JAVA =.\{0,\}|JAVA = $JAVA|" -e "s|JAVA_HOME =.\{0,\}|JAVA_HOME = ${JAVA_HOME}|" -e "s|: \${JAVA_HOME=.\{1,\}|: \${JAVA_HOME=${JAVA_HOME}}|" -e "s|: \${R_JAVA_LD_LIBRARY_PATH=.\{1,\}|: \${R_JAVA_LD_LIBRARY_PATH=${JAVA_LD_LIBRARY_PATH_SH}}|" -e "s|JAVA_LIBS =.\{0,\}|JAVA_LIBS = ${JAVA_LIBS}|g" -e "s|JAVA_LD_LIBRARY_PATH =.\{0,\}|JAVA_LD_LIBRARY_PATH = ${JAVA_LD_LIBRARY_PATH}|" -e "s|JAVAC =.\{0,\}|JAVAC = $JAVAC|" -e "s|JAVAH =.\{0,\}|JAVAH = $JAVAH|" -e "s|JAR =.\{0,\}|JAR = $JAR|" "${file}" -e "s|JAVA_CPPFLAGS =.\{0,\}|JAVA_CPPFLAGS = ${JAVA_CPPFLAGS}|g"> "${file}.new"
+     if test -f "${file}.new"; then

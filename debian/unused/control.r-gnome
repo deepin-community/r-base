@@ -1,0 +1,27 @@
+
+Package: r-gnome
+Section: gnome
+Architecture: all
+Depends: r-base-core 
+Recommends: r-cran-gtkdevice
+Description: GNU R Gnome gui for statistical computing system
+ R is `GNU S' - A language and environment for statistical computing
+ and graphics. R is similar to the award-winning S system, which was
+ developed at Bell Laboratories by John Chambers et al. It provides a
+ wide variety of statistical and graphical techniques (linear and
+ nonlinear modelling, statistical tests, time series analysis,
+ classification, clustering, ...).
+ .
+ R is designed as a true computer language with control-flow
+ constructions for iteration and alternation, and it allows users to
+ add additional functionality by defining new functions. For
+ computationally intensive tasks, C, C++ and Fortran code can be
+ linked and called at run time.
+ .
+ This package used to provide the dynamic link libraries needed to start 
+ GNU R with the GNOME libraries frontend as in "R --gui=GNOME".
+ .
+ As of R 2.1.0, this interface is no longer provided with the upstream
+ sources. As such, this package is now an empty stub that will be removed
+ in a subsequent revision of the Debian package.
+

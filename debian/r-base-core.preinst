@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# preinst script for the Debian GNU/Linux r-base-core package
+# This version written by Dirk Eddelbuettel <edd@debian.org>   
+
+set -e
+
+#DEBHELPER#
+    
+case "$1" in
+    install|upgrade)
+	# edd 06 Feb 2006 2.2.1-4 created this symlink, we now want a directory
+    	if [ -h /usr/lib/R/share ]
+	then
+	    echo "Removing symbolic link /usr/lib/R/share"
+	    rm /usr/lib/R/share
+	fi
+	# edd 27 Jul 2006 this is now a softlink but used to be a dir
+	dir=/usr/share/doc/r-base-core/doc
+    	if [ -d $dir ] && [ ! -h $dir ]
+	then
+	    rmdir $dir
+	fi
+    ;;
+ 
+    abort-upgrade)
+    ;;
+ 
+    *)
+        echo "preinst called with unknown argument \`$1'" >&2
+    ;;
+esac
+
+exit 0

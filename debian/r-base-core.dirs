@@ -1,0 +1,13 @@
+etc/R
+etc/ld.so.conf.d
+usr/share/bash-completion/completions
+usr/bin
+usr/lib/R
+usr/lib/R/site-library
+usr/share/doc/r-base-core
+usr/share/lintian/overrides
+usr/share/R/include/
+usr/share/texmf/tex/latex
+usr/share/icons/hicolor/48x48/apps
+usr/share/icons/hicolor/scalable/apps
+usr/share/applications

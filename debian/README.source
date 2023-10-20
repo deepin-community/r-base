@@ -1,0 +1,72 @@
+
+Explanation for binary files inside source package according to
+
+  http://lists.debian.org/debian-devel/2013/09/msg00332.html
+
+Files: tests/arima.rda
+Documentation: https://bugs.r-project.org/bugzilla/show_bug.cgi?id=15396
+
+  -> Initialization issue for particular ARIMA model fit
+     Bug report quoted gives complete (simulated) data set.
+
+
+Files: tests/nanbug.rda
+Documentation: https://bugs.r-project.org/bugzilla/show_bug.cgi?id=1267
+
+  -> Bug report from 2002 (!!) about hashed values of NaN. Reference output
+
+
+Files: src/library/datasets/data/CO2.rda
+Documentation: src/library/datasets/man/co2.Rd
+
+  -> Mauna Loa Atmospheric CO2 Concentration
+
+     Keeling, C. D. and  Whorf, T. P.,
+     Scripps Institution of Oceanography (SIO),
+     University of California,
+     La Jolla, California USA 92093-0220.
+
+     ftp://cdiac.esd.ornl.gov/pub/maunaloa-co2/maunaloa.co2
+
+
+Files: src/library/datasets/data/crimtab.rda
+Documentation: src/library/datasets/man/crimtab.Rd
+
+  -> Student's 3000 Criminals Data
+
+     Garson, J.G. (1900)
+     The metric system of identification of criminals, as used in in Great
+     Britain and Ireland.
+     \emph{The Journal of the Anthropological Institute of Great Britain
+       and Ireland} \bold{30}, 161--198.
+
+     MacDonell, W.R. (1902)
+     On criminal anthropometry and the identification of criminals.
+     \emph{Biometrika} \bold{1}, 2, 177--227.
+
+     Student (1908) The probable error of a mean.
+     \emph{Biometrika} \bold{6}, 1--25.
+
+
+Files: src/library/datasets/data/npk.rda
+Documentation: src/library/datasets/man/npk.Rd
+
+  -> Classical N, P, K Factorial Experiment
+
+     Venables, W. N. and Ripley, B. D. (2002)
+     \emph{Modern Applied Statistics with S.} Fourth edition.  Springer.
+
+
+Files: src/library/datasets/data/UScitiesD.rda
+Documentation: src/library/datasets/man/eurodist.Rd
+
+  -> Distances Between European Cities and Between US Cities
+
+     Crystal, D. Ed. (1990)
+     \emph{The Cambridge Encyclopaedia}.
+     Cambridge: Cambridge University Press,
+
+     The US cities distances were provided by Pierre Legendre.
+
+
+ -- Dirk Eddelbuettel <edd@debian.org>, Sat, 23 Sep 2017 14:03:43 -0500
