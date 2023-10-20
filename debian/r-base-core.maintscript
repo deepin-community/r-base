@@ -1,0 +1,1 @@
+mv_conffile /etc/bash_completion.d/R /usr/share/bash-completion/completions/R

@@ -1,0 +1,20 @@
+Description: define for long double on ppc64
+Author: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Bug-Debian: https://bugs.debian.org/946836
+Forwarded: https://github.com/wch/r-source/commit/1b588f18b1802de3370515181f9ba04a2dee3f42
+Reviewed-By: Dirk Eddelbuettel <edd@debian.org>
+Last-Update: 2020-03-25
+
+--- r-base-3.6.3.orig/src/main/arithmetic.c
++++ r-base-3.6.3/src/main/arithmetic.c
+@@ -178,8 +178,8 @@ void attribute_hidden InitArithmetic()
+ 
+ 
+ #if HAVE_LONG_DOUBLE && (SIZEOF_LONG_DOUBLE > SIZEOF_DOUBLE)
+-# ifdef __PPC64__
+- // PowerPC 64 (when gcc has -mlong-double-128) fails constant folding with LDOUBLE
++# ifdef __powerpc__
++ // PowerPC (when gcc has -mlong-double-128) fails constant folding with LDOUBLE
+ #  define q_1_eps (1 / LDBL_EPSILON)
+ # else
+ static LDOUBLE q_1_eps = 1 / LDBL_EPSILON;

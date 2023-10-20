@@ -1,0 +1,42 @@
+Description: Modify R_LIBS_USER and R_LIBS_SITE for Debian settings
+ This goes back to a decision made jointly with R Core upstream in the early 
+ 2000s to support three default directories: /usr/lib/R/library for base and recommended
+ packages (as part of the binary), /usr/lib/R/site-library for binary r-cran-* packages
+ as part of the distro, and /usr/local/lib/R/site-library for user-controlled, non-distro
+ packages to be visible system-wide.
+ .
+ A recent-ish change in R 4.2.* made it that we needed to change where we set this here
+ and not in Renviron.site which would not be read in 'R -q' mode.
+ .
+ r-base (4.2.2.20221110-2) unstable; urgency=medium
+ .
+   [ Dirk Eddelbuettel ]
+   * debian/patches/set_R_LIBS_USER_and_SITE_in_Renviron.patch: Modified following 
+     helpful email discussion with Kurt Hornik
+   * debian/control: Remove Depends: on perl in light of change by Giole
+ .
+   [ Adrian Bunk ]
+   * debian/rukes: Set -ffloat-store on i386
+ .
+   [ Giole Barabucci ]
+   * debian/r-base-core.postinst: Simplify one perl substitution call to sed
+Author: Dirk Eddelbuettel <edd@debian.org>
+Forwarded: not-needed
+Last-Update: 2023-01-20
+
+--- r-base-4.2.2.20221110.orig/etc/Renviron.in
++++ r-base-4.2.2.20221110/etc/Renviron.in
+@@ -48,8 +48,12 @@ R_SYSTEM_ABI='@R_SYSTEM_ABI@'
+ R_STRIP_SHARED_LIB=${R_STRIP_SHARED_LIB-'@STRIP_SHARED_LIB@'}
+ R_STRIP_STATIC_LIB=${R_STRIP_STATIC_LIB-'@STRIP_STATIC_LIB@'}
+ 
++# edd Apr 2003  Allow local install in /usr/local, also add a directory for
++#               Debian packaged CRAN packages, and finally the default dir
++# edd Jul 2007  Now use R_LIBS_SITE, not R_LIBS
++# edd Jan 2023  Modify R_LIBS_{USER,SITE} respecting existing values (cf discussion with Kurt Hornik)
+ R_LIBS_USER=${R_LIBS_USER:-'%U'}
+-R_LIBS_SITE=${R_LIBS_SITE:-'%S'}
++R_LIBS_SITE=${R_LIBS_SITE:-'/usr/local/lib/R/site-library:%S'}
+ 
+ ### Local Variables: ***
+ ### mode: sh ***

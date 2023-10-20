@@ -1,0 +1,149 @@
+diff -uNr R-2.5.0/src/nmath/standalone/Makefile.in R-2.5.0-patched/src/nmath/standalone/Makefile.in
+--- R-2.5.0/src/nmath/standalone/Makefile.in	2007-03-26 18:42:08.000000000 +0200
++++ R-2.5.0-patched/src/nmath/standalone/Makefile.in	2007-04-29 14:50:55.000000000 +0200
+@@ -67,7 +67,7 @@
+ libRmath_la_LDFLAGS =
+ 
+ CLEANFILES = Makedeps *.d *.o *.lo test $(SOURCES)
+-DISTCLEANFILES = Makefile $(Rexeclibdir_LIBRARIES) $(Rexeclibdir_LTLIBRARIES)
++DISTCLEANFILES = Makefile libRmath.pc $(Rexeclibdir_LIBRARIES) $(Rexeclibdir_LTLIBRARIES)
+ 
+ DEFS = -DHAVE_CONFIG_H -DMATHLIB_STANDALONE
+ ALL_CPPFLAGS = $(R_XTRA_CPPFLAGS) -I$(srcdir)/.. $(CPPFLAGS) $(DEFS)
+@@ -78,7 +78,7 @@
+ @r_cc_lo_rules_frag@
+ 
+ 
+-all: Makefile inc static shared
++all: Makefile inc static shared build-pc
+ 
+ inc:
+ 	(cd ../../include; $(MAKE) Rmath.h)
+@@ -100,6 +100,11 @@
+ shared: Makefile ../../include/Rconfig.h Copy Makedeps
+ 	@$(MAKE) $(Rexeclibdir_LTLIBRARIES)
+ 
++build-pc:
++	@$(SED) -e "s:@libdir:$(libdir):" -e "s:@includedir:$(includedir):" \
++	  -e 's/@VERSION/$(VERSION)/' -e 's/@libm/$(LIBM)/' $(srcdir)/libRmath.pc.in \
++	  > "libRmath.pc"
++
+ ../../include/Rconfig.h:
+ 	(cd $(@D); $(MAKE) $(@F))
+ 
+@@ -163,9 +168,7 @@
+ 
+ install-pc:
+ 	@$(MKINSTALLDIRS) "$(libdir)/pkgconfig"
+-	@$(SED) -e "s:@libdir:$(libdir):" -e "s:@includedir:$(includedir):" \
+-	  -e 's/@VERSION/$(VERSION)/' -e 's/@libm/$(LIBM)/' $(srcdir)/libRmath.pc.in \
+-	  > "$(libdir)/pkgconfig/libRmath.pc"
++	@$(INSTALL_DATA) libRmath.pc "$(libdir)/pkgconfig/libRmath.pc"
+ 
+ uninstall:
+ 	@rm -f $(includedir)/Rmath.h $(libdir)/$(libRmath_la) $(libdir)/libRmath.a "$(libdir)/pkgconfig/libRmath.pc"
+diff -uNr R-2.5.0/src/scripts/Makefile.in R-2.5.0-patched/src/scripts/Makefile.in
+--- R-2.5.0/src/scripts/Makefile.in	2007-03-26 18:42:09.000000000 +0200
++++ R-2.5.0-patched/src/scripts/Makefile.in	2007-04-29 14:50:14.000000000 +0200
+@@ -23,17 +23,22 @@
+ DISTFILES = Makefile.in Makefile.win $(SCRIPTS_S) $(SCRIPTS_B_IN) R.sh.in
+ 
+ CLEANFILES =
+-DISTCLEANFILES = Makefile R.fe R.sh $(SCRIPTS_B)
++DISTCLEANFILES = Makefile R.fe R.fe2 R.sh $(SCRIPTS_B)
+ 
+ all: Makefile R
+ 
+ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+ 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+ 
+-R: $(SCRIPTS_B) R.fe
++R: $(SCRIPTS_B) R.fe R.fe2
+ 	@$(MAKE) rhome=$(top_builddir) install-cmds
+ 	@$(INSTALL_SCRIPT) R.fe $(top_builddir)/bin/R
+ 
++R.fe2: 
++	@(d=`echo '$(rhome)' | sed 's,/,\\\/,g';`; \
++	  sed -e "s/\\(R_HOME_DIR=\\).*/\\1$${d}/;" -e "s+\\(R_SHARE_DIR=\\).*+\\1$(rsharedir)+;" -e  "s+\\(R_INCLUDE_DIR=\\).*+\\1$(rincludedir)+;" -e "s+\\(R_DOC_DIR=\\).*+\\1$(rdocdir)+;"\
++	  < R.fe > $@)
++
+ ## <NOTE>
+ ## Seems we need target rules for creating FOO from FOO.in: pattern
+ ## rules ('%:%.in') are not portable, and some versions of Make do not
+@@ -95,10 +100,8 @@
+ 
+ install: installdirs install-cmds
+ 	@rm -f $(bindir)/R
+-	@(d=`echo '$(rhome)' | sed 's,/,\\\/,g';`; \
+-	  sed -e "s/\\(R_HOME_DIR=\\).*/\\1$${d}/;" -e "s+\\(R_SHARE_DIR=\\).*+\\1$(rsharedir)+;" -e  "s+\\(R_INCLUDE_DIR=\\).*+\\1$(rincludedir)+;" -e "s+\\(R_DOC_DIR=\\).*+\\1$(rdocdir)+;"\
+-	  < R.fe > "$(Rexecbindir)/R")
+-	@$(INSTALL_SCRIPT)  "$(Rexecbindir)/R" "$(bindir)/R"
++	@$(INSTALL_SCRIPT)  R.fe2 "$(Rexecbindir)/R"
++	@$(INSTALL_SCRIPT)  R.fe2 "$(bindir)/R"
+ 	@chmod 755 "$(bindir)/R" "$(Rexecbindir)/R"
+ ## why of all the scriots does this alone chmod just one copy?
+ installdirs:
+diff -uNr R-2.5.0/src/unix/Makefile.in R-2.5.0-patched/src/unix/Makefile.in
+--- R-2.5.0/src/unix/Makefile.in	2007-03-26 18:41:33.000000000 +0200
++++ R-2.5.0-patched/src/unix/Makefile.in	2007-04-29 14:51:55.000000000 +0200
+@@ -26,7 +26,7 @@
+ 
+ @WANT_R_SHLIB_TRUE@ALL_CFLAGS = $(ALL_CFLAGS_LO)
+ 
+-all: Makefile Makedeps R
++all: Makefile Makedeps R 
+ 
+ Makefile: $(srcdir)/Makefile.in \
+   $(top_builddir)/config.status \
+@@ -38,11 +38,23 @@
+ 	@cat $(DEPENDS) >> Makefile
+ 	@touch $@
+ 
+-R: Makefile
++R: Makefile 
+ 	@$(MAKE) Makedeps
+ @WANT_R_SHLIB_FALSE@	@$(MAKE) libunix.a
+ @WANT_R_SHLIB_TRUE@	@$(MAKE) stamp-lo
++	@$(MAKE) rhome=$(abs_top_builddir) build-Rscript
+ 	@$(MAKE) rhome=$(abs_top_builddir) install-Rscript
++	@$(MAKE) build-Rscript
++	@$(MAKE) build-pc
++
++build-pc:
++	@$(SED) -e "s:@rhome:$(rhome):" -e "s:@rincludedir:$(rincludedir):" \
++	  -e 's/@VERSION/$(VERSION)/' $(srcdir)/libR.pc.in \
++	  > "libR.pc"
++
++build-Rscript:
++	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -DR_HOME='"$(rhome)"' -o Rscript \
++	  $(srcdir)/Rscript.c
+ 
+ ## is this portable?
+ ../include/Rversion.h:
+@@ -60,22 +72,19 @@
+ clean:
+ 	@-rm -rf .libs _libs
+ 	@-rm -f Makedeps *.d *.o *.a *.lo *.la stamp-lo
++	@-rm -f Rscript libR.pc
+ distclean: clean
+ 	@-rm -f Makefile
+ maintainer-clean: distclean
+ 
+-## we need to build at install time to capture the correct 'rhome'
++## install previously built Rscript
+ install-Rscript:
+-	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -DR_HOME='"$(rhome)"' -o Rscript \
+-	  $(srcdir)/Rscript.c
+ 	@$(MKINSTALLDIRS) "$(Rexecbindir)"
+ 	@$(INSTALL_PROGRAM) Rscript "$(Rexecbindir)/Rscript"
+-## substitute at install time to allow 'prefix' to be overridden
++## install previously built libR.pc
+ install-pc:
+ 	@$(MKINSTALLDIRS) "$(libdir)/pkgconfig"
+-	@$(SED) -e "s:@rhome:$(rhome):" -e "s:@rincludedir:$(rincludedir):" \
+-	  -e 's/@VERSION/$(VERSION)/' $(srcdir)/libR.pc.in \
+-	  > "$(libdir)/pkgconfig/libR.pc"
++	@$(INSTALL_DATA) libR.pc "$(libdir)/pkgconfig/libR.pc"
+ install: install-Rscript @WANT_R_SHLIB_TRUE@ install-pc
+ 	@$(MKINSTALLDIRS) "$(bindir)"
+ 	@$(INSTALL_PROGRAM) Rscript "$(bindir)/Rscript"

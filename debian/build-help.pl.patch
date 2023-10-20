@@ -1,0 +1,38 @@
+--- build-help.pl.orig	2005-07-27 15:10:08.000000000 -0500
++++ build-help.pl	2005-09-28 20:28:08.000000000 -0500
+@@ -17,6 +17,10 @@
+ # writing to the Free Software Foundation, Inc., 59 Temple Place,
+ # Suite 330, Boston, MA  02111-1307  USA.
+ 
++# edd Sep 2005  R 2.2.0 no longer supports (or needs) --htmllists, yet all
++#               of the r-cran-* postinst still call it so we need this patch
++#               implementing a null-op function to show it is recognised.
++
+ use File::Basename;
+ use Cwd;
+ use Getopt::Long;
+@@ -33,11 +37,12 @@
+ ($name = $0) =~ s|.*/||;
+ 
+ @knownoptions = ("rhome:s", "html", "txt", "latex", "example", "debug|d",
+-		 "dosnames", "help|h", "version|v", "os|OS:s", 
++		 "dosnames", "help|h", "version|v", "os|OS:s", "htmllists",
+ 		 "index");
+ GetOptions (@knownoptions) || usage();
+ &R_version($name, $version) if $opt_version;
+ &usage() if $opt_help;
++htmllists() if $opt_htmllists;
+ 
+ $OSdir ="unix";
+ $OSdir = $opt_os if $opt_os;
+@@ -268,3 +273,10 @@
+ END
+   exit 0;
+ }
++
++sub htmllists {
++  print STDERR <<END;
++Ignoring deprecated option --htmllists called from postinst or postrm script.
++END
++  exit 0;
++}

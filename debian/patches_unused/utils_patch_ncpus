@@ -1,0 +1,76 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ r-base (3.5.2-1.1) unstable; urgency=medium
+ .
+   [unreleased]
+   * debian/control: Change Suggests: to elpa-ess	(Closes: #917246)
+ .
+   [testing only]
+   * src/library/utils/packages2.R: Proposed patch
+Author: Dirk Eddelbuettel <edd@debian.org>
+Bug-Debian: https://bugs.debian.org/917246
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2019-01-18
+
+--- r-base-3.5.2.orig/src/library/utils/R/packages2.R
++++ r-base-3.5.2/src/library/utils/R/packages2.R
+@@ -408,7 +408,7 @@ install.packages <-
+ 
+         hasArchs <-  !is.na(av2[bins, "Archs"])
+         needsCmp <- !(available[bins, "NeedsCompilation"] %in% "no")
+-        hasSrc <- hasArchs | needsCmp  
++        hasSrc <- hasArchs | needsCmp
+ 
+         srcvers <- available[bins, "Version"]
+         later <- as.numeric_version(binvers) < srcvers
+@@ -740,12 +740,12 @@ install.packages <-
+             ## if --no-lock or --lock was specified in INSTALL_opts
+             ## that will override this.
+             args0 <- c(args0, "--pkglock")
+-            tmpd <- file.path(tempdir(), "make_packages")
+-            if (!file.exists(tmpd) && !dir.create(tmpd))
++            tmpd2 <- file.path(tempdir(), "make_packages")
++            if (!file.exists(tmpd2) && !dir.create(tmpd2))
+                 stop(gettextf("unable to create temporary directory %s",
+-                              sQuote(tmpd)),
++                              sQuote(tmpd2)),
+                      domain = NA)
+-            mfile <- file.path(tmpd, "Makefile")
++            mfile <- file.path(tmpd2, "Makefile")
+             conn <- file(mfile, "wt")
+             deps <- paste(paste0(update[, 1L], ".ts"), collapse=" ")
+             deps <- strwrap(deps, width = 75, exdent = 2)
+@@ -789,7 +789,7 @@ install.packages <-
+                     "", sep = "\n", file = conn)
+             }
+             close(conn)
+-            cwd <- setwd(tmpd)
++            cwd <- setwd(tmpd2)
+             on.exit(setwd(cwd))
+             ## MAKE will be set by sourcing Renviron
+             status <- system2(Sys.getenv("MAKE", "make"),
+@@ -809,7 +809,7 @@ install.packages <-
+             if(keep_outputs)
+                 file.copy(paste0(update[, 1L], ".out"), outdir)
+             setwd(cwd); on.exit()
+-            unlink(tmpd, recursive = TRUE)
++            unlink(tmpd2, recursive = TRUE)
+         } else {
+             outfiles <- paste0(update[, 1L], ".out")
+             for(i in seq_len(nrow(update))) {

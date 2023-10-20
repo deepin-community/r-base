@@ -1,0 +1,12 @@
+--- Renviron.orig	2005-09-08 23:00:58.000000000 -0500
++++ Renviron	2006-01-07 11:31:07.000000000 -0600
+@@ -6,7 +6,8 @@
+ 
+ R_PLATFORM=${R_PLATFORM-'i486-pc-linux-gnu'}
+ ## Default printer paper size
+-R_PAPERSIZE=${R_PAPERSIZE-'letter'}
++## edd 07 Jan 2006  try determining this at start-time based on paperconf
++R_PAPERSIZE=${R_PAPERSIZE-`paperconf`}
+ ## Default print command
+ R_PRINTCMD=${R_PRINTCMD-'/usr/bin/lpr'}
+ ## Default TeXMF stuff
