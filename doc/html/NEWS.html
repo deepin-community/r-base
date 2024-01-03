@@ -18,6 +18,174 @@ function processMathHTML() {
 
 <h2 id='NEWS'>R News</h2>
 
+<h3><img src="../help/figures/../../html/Rlogo.svg" class="toplogo" alt="[R logo]" /> CHANGES IN R 4.3.2</h3>
+
+
+
+<h4>NEW FEATURES</h4>
+
+
+<ul>
+<li><p> The default initialization of the <code>"repos"</code> option
+from the &lsquo;<span class="file">repositories</span>&rsquo; file at startup can be skipped by
+setting environment variable <span class="env">R_REPOSITORIES</span> to <code>NULL</code>
+such that <code>getOption("repos")</code> is empty if not set elsewhere.
+</p>
+</li>
+<li> <p><code>qr.X()</code> is now an implicit S4 generic in <span class="pkg">methods</span>.
+</p>
+</li>
+<li> <p><code>iconv(to = "ASCII//TRANSLIT")</code> is emulated using
+substitution on platforms which do not support it (notably Alpine
+Linux).  This should give a human-readable conversion in ASCII on
+all platforms (rather than <code>NA_character_</code>).
+</p>
+</li>
+<li> <p><code>trans3d()</code> gains options <code>continuous</code> and
+<code>verbose</code> addressing the problem of possible &ldquo;wrap
+around&rdquo; when projecting too long curves, as reported by Achim Zeileis
+in <a href="https://bugs.R-project.org/show_bug.cgi?id=18537">PR#18537</a>.
+</p>
+</li>
+<li> <p><code>tools::showNonASCII()</code> has been rewritten to work
+better on macOS 14 (which has a changed implementation of
+<code>iconv()</code>).
+</p>
+</li>
+<li> <p><code>tiff(type = "quartz")</code> (the default on macOS) now warns
+if <code>compression</code> is specified: it continues to be ignored.
+</p>
+</li></ul>
+
+
+
+
+<h4>INSTALLATION on a UNIX-ALIKE</h4>
+
+
+<ul>
+<li><p> There is some support for building with Intel's LLVM-based
+compilers on &lsquo;<span class="samp">&#8288;x86_64&#8288;</span>&rsquo; Linux, such as (C) <code>icx</code>, (C++)
+<code>ipcx</code> and (Fortran) <code>ifx</code> from oneAPI 2023.x.y.
+</p>
+</li>
+<li><p> There is support for using LLVM's <code>flang-new</code> as the
+Fortran compiler from LLVM 16.0.x (preferably 17.0.0
+or later).
+</p>
+</li></ul>
+
+
+
+
+<h4>UTILITIES</h4>
+
+
+<ul>
+<li> <p><code>R CMD check</code> reports the use of the Fortran 90 random
+number generator <code>RANDOM_NUMBER()</code> and the subroutines to
+initialize it.
+</p>
+<p>&lsquo;Writing R Extensions&rsquo; has example code to use <span class="rlang"><b>R</b></span>'s RNGs
+from Fortran.
+</p>
+</li></ul>
+
+
+
+
+<h4>BUG FIXES</h4>
+
+
+<ul>
+<li> <p><code>substr(x, n, L) &lt;- cc</code> now works (more) correctly for
+multibyte UTF-8 strings <code>x</code> when <code>L &gt; nchar(x)</code>, thanks to
+a report and patch by &lsquo;Architect 95&rsquo;.
+</p>
+</li>
+<li> <p><code>contrib.url(character())</code> now returns 0-length
+<code>character()</code> as documented, which also avoids spurious
+warnings from <code>available.packages()</code> et al. in the
+edge case of an empty vector of repository URLs.
+</p>
+</li>
+<li> <p><code>readChar(., 4e8)</code> no longer fails, thanks to Kodi Arfer's
+report (<a href="https://bugs.R-project.org/show_bug.cgi?id=18557">PR#18557</a>).
+</p>
+</li>
+<li> <p><code>lapply(&lt;list&gt;, as.data.frame)</code> no longer warns falsely for
+some base vector components.
+</p>
+</li>
+<li><p> Communication between parent and child processes in the
+<code>multicore</code> part of <code>parallel</code> could fail on platforms
+that do not support an arbitrarily large payload in system
+functions <code>read()</code>/<code>write()</code> on pipes (seen on macOS
+where a restriction to <code>INT_MAX</code> bytes is documented, without
+doing a partial read unlike Linux). The payload is now split into
+1Gb chunks to avoid that problem. (<a href="https://bugs.R-project.org/show_bug.cgi?id=18571">PR#18571</a>)
+</p>
+</li>
+<li> <p><code>qqplot(x,y, conf.level=.)</code> gives better confidence bounds
+when <code>length(x) != length(y)</code>, thanks to Alexander Ploner's
+report and patch proposal (<a href="https://bugs.R-project.org/show_bug.cgi?id=18557">PR#18557</a>).
+</p>
+</li>
+<li> <p><code>norm(&lt;0-length&gt;, "2")</code> now gives zero instead of an
+error, as all the other norm types, thanks to Mikael Jagan's <a href="https://bugs.R-project.org/show_bug.cgi?id=18542">PR#18542</a>.
+</p>
+</li>
+<li><p> Build-stage Rd macros <code style="white-space: pre;">&#8288;\packageAuthor&#8288;</code> and
+<code style="white-space: pre;">&#8288;\packageMaintainer&#8288;</code> now process &lsquo;<span class="samp">&#8288;Authors@R&#8288;</span>&rsquo;,
+fixing &lsquo;<span class="samp">&#8288;NA&#8288;</span>&rsquo; results when the package &lsquo;<span class="file">DESCRIPTION</span>&rsquo; omits
+&lsquo;<span class="samp">&#8288;Author&#8288;</span>&rsquo; and &lsquo;<span class="samp">&#8288;Maintainer&#8288;</span>&rsquo; fields.
+</p>
+</li>
+<li><p> Formatting and printing complex numbers could give things
+like &lsquo;<span class="samp">&#8288;0.1683-0i&#8288;</span>&rsquo; because of rounding error: &lsquo;<span class="samp">&#8288;-0i&#8288;</span>&rsquo; is now
+replaced by &lsquo;<span class="samp">&#8288;+0i&#8288;</span>&rsquo;.
+</p>
+</li>
+<li> <p><code>postscript()</code> refused to accept a <code>title</code> comment
+containing the letter &ldquo;W&rdquo; (<a href="https://bugs.R-project.org/show_bug.cgi?id=18599">PR#18599</a>).
+</p>
+</li>
+<li> <p><code>isoreg(c(1,Inf))</code> signals an error instead of
+segfaulting, fixing <a href="https://bugs.R-project.org/show_bug.cgi?id=18603">PR#18603</a>.
+</p>
+</li>
+<li> <p><code>tiff(type = "Xlib")</code> was only outputting the last page
+of multi-page plots.
+</p>
+</li>
+<li> <p><code>tools::latexToUtf8()</code> again knows about &lsquo;<span class="samp">&#8288;\~{n}&#8288;</span>&rsquo;
+and other letters with tilde, fixing a regression in <span class="rlang"><b>R</b></span> 4.3.0,
+and about &lsquo;<span class="samp">&#8288;\^{i}&#8288;</span>&rsquo; as an alternative to &lsquo;<span class="samp">&#8288;\^{\i}&#8288;</span>&rsquo;
+(similarly with other accents).
+Furthermore, LaTeX codes for accented I letters are now
+correctly converted, also fixing related mistakes in
+<code>tools::encoded_text_to_latex()</code>.
+</p>
+</li>
+<li> <p><code>tar(*, tar = "internal")</code> no longer creates out-of-spec
+tar files in the very rare case of user or group names longer than
+32 bytes, fixing <a href="https://bugs.R-project.org/show_bug.cgi?id=17871">PR#17871</a> with thanks to Ivan Krylov.
+</p>
+</li>
+<li><p> When using the &ldquo;internal&rdquo; timezone datetime code, adding
+a fraction of a second no longer adds one second, fixing <a href="https://bugs.R-project.org/show_bug.cgi?id=16856">PR#16856</a>
+from a patch by Ivan Krylov.
+</p>
+</li>
+<li> <p><code>tools::checkRd()</code> no longer produces spurious notes
+about &ldquo;unnecessary braces&rdquo; from multi-line Rd results of
+<code style="white-space: pre;">&#8288;\Sexpr&#8288;</code> macros.
+</p>
+</li></ul>
+
+
+
+
 <h3><img src="../help/figures/../../html/Rlogo.svg" class="toplogo" alt="[R logo]" /> CHANGES IN R 4.3.1</h3>
 
 
@@ -1506,7 +1674,7 @@ overflow reliably.
 </p>
 </li>
 <li> <p><code>tar(., files=*)</code> now produces correctly the warning
-about invalid uid or gid of files, fixing <a href="https://bugs.R-project.org/show_bug.cgi?id=18344">PR#18344</a>, reported by
+about invalid UID or GID of files, fixing <a href="https://bugs.R-project.org/show_bug.cgi?id=18344">PR#18344</a>, reported by
 Martin Morgan.
 </p>
 </li>
@@ -1546,7 +1714,7 @@ has been improved to pass <code>tidy</code> 5.8.0.
 <ul>
 <li><p> Writing to a clipboard connection works again, fixing a
 regression in <span class="rlang"><b>R</b></span> 4.2.0 (<a href="https://bugs.R-project.org/show_bug.cgi?id=18332">PR#18332</a>).  Re-using a closed clipboard
-connection longer issues a spurious warning about an ignored
+connection no longer issues a spurious warning about an ignored
 encoding argument.
 </p>
 </li>

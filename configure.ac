@@ -2,7 +2,7 @@
 ###
 ### Process this file with autoconf to produce a configure script.
 ###
-### Copyright (C) 1998-2022 R Core Team
+### Copyright (C) 1998-2023 R Core Team
 ###
 ### This file is part of R.
 ###
@@ -1399,6 +1399,7 @@ if test -n "${XMKMF}"; then
 fi
 
 ## Step 2.  GNU compilers.
+## (And those C/C++ compilers claiming conformity.)
 if test "${GCC}" = yes; then
   case "${host_cpu}" in
 ## Sparc has only an 8k global object table, 1024 entries on 64-bit.
@@ -1428,8 +1429,9 @@ if test "${ac_cv_fc_compiler_gnu}" = yes; then
   esac
 fi
 ## Assume flang is the same as clang (it is a modified front end)
+## Also flang-new
 case "${FC}" in
-  *flang|flang-*)
+  *flang|*flang-new)
     fpicflags=${cpicflags}
     ;;
 esac
@@ -1481,8 +1483,17 @@ case "${host_os}" in
     darwin_pic="-fPIC"
     dylib_undefined_allowed=no
     darwin_dylib_ldflags="-dynamiclib"
-    shlib_ldflags="-dynamiclib -Wl,-headerpad_max_install_names -undefined dynamic_lookup -single_module -multiply_defined suppress"
-    ## * recent ld has -single_module so it doesn't need -fno-common
+    ##  -single_module is default and -multiply_defined is obsolete
+    ## at least since macOS 11 (darwin 20)
+    case "${host_os}" in
+      darwin1*)
+        shlib_ldflags="-dynamiclib -Wl,-headerpad_max_install_names -undefined dynamic_lookup -single_module -multiply_defined suppress"
+      ;;
+      *)
+        shlib_ldflags="-dynamiclib -Wl,-headerpad_max_install_names -undefined dynamic_lookup"
+      ;;
+    esac
+## * recent ld has -single_module so it doesn't need -fno-common
     ##   we have to use dylib instead of a bundle
     ## * dylib+single_module+flat_namespace=pretty much what other platforms call .so
     ##   but there can be no multiple symbols (due to flat namespace)
@@ -1515,7 +1526,14 @@ rm -f libconftest${DYLIB_EXT} conftest.c
        r_cv_has_dynlookup=forced-no
     fi
     if test "${r_cv_has_dynlookup}" != "yes"; then
-       shlib_ldflags="-dynamiclib -flat_namespace -undefined suppress -single_module -multiply_defined suppress"
+      case "${host_os}" in
+         darwin1*)
+          shlib_ldflags="-dynamiclib -flat_namespace -undefined suppress -single_module -multiply_defined suppress"
+         ;;
+         *)
+           shlib_ldflags="-dynamiclib -flat_namespace -undefined suppress"
+         ;;
+       esac
        dylib_undefined_allowed=yes
     fi
 	
@@ -1585,7 +1603,7 @@ dnl     ;;
     esac
     case  "${FC}" in
       ## Intel compilers
-      *ifc|*ifort)
+      *ifc|*ifort|*ifx)
         fpicflags="-fpic"
         ;;
       ## Nvidia (formerly Portland Group)

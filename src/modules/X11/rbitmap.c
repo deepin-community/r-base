@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1999       Guido Masarotto
- *  Copyright (C) 1999-2022  The R Core Team
+ *  Copyright (C) 1999-2023  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -457,6 +457,7 @@ int R_SaveAsJpeg(void  *d, int width, int height,
 #ifdef HAVE_TIFF
 
 #include <tiffio.h>
+#include <Rversion.h>
 
 int R_SaveAsTIFF(void  *d, int width, int height,
 		unsigned int (*gp)(void *, int, int),
@@ -464,7 +465,6 @@ int R_SaveAsTIFF(void  *d, int width, int height,
 {
     TIFF *out;
     int sampleperpixel;
-    tsize_t linebytes;
     unsigned char *buf, *pscanline;
     unsigned int col, i, j;
     int have_alpha = 0;
@@ -493,19 +493,7 @@ int R_SaveAsTIFF(void  *d, int width, int height,
     TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
     TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
     TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
-#if 0
-    /* Possible compression values
-       COMPRESSION_NONE = 1;
-       COMPRESSION_CCITTRLE = 2;
-       COMPRESSION_CCITTFAX3 = COMPRESSION_CCITT_T4 = 3;
-       COMPRESSION_CCITTFAX4 = COMPRESSION_CCITT_T6 = 4;
-       COMPRESSION_LZW = 5;
-       COMPRESSION_JPEG = 7;
-       COMPRESSION_DEFLATE = 32946;
-       COMPRESSION_ADOBE_DEFLATE = 8;
-    */
-    TIFFSetField(out, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
-#endif
+    TIFFSetField(out, TIFFTAG_SOFTWARE, "R " R_MAJOR "." R_MINOR);
     if(compression > 1) {
 	if (compression > 10) {
 	    TIFFSetField(out, TIFFTAG_COMPRESSION, compression - 10);
@@ -520,11 +508,12 @@ int R_SaveAsTIFF(void  *d, int width, int height,
 	TIFFSetField(out, TIFFTAG_YRESOLUTION, (float) res);
     }
 
-    linebytes = sampleperpixel * width;
-    if (TIFFScanlineSize(out))
-	buf =(unsigned char *)_TIFFmalloc(linebytes);
-    else
-	buf = (unsigned char *)_TIFFmalloc(TIFFScanlineSize(out));
+    buf = (unsigned char *)_TIFFmalloc(TIFFScanlineSize(out));
+    if (!buf) {
+	TIFFClose(out);
+	warning("allocation failure in R_SaveAsTIF");
+	return 0;
+    }
 
     for (i = 0; i < height; i++) {
 	pscanline = buf;
@@ -535,7 +524,7 @@ int R_SaveAsTIFF(void  *d, int width, int height,
 	    *pscanline++ = GETBLUE(col) ;
 	    if(have_alpha) *pscanline++ = GETALPHA(col) ;
 	}
-	TIFFWriteScanline(out, buf, i, 0);
+	if(TIFFWriteScanline(out, buf, i, 0) == -1) break;
     }
     TIFFClose(out);
     _TIFFfree(buf);

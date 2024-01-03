@@ -45,7 +45,7 @@ cc <- capture.output(print(dt <- .POSIXct(154e7 + (0:200)*60)))
 c2 <- capture.output(print(dt, max = 6))
 writeLines(tail(cc, 4))
 writeLines(c2)
-stopifnot(expr = {
+stopifnot(exprs = {
     grepl("omitted 151 entries", tail(cc, 1))
                   !anyDuplicated(tail(cc, 2))
     grepl("omitted 195 entries", tail(c2, 1))
@@ -527,6 +527,16 @@ stopifnot(exprs = {
 (b1 <- balancePOSIXlt(lt., fill.only=TRUE))
 (b2 <- balancePOSIXlt(lt.))
 stopifnot(b1 == b2)
+
+
+
+
+## Losing 1 sec in ct -> lt conversion for tzcode=internal (USE_INTERNAL_MKTIME) -- PR#16856
+ct <- .POSIXct(c(-1.25, -1, 0, 1), tz = "UTC")
+(d1 <- (lt <- as.POSIXlt(ct)) - ct)
+(d2 <-        as.POSIXlt(as.POSIXct(lt)) - ct)
+stopifnot(d1 == 0, d2 == 0)
+## where (1 0 0 0) and (2 0 0 0) {w/ "internal" tz src} in R <= 4.3.1
 
 
 

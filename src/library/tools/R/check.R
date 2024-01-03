@@ -3214,14 +3214,17 @@ add_dummies <- function(dir, Log)
                               lines, useBytes = TRUE)
                 c2bf <- grepl("\\$[{(]{0,1}BLAS_LIBS.*\\$[{(]{0,1}FLIBS",
                               lines, useBytes = TRUE)
-                if (any(c1 & c2l & !c2lb)) {
+                ## FLIBS is unneeded if Fortran sources are included.
+                ## So we look for top-level .f .f90 .f95 source files.
+                have_F <- any(grepl("[.](f|f90|f95)$", dir("src")))
+                if (any(c1 & c2l & !c2lb) && !have_F) {
                     if (!any) warningLog(Log)
                     any <- TRUE
                     printLog(Log,
                              "  apparently using $(LAPACK_LIBS) without following $(BLAS_LIBS) in ",
                              sQuote(f), "\n")
                 }
-                if (any(c1 & c2b & !c2bf)) {
+                if (any(c1 & c2b & !c2bf) && !have_F) {
                     if (!any) warningLog(Log)
                     any <- TRUE
                     printLog(Log,
@@ -3589,7 +3592,8 @@ add_dummies <- function(dir, Log)
                 except <- unlist(strsplit(except, "\\s", perl = TRUE))
                 warns <- setdiff(warns,
                                  c(except, "-Wall", "-Wextra", "-Weverything",
-                                   "-Wno-dev", "-Wstrict-prototypes"))
+                                   "-Wno-dev", "-Wstrict-prototypes",
+                                   "-Wno-strict-prototypes"))
                 warns <- warns[!startsWith(warns, "-Wl,")] # linker flags
                 diags <- grep(" -fno-diagnostics-show-option", tokens,
                               useBytes = TRUE, value = TRUE)
@@ -3611,8 +3615,9 @@ add_dummies <- function(dir, Log)
                                              )))
                 machs <- machs[!startsWith(machs, "-mtune=")]
                 ## This should only appear on macOS!
+                ## -mmacosx- has been replaced by -mmacos-
                 if(grepl('darwin', R.version$platform))
-                    machs <- machs[!startsWith(machs, "-mmacosx-")]  # macOS target flags
+                    machs <- machs[!startsWith(machs, "-mmacos")]  # macOS target flags
                 warns <- c(warns, diags, opts, machs)
                 if(any(startsWith(warns, "-Wno-")) || length(diags)) {
                     warningLog(Log)

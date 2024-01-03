@@ -835,6 +835,7 @@ contrib.url <- function(repos, type = getOption("pkgType"))
         stop("invalid 'type'; must be a character string")
     type <- resolvePkgType(type)
     if(is.null(repos)) return(NULL)
+    if(!length(repos)) return(character())
     if("@CRAN@" %in% repos && interactive()) {
         cat(gettext("--- Please select a CRAN mirror for use in this session ---"),
             "\n", sep = "")
@@ -1173,7 +1174,8 @@ compareVersion <- function(a, b)
 .get_repositories <- function()
 {
     rfile <- Sys.getenv("R_REPOSITORIES", unset = NA_character_)
-    if(is.na(rfile) || !file_test("-f", rfile)) {
+    ## "NULL" has a special meaning during .onLoad()
+    if(is.na(rfile) || rfile == "NULL" || !file_test("-f", rfile)) {
         rfile <- file.path(Sys.getenv("HOME"), ".R", "repositories")
         if(!file_test("-f", rfile))
             rfile <- file.path(R.home("etc"), "repositories")
@@ -1203,7 +1205,7 @@ compareVersion <- function(a, b)
 }
 
 ## default is included in setRepositories.Rd (via \Sexpr)
-.BioC_version_associated_with_R_version_default <- "3.17"
+.BioC_version_associated_with_R_version_default <- "3.18"
 .BioC_version_associated_with_R_version <- function ()
     numeric_version(Sys.getenv("R_BIOC_VERSION",
                                .BioC_version_associated_with_R_version_default))

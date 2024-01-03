@@ -5,6 +5,131 @@
 \title{R News}
 \encoding{UTF-8}
 
+\section{\Rlogo CHANGES IN R 4.3.2}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item The default initialization of the \code{"repos"} option
+      from the \file{repositories} file at startup can be skipped by
+      setting environment variable \env{R_REPOSITORIES} to \code{NULL}
+      such that \code{getOption("repos")} is empty if not set elsewhere.
+
+      \item \code{qr.X()} is now an implicit S4 generic in \pkg{methods}.
+
+      \item \code{iconv(to = "ASCII//TRANSLIT")} is emulated using
+      substitution on platforms which do not support it (notably Alpine
+      Linux).  This should give a human-readable conversion in ASCII on
+      all platforms (rather than \code{NA_character_}).
+
+      \item \code{trans3d()} gains options \code{continuous} and
+      \code{verbose} addressing the problem of possible \dQuote{wrap
+	around} when projecting too long curves, as reported by Achim Zeileis
+      in \PR{18537}.
+
+      \item \code{tools::showNonASCII()} has been rewritten to work
+      better on macOS 14 (which has a changed implementation of
+      \code{iconv()}).
+
+      \item \code{tiff(type = "quartz")} (the default on macOS) now warns
+      if \code{compression} is specified: it continues to be ignored.
+    }
+  }
+
+  \subsection{INSTALLATION on a UNIX-ALIKE}{
+    \itemize{
+      \item There is some support for building with Intel's LLVM-based
+      compilers on \samp{x86_64} Linux, such as (C) \command{icx}, (C++)
+      \command{ipcx} and (Fortran) \command{ifx} from oneAPI 2023.x.y.
+
+      \item There is support for using LLVM's \command{flang-new} as the
+      Fortran compiler from LLVM 16.0.x (preferably 17.0.0
+      or later).
+    }
+  }
+
+  \subsection{UTILITIES}{
+    \itemize{
+      \item \command{R CMD check} reports the use of the Fortran 90 random
+      number generator \code{RANDOM_NUMBER()} and the subroutines to
+      initialize it.
+
+      \sQuote{Writing R Extensions} has example code to use \R{}'s RNGs
+      from Fortran.
+    }
+  }
+
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item \code{substr(x, n, L) <- cc} now works (more) correctly for
+      multibyte UTF-8 strings \code{x} when \code{L > nchar(x)}, thanks to
+      a report and patch by \sQuote{Architect 95}.
+
+      \item \code{contrib.url(character())} now returns 0-length
+      \code{character()} as documented, which also avoids spurious
+      warnings from \code{available.packages()} et al.\sspace{}in the
+      edge case of an empty vector of repository URLs.
+
+      \item \code{readChar(., 4e8)} no longer fails, thanks to Kodi Arfer's
+      report (\PR{18557}).
+
+      \item \code{lapply(<list>, as.data.frame)} no longer warns falsely for
+      some base vector components.
+
+      \item Communication between parent and child processes in the
+      \code{multicore} part of \code{parallel} could fail on platforms
+      that do not support an arbitrarily large payload in system
+      functions \code{read()}/\code{write()} on pipes (seen on macOS
+      where a restriction to \code{INT_MAX} bytes is documented, without
+      doing a partial read unlike Linux). The payload is now split into
+      1Gb chunks to avoid that problem. (\PR{18571})
+
+      \item \code{qqplot(x,y, conf.level=.)} gives better confidence bounds
+      when \code{length(x) != length(y)}, thanks to Alexander Ploner's
+      report and patch proposal (\PR{18557}).
+
+      \item \code{norm(<0-length>, "2")} now gives zero instead of an
+      error, as all the other norm types, thanks to Mikael Jagan's \PR{18542}.
+
+      \item Build-stage Rd macros \verb{\packageAuthor} and
+      \verb{\packageMaintainer} now process \samp{Authors@R},
+      fixing \samp{NA} results when the package \file{DESCRIPTION} omits
+      \samp{Author} and \samp{Maintainer} fields.
+
+      \item Formatting and printing complex numbers could give things
+      like \samp{0.1683-0i} because of rounding error: \samp{-0i} is now
+      replaced by \samp{+0i}.
+
+      \item \code{postscript()} refused to accept a \code{title} comment
+      containing the letter \dQuote{W} (\PR{18599}).
+
+      \item \code{isoreg(c(1,Inf))} signals an error instead of
+      segfaulting, fixing \PR{18603}.
+
+      \item \code{tiff(type = "Xlib")} was only outputting the last page
+      of multi-page plots.
+
+      \item \code{tools::latexToUtf8()} again knows about \samp{\\~{n}}
+      and other letters with tilde, fixing a regression in \R 4.3.0,
+      and about \samp{\\^{i}} as an alternative to \samp{\\^{\\i}}
+      (similarly with other accents).
+      Furthermore, \LaTeX codes for accented I letters are now
+      correctly converted, also fixing related mistakes in
+      \code{tools::encoded_text_to_latex()}.
+
+      \item \code{tar(*, tar = "internal")} no longer creates out-of-spec
+      tar files in the very rare case of user or group names longer than
+      32 bytes, fixing \PR{17871} with thanks to Ivan Krylov.
+
+      \item When using the \dQuote{internal} timezone datetime code, adding
+       a fraction of a second no longer adds one second, fixing \PR{16856}
+       from a patch by Ivan Krylov.
+
+      \item \code{tools::checkRd()} no longer produces spurious notes
+      about \dQuote{unnecessary braces} from multi-line Rd results of
+      \verb{\Sexpr} macros.
+    }
+  }
+}
+
 \section{\Rlogo CHANGES IN R 4.3.1}{
   \subsection{C-LEVEL FACILITIES}{
     \itemize{
@@ -1161,7 +1286,7 @@
       overflow reliably.
 
       \item \code{tar(., files=*)} now produces correctly the warning
-      about invalid uid or gid of files, fixing \PR{18344}, reported by
+      about invalid UID or GID of files, fixing \PR{18344}, reported by
       Martin Morgan.
 
       \item \code{tk_choose.files()} with \code{multi = FALSE}
@@ -1191,7 +1316,7 @@
     \itemize{
       \item Writing to a clipboard connection works again, fixing a
       regression in \R 4.2.0 (\PR{18332}).  Re-using a closed clipboard
-      connection longer issues a spurious warning about an ignored
+      connection no longer issues a spurious warning about an ignored
       encoding argument.
 
       \item C function \code{getlocale} no longer attempts to query an
