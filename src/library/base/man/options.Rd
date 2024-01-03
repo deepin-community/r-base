@@ -708,7 +708,7 @@ getOption(x, default = NULL)
       \code{\link{help.request}}.}
 
     \item{\code{menu.graphics}:}{Logical: should graphical menus be used
-      if available?.  Defaults to \code{TRUE}.  Currently applies to
+      if available?  Defaults to \code{TRUE}.  Currently applies to
       \code{\link{select.list}}, \code{\link{chooseCRANmirror}},
       \code{\link{setRepositories}} and to select from multiple (text)
       help files in \code{\link{help}}.}
@@ -739,10 +739,12 @@ getOption(x, default = NULL)
       installs.
     }
 
-    \item{\code{repos}:}{URLs of the repositories for use by
-      \code{\link{update.packages}}.  Initially set from entries marked as
-      default in the \file{repositories} file, see \link{R_REPOSITORIES}.
-      The \sQuote{factory-fresh} setting from \file{etc/repositories} is
+    \item{\code{repos}:}{character vector of repository URLs for use by
+      \code{\link{available.packages}} and related functions.  Initially
+      set from entries marked as default in the \file{repositories} file,
+      whose path is configurable via environment variable \env{R_REPOSITORIES}
+      (set this to \code{NULL} to skip initialization at startup).
+      The \sQuote{factory-fresh} setting from the file in \code{R.home("etc")} is
       \code{c(CRAN="@CRAN@")}, a value that causes some utilities to
       prompt for a CRAN mirror.  To avoid this do set the CRAN mirror,
       by something like \preformatted{
@@ -759,6 +761,12 @@ local({
       R-Forge, RForge.net, \dots) for the current session
       using \code{\link{setRepositories}}.
     }
+
+    \item{\code{str}:}{a list of options controlling the default
+      \code{\link{str}} display. Defaults to \code{\link{strOptions}()}.}
+
+    \item{\code{str.dendrogram.last}:}{see \code{\link{str.dendrogram}}.}
+
     \item{\code{SweaveHooks}, \code{SweaveSyntax}:}{
       see \code{\link{Sweave}}.
     }

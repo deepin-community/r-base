@@ -1,3 +1,15 @@
+r-base (4.3.2-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Tue, 31 Oct 2023 06:36:03 -0500
+
+r-base (4.3.1-4.2304.0) lunar; urgency=medium
+
+  * PPA build for Ubuntu 23.04 "lunar"
+
+ -- Dirk Eddelbuettel <edd@debian.org>  Sat, 05 Aug 2023 16:56:56 -0500
+
 r-base (4.3.1-4) unstable; urgency=medium
 
   * debian/rules: Correct setting for i386 to always append flags

@@ -1228,7 +1228,8 @@ C++@footnote{either or both of which may not be supported on particular
 platforms.  Their main use is on macOS, but unfortunately recent
 versions of the macOS SDK have removed much of the support for Objective
 C v1.0 and Objective C++.} with associated extensions @file{.c},
-@file{.cc} or @file{.cpp}, @file{.f}, @file{.f90} or @file{.f95},
+@file{.cc} or @file{.cpp}, @file{.f}, @file{.f90} or
+@file{.f95},@footnote{This is not accepted by the Intel Fortran compiler.}
 @file{.m}, and @file{.mm}, respectively.  We recommend using @file{.h}
 for headers, also for C++@footnote{Using @file{.hpp} is not guaranteed
 to be portable.} or Fortran 9x include files.  (Use of extension
@@ -2199,9 +2200,10 @@ double-complex BLAS routines, but no single-precision nor complex
 routines.  If @code{BLAS_LIBS} is included, then @code{FLIBS} also needs
 to be@footnote{at least on Unix-alikes: the Windows build currently
 resolves such dependencies to a static Fortran library when
-@file{Rblas.dll} is built.  Also, not if @code{USE_FC_TO_LINK} is used.}
-included following it, as most BLAS libraries are written at least
-partially in Fortran.
+@file{Rblas.dll} is built.}  included following it, as most BLAS
+libraries are written at least partially in Fortran.  However, it can
+be omitted if the package contains Fortran source code as that will add
+@code{FLIBS} to the link line.
 
 @item LAPACK_LIBS
 @vindex LAPACK_LIBS
@@ -2214,10 +2216,11 @@ point to an external LAPACK library, or may be empty if an external BLAS
 library also contains LAPACK.
 
 [@code{libRlapack} includes all the double-precision LAPACK routines
-which were current in 2003: a list of which routines are included is in
-file @file{src/modules/lapack/README}. Note that an external LAPACK/BLAS
-library need not do so, as some were `deprecated' (and not compiled by
-default) in LAPACK 3.6.0 in late 2015.]
+which were current in 2003 and a few more recent ones: a list of which
+routines are included is in file @file{src/modules/lapack/README}. Note
+that an external LAPACK/BLAS library need not do so, as some were
+`deprecated' (and not compiled by default) in LAPACK 3.6.0 in late
+2015.]
 
 For portability, the macros @code{BLAS_LIBS} and @code{FLIBS} should
 always be included @emph{after} @code{LAPACK_LIBS} (and in that order).
@@ -2845,31 +2848,30 @@ or by setting the environment variables @code{ODBC_INCLUDE} and
 
 @R{} assumes that source files with extension @file{.f} are fixed-form
 Fortran 90 (which includes Fortran 77), and passes them to the compiler
-specified by macro @samp{FC}.  On known platforms the Fortran compiler
-will also accept free-form Fortran 90/95 code with extension @file{.f90}
-or @file{.f95}, but those are not used by @R{} itself so this is not
-required.
+specified by macro @samp{FC}.  The Fortran compiler will also accept
+free-form Fortran 90/95 code with extension @file{.f90} or @file{.f95}.
 
 @vindex PKG_FCFLAGS
-The same compiler is used@footnote{for versions of @R{} since 3.6.0.}
-for both fixed-form and free-form Fortran code (with different file
-extensions and possibly different flags).  Macro @code{PKG_FFLAGS} can
-be used for package-specific flags: for the un-encountered case that both
-are included in a single package and that different flags are needed for
-the two forms, macro @code{PKG_FCFLAGS} is also available for free-form
-Fortran.
+The same compiler is used for both fixed-form and free-form Fortran code
+(with different file extensions and possibly different flags).  Macro
+@code{PKG_FFLAGS} can be used for package-specific flags: for the
+un-encountered case that both are included in a single package and that
+different flags are needed for the two forms, macro @code{PKG_FCFLAGS}
+is also available for free-form Fortran.
 
 The code used to build @R{} allows a `Fortran 90' compiler to be
 selected as @samp{FC}, so platforms might be encountered which only
-support Fortran 90.  However, Fortran 95 is widely supported.
+support Fortran 90.  However, Fortran 95 is supported on all known
+platforms.
 
-Some compilers specified by @samp{FC} will accept Fortran 2003, 2008 or
+Most compilers specified by @samp{FC} will accept Fortran 2003, 2008 or
 2018 code: such code should still use file extension @file{.f90} or
 @file{.f95}.  Almost all current platforms use @command{gfortran} where
 you may need to include @option{-std=f2003}, @option{-std=f2008} or
 (from version 8) @option{-std=f2018} in @code{PKG_FFLAGS} or
-@code{PKG_FCFLAGS}: the default is `GNU Fortran', Fortran 95 with
-non-standard extensions.
+@code{PKG_FCFLAGS}: the default is `GNU Fortran', currently Fortran 2018
+(but Fortran 95 prior to @command{gfortran}@tie{}8) with non-standard
+extensions.
 @c The Oracle @command{f95} compiler `accepts some Fortran 2003/8 features'
 @c (search for `Oracle Developer Studio 12.6: Fortran User's Guide' and
 @c look for §4.6).
@@ -3118,11 +3120,22 @@ C++17 as from @R{} 3.4.0, for C++20 from @R{} 4.0.0 and for C++23 from
 @R{} 4.3.0 (although they may not be supported by the compilers
 in use).  C++11 support became mandatory in @R{} 4.0.0.
 
+The @file{.so}/@file{.dll} in a package may need to be linked by the
+C++ compiler if it or any library it links to contains compiled C++
+code.  Dynamic linking usually brings in the C++ runtime library
+(commonly @code{libstdc++} but can be, for example, @code{libc++}) but
+static linking (as used for external libraries on Windows and macOS)
+will not.  @command{R CMD INSTALL} will link with the C++ compiler if
+there are any top-level C++ files in @file{src}, but not if these are
+all in subdirectories.  The simplest way to force linking by the C++
+compiler is to include an empty C++ file in @file{src}, as used by
+package @pkg{rgeos}.
+
 @node C standards, Using @command{cmake}, Using C++ code, Configure and cleanup
 @subsection C standards
 
-C has had standards C89/C90, C99, C11, C17 (also known as C18) and C23
-is in final draft and expected to be publishedd in early 2024.  C11 was a
+C has had standards C89/C90, C99, C11, C17 (also known as C18), and C23
+is in final draft and expected to be published in early 2024.  C11 was a
 minor change to C99 which introduced some new features and made others
 optional, and C17 is a `bug-fix' update to C11.  On the other hand, C23
 makes extensive changes, including making @code{bool}, @code{true} and
@@ -3596,7 +3609,7 @@ setting environment variables @w{@env{_R_CHECK_*_}} as described in
 @ref{Tools, , Tools, R-ints, R Internals}:
 @end ifset
 @ifclear UseExternalXrefs
-`R Internals':
+section `Tools' in the `R Internals' manual:
 @end ifclear
 a set of these customizations similar to those used by @acronym{CRAN}
 can be selected by the option @option{--as-cran} (which works best if
@@ -4815,6 +4828,7 @@ repository such as @acronym{CRAN}).
 * Check timing::
 * Encoding issues::
 * Portable C and C++ code::
+* Portable Fortran code::
 * Binary distribution::
 @end menu
 
@@ -5011,7 +5025,8 @@ for accounts ported from Mojave or earlier it is usually
 
 @item
 Make use of the abilities of your compilers to check the
-standards-conformance of your code.  For example, @command{gcc} and
+standards-conformance of your code.  For example, @command{gcc},
+@command{clang} and
 @command{gfortran}@footnote{@uref{https://fortranwiki.org/fortran/show/Modernizing+Old+Fortran}
 may help explain some of the warnings from @command{gfortran -Wall
 -pedantic}.}  can be used with options @option{-Wall -pedantic} to alert
@@ -5024,31 +5039,22 @@ personal @file{Makevars} files.
 @xref{Customizing package compilation, , Customizing package compilation,
 R-admin, R Installation and Administration},
 @end ifset
+@ifclear UseExternalXrefs
+See section `Customizing package compilation' in the `R Installation and
+Administration' manual for more information.
+@end ifclear
 
-Portable C++ code needs to follow both the 2011 and 2014 standards or to
-specify C+11/14/17/20 where available (which is not the case on all @R{}
-platforms).  Currently C++17/20 support is patchy across @R{} platforms.
+Portable C++ code needs to follow both the 2011, 2014 and 2017 standards
+or to specify C+11/14/17/20 where available (which is not the case on
+all @R{} platforms).  Currently C++20 support is patchy across @R{}
+platforms.
 
-If using Fortran with the GNU compiler, use the flags
-@option{-std=f95 -Wall -pedantic} which reject most GNU extensions and
-features from later standards.  (Although @R{} only requires Fortran 90,
-@command{gfortran} does not have a way to specify that standard.)
-
-@R{} has tested that @code{DOUBLE COMPLEX} works and so is preferred to
-@code{COMPLEX*16}.  (One can also use something like
-@code{COMPLEX(KIND=KIND(0.0D0))}.)
-
-
-@c https://gcc.gnu.org/onlinedocs/gfortran/KIND-Type-Parameters.html
-@c https://stackoverflow.com/questions/838310/fortran-90-kind-parameter
-The use of Fortran types such as @code{REAL(KIND=8)} is very far from
-portable.  According of the standards this merely enumerates different
-supported types, so @code{DOUBLE PRECISION} might be @code{REAL(KIND=3)}
-(and is on an actual compiler).  Even if for a particular compiler the
-value indicates the size in bytes, which values are supported is
-platform-specific --- for example @command{gfortran} supports values of 4
-and 8 on all current platforms and 10 and 16 on a few (but not for
-example on @cputype{arm} CPUs).
+If using Fortran with the GNU compiler, use the flags @option{-std=f95
+-Wall -pedantic} which reject most GNU extensions and features from
+later standards.  (Although @R{} only requires Fortran 90,
+@command{gfortran} does not have a way to specify that standard.)  Also
+consider @option{-std=f2008} as some recent compilers have Fortran 2008
+or even 2018 as the minimum supported standard.
 
 Not all common @R{} platforms conform to the expected standards, e.g.@:
 C99 for C code.  One common area of problems is the @code{*printf}
@@ -5171,9 +5177,14 @@ as @code{rand}, @code{drand48} and @code{random}@footnote{This and
 in the C99 standard, and not available on Windows.}, but rather use the
 interfaces to @R{}'s RNGs described in @ref{Random numbers}.  In
 particular, if more than one package initializes a system RNG (e.g.@:
-@emph{via} @code{srand}), they will interfere with each other.
+@emph{via} @code{srand}), they will interfere with each other.  This
+applies also to Fortran 90's @code{random_number} and
+@code{random_seed}, and Fortran 2018's @code{random_init}.  And to GNU
+Fortran's @code{rand}, @code{irand} and @code{srand}.  Except for
+@code{drand48}, what PRNG these functions use is
+implementation-dependent.
 
-Nor should the C++11 random number library be used, nor any other
+Nor should the C++11 random number library be used nor any other
 third-party random number generators such as those in GSL.
 
 @item
@@ -5331,9 +5342,9 @@ does not mention any options, and what calling it without options does
 is platform-dependent.  Stripping a @file{.so} file could even prevent
 it being dynamically loaded into @R{} on an untested platform.
 
-@command{ld -S} invokes @command{strip --strip-debug} on GNU
-@command{ld} but is not portable: in particular on Solaris it did
-something completely different and took an argument.
+@command{ld -S} invokes @command{strip --strip-debug} for GNU
+@command{ld} (and similarly on macOS) but is not portable: in particular
+on Solaris it did something completely different and took an argument.
 
 @item
 Some people have a need to set a locale.  Locale names are not portable,
@@ -5383,12 +5394,12 @@ be for binary packages).
 When specifying a minimum Java version please use the official version
 names, which are (confusingly)
 @example
-1.1 1.2 1.3 1.4 5.0 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 (announced 21)
+1.1 1.2 1.3 1.4 5.0 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21
 @end example
 @noindent
 and as from 2018 a year.month scheme such as @samp{18.9} is also in
 use.  Fortunately only the integer values are likely to be relevant.
-If at all possible, use one of the LTS versions (8, 11, 17, 21 @dots{})
+If at all possible, use one of the @acronym{LTS} versions (8, 11, 17, 21 @dots{})
 as the minimum version.  The preferred form of version specification is
 @example
 SystemRequirements: Java (>= 11)
@@ -5427,7 +5438,11 @@ Java code produced by others, so their requirements need to be checked
 (they are often not documented accurately) and accounted for.  It should
 be possible to check the class-file version @emph{via} command-line
 utility @command{javap}, if necessary after extracting the @file{.class}
-files from a @file{.jar} archive.
+files from a @file{.jar} archive.  For example,
+@example
+jar xvf some.jar
+javap -verbose path/to/some.class | grep major
+@end example
 
 Some packages have stated a requirement on a particular JDK, but a
 package should only be requiring a JRE unless providing its own Java
@@ -5448,10 +5463,9 @@ portable, annoyingly so if this is not declared in the
 platforms (and has onerous requirements to install from source) and has
 capabilities@footnote{For example, the ability to handle @samp{https://}
 URLs.} that vary by build but are not documented.  Several recent
-versions of @command{pandoc} for macOS did not work on @R{}'s target of
-High Sierra (and this too was undocumented).
-Another example is the Rust compilation system (@command{cargo} and
-@command{rustc}).
+versions of @command{pandoc} for macOS did not work on @R{}'s then
+target of High Sierra (and this too was undocumented).  Another example
+is the Rust compilation system (@command{cargo} and @command{rustc}).
 
 Usage of external commands should always be conditional on a test for
 presence (perhaps using @code{Sys.which}), as well as declared in the
@@ -5469,7 +5483,7 @@ example macOS 10.16 was announced not to have them (but released as
 macOS 11 with them); later it was announced that macOS 12.3 does not
 have Python 2 and only a minimal install of Python 3 is included.
 Python 2 has passed end-of-life and been removed from many major
-distributions.  Support for Rust cannot be assumed.
+distributions.  Support for Rust or Go cannot be assumed.
 
 Command @command{cmake} is not commonly installed, and where it is, it
 might not be on the path.  In particular, the most common location on
@@ -5516,6 +5530,13 @@ UTC, the time represented is independent of the time zone: but how it is
 printed may not be.  Objects of class @code{"POSIXlt"} should have a
 @code{"tzone"} attribute.  Dates (e.g,@: birthdays) are conventionally
 considered independently of time zone.
+
+@item
+If at all possible avoid any Internet access during package
+installation.  Installation and use may well be on different
+machines/accounts and those allowed to install software may have no
+Internet access, and being self-contained helps ensure long-term
+reproducibility.
 @end itemize
 
 
@@ -5787,7 +5808,7 @@ is equivalent to the value
 UTF-8 then the package code is translated to UTF-8 for syntax checking,
 so it is strongly recommended to check in a UTF-8 locale.
 
-@node Portable C and C++ code, Binary distribution, Encoding issues, Writing portable packages
+@node Portable C and C++ code, Portable Fortran code, Encoding issues, Writing portable packages
 @subsection Portable C and C++ code
 
 @menu
@@ -5806,13 +5827,13 @@ versions) these are part of @option{-Wall} or @option{-pedantic}).
 
 @strong{C++ standards}: From version 3.6.0 (3.6.2 on Windows), @R{}
 defaulted to C++11 where available@footnote{which it is on all known
-platforms, and is required as from @R{} 4.0.0}; @R{} 4.1.0 and later
-default to C++14 (where available).  However, in earlier versions the
-default standard was that of the compiler used, often C++98 or C++14,
-and the default is likely to change in future.  For maximal portability
-a package should either specify a standard (@pxref{Using C++ code}) or
-be tested under all of C++11, C++98 and C++14.  (Specifying C++14 will
-limit portability.)
+platforms, and is required as from @R{} 4.0.0}; from @R{} 4.1.0 to C++14
+and from @R{} 4.3.0 to C++17 (where available).  However, in earlier
+versions the default standard was that of the compiler used, often C++98
+or C++14, and the default is likely to change in future.  For maximal
+portability a package should either specify a standard (@pxref{Using C++
+code}) or be tested under all of C++11, C++98, C++14 and C++17.
+(Specifying C++14 or later will limit portability.)
 
 Note that the `TR1' C++ extensions are not part of any of these
 standards and the @code{<tr1/@var{name}>} headers are not supplied by some of
@@ -5878,12 +5899,13 @@ functionality.
 
 Both the compiler and OS (@emph{via} system header files, which may
 differ by architecture even for nominally the same OS) affect the
-compilability of C/C++ code.  Compilers from the GCC, @command{clang},
-Intel and Oracle Developer Studio suites have been used with @R{}, and
-both LLVM @command{clang} and Oracle have more than one implementation of C++
-headers and library.  The range of possibilities makes comprehensive
-empirical checking impossible, and regrettably compilers are patchy at
-best on warning about non-standard code.
+compilability of C/C++ code.  Compilers from the GCC, LLVM
+(@command{clang} and @command{flang}) Intel and Oracle Developer Studio
+suites have been used with @R{}, and both LLVM @command{clang} and
+Oracle have more than one implementation of C++ headers and library.
+The range of possibilities makes comprehensive empirical checking
+impossible, and regrettably compilers are patchy at best on warning
+about non-standard code.
 
 @itemize
 @item
@@ -5947,25 +5969,7 @@ Other GNU extensions which have bitten package writers are the use of
 non-portable characters such as @samp{$} in identifiers and use of C++
 headers under @file{ext}.
 
-The GNU Fortran compiler also supports a large number of non-portable
-extensions, the most commonly encountered one being
-@code{ISNAN}@footnote{There is a portable way to do this in Fortran 2003
-(@code{ieee_is_nan()} in module @code{ieee_arithmetic}), but ironically
-that is not supported in the versions 4.x of GNU Fortran.  A pretty
-robust alternative is to test @code{if(my_var /= my_var)}.}.  Some are
-listed at
-@uref{https://gcc.gnu.org/onlinedocs/gfortran/Extensions-implemented-in-GNU-Fortran.html}.
-One that frequently catches package writers is that it allows
-out-of-order declarations: in standard-conformant Fortran variables must
-be declared (explicitly or implicitly) before use in other declarations
-such as dimensions.
-
-GNU Fortran 10 and later give a compilation error for the previously
-widespread practice of passing a Fortran array element where an array is
-expected, or a scalar instead of a length-one array.  See
-@uref{https://gcc.gnu.org/gcc-10/porting_to.html}.
-
-@item
+item
 Including C-style headers in C++ code is not portable.  Including the
 legacy header@footnote{which often is the same as the header included by
 the C compiler, but some compilers have wrappers for some of the C
@@ -6198,9 +6202,9 @@ ISO C++11 does not allow conversion from string literal to 'char *'
 removed in C++17.
 
 There are quite a lot of other C++98 features deprecated in C++11 and
-removed in C++17, and LLVM @command{clang} 9 and later warn about
-them. Examples include @code{bind1st}/@code{bind2nd} (use
-@code{std::bind} or
+removed in C++17, and LLVM @command{clang} 9 and later warn about them
+(and as from version 16 they have been removed). Examples include
+@code{bind1st}/@code{bind2nd} (use @code{std::bind} or
 lambdas@footnote{@uref{https://stackoverflow.com/questions/32739018/a-replacement-for-stdbind2nd}})
 @code{std::auto_ptr} (replaced by @code{std::unique_ptr}),
 @code{std::mem_fun_ref} and @code{std::ptr_fun}.
@@ -6211,7 +6215,7 @@ Later versions of standards may add reserved words: for example
 no longer available as variable names.  As noted above, C++17 uses
 @code{byte}, @code{data}, @code{sample} and @code{size}.
 
-So avoid common words and keywords in other programming languages.
+So avoid common words and keywords from other programming languages.
 
 @item
 Be careful about including C headers in C++ code.  Issues include
@@ -6308,6 +6312,31 @@ defining @samp{_POSIX_C_SOURCE} to for example @samp{200809L} before
 including the (C or C++) header which defines them.  (However, this may
 hide other extensions.)
 
+@item
+Compilers may interpret comments in source code, so it is necessary to
+remove any intended for a compiler to interpret.  The main example has
+been comments for Visual Fortran (as the Intel Fortran compiler has been
+known on Windows@footnote{and at one time as DEC Fortran, hence the
+@code{DEC}.}) like
+@example
+!DEC$ ATTRIBUTES DLLEXPORT,C,REFERENCE,ALIAS:'kdenestmlcvb' :: kdenestmlcvb
+@end example
+@noindent
+which are interpreted by Intel Fortran on all platforms (and are
+inappropriate for use with @R{} on Windows).  @command{gfortran} has
+similar forms starting with @code{!GCC$}.
+
+@item
+The C++ @code{new} operator takes argument @code{std::size_t size},
+which is unsigned.  Using a signed integer type such as @code{int} may
+lead to compiler warnings such as
+@example
+warning: argument 1 value '18446744073709551615' exceeds maximum object
+  size 9223372036854775807  [-Walloc-size-larger-than=]
+@end example
+@noindent
+(especially if LTO is used).  So don't do that!
+
 @end itemize
 
 Some additional information for C++ is available at
@@ -6398,7 +6427,8 @@ in @file{boost/mpl/aux_/integral_wrapper.hpp}.  Adding
 @end example
 @noindent
 to @code{PKG_CXXFLAGS} will allow this, but that flag is only accepted
-by recent versions of LLVM @command{clang} so needs a @command{configure} test.
+by recent versions of LLVM @command{clang} (and will not be in future)
+so needs a @command{configure} test.
 
 Pre=built versions of current @command{clang}/@code{libc++} are
 usually available from
@@ -6417,7 +6447,98 @@ Another build for Windows which may be sufficiently compatible with
 @code{Rtools} can be found at
 @uref{https://github.com/mstorsjo/llvm-mingw}: this uses @code{libc++}.
 
-@node Binary distribution,  , Portable C and C++ code, Writing portable packages
+@node Portable Fortran code, Binary distribution, Portable C and C++ code, Writing portable packages
+@subsection Portable Fortran code
+
+Until recently almost all known @R{} platforms used @command{gfortran}
+as their Fortran compiler, but now rhere are LLVM and `classic'
+@command{flang} and the Intel compilers
+@command{ifort}@footnote{announced to be discontinued in 2023.} and
+@command{ifx} are free-of-change.
+
+There is still a lot of Fortran code in @acronym{CRAN} packages which
+predates Fortran 77.  Modern Fortran compilers are being written to
+target a minimum standard of Fortran 2018. and it is desirable that
+Fortran code in packages complies with that standard.  For
+@command{gfortran} this can be checked by adding @option{-std=f2018} to
+@code{FFLAGS}.  The most commonly seen issues are
+
+@itemize
+@item
+The use of @code{DFLOAT}, which was superseded by @code{DBLE} in Fortran
+77.  Also, use of @code{DCMPLX}, @code{DCONJG}, @code{DIMAG} and
+similar.
+
+@item
+The use of GNU Fortran extensions.  Some are listed at
+@uref{https://gcc.gnu.org/onlinedocs/gfortran/Extensions-implemented-in-GNU-Fortran.html}.
+Others which have caused problems include @code{etime}, @code{getpid},
+@code{isnan}@footnote{There is a portable way to do this in Fortran 2003
+(@code{ieee_is_nan()} in module @code{ieee_arithmetic}), but that was
+not supported in the versions 4.x of GNU Fortran.  A pretty robust
+alternative is to test @code{if(my_var /= my_var)}.} and @code{sizeof}.
+
+One that frequently catches package writers is that it allows
+out-of-order declarations: in standard-conformant Fortran variables must
+be declared (explicitly or implicitly) before use in other declarations
+such as dimensions.
+
+@end itemize
+@noindent
+Unfortunately this flags extensions such as @code{DOUBLE COMPLEX} and
+@code{COMPLEX*16}.  @R{} has tested that @code{DOUBLE COMPLEX} works and
+so is preferred to -@code{COMPLEX*16}.  (One can also use something like
+-@code{COMPLEX(KIND=KIND(0.0D0))}.)
+
+GNU Fortran 10 and later give a compilation error for the previously
+widespread practice of passing a Fortran array element where an array is
+expected, or a scalar instead of a length-one array.  See
+@uref{https://gcc.gnu.org/gcc-10/porting_to.html}.  As do the Intel
+Fortran compilers, and they can be stricter.
+
+The use of @code{IMPLICIT NONE} is highly recommended -- Intel compilers
+with @option{-warn} will warn on variables without an explicit type.
+
+Common non-portable constructions include
+@itemize
+
+@c https://gcc.gnu.org/onlinedocs/gfortran/KIND-Type-Parameters.html
+@c https://stackoverflow.com/questions/838310/fortran-90-kind-parameter
+@item
+The use of Fortran types such as @code{REAL(KIND=8)} is very far from
+portable.  According to the standards this merely enumerates different
+supported types, so @code{DOUBLE PRECISION} might be @code{REAL(KIND=3)}
+(and is on an actual compiler).  Even if for a particular compiler the
+value indicates the size in bytes, which values are supported is
+platform-specific --- for example @command{gfortran} supports values of 4
+and 8 on all current platforms and 10 and 16 on a few (but not for
+example on all @cputype{arm} CPUs).
+
+The same applies to @code{INTEGER(KIND=4)} and @code{COMPLEX(KIND=16)}.
+
+Many uses of integer and real variable in Fortran code in packages will
+interwork with C (for example @code{.Fortran} is written in C), and @R{}
+has checked that @code{INTEGER} and @code{DOUBLE PRECISION} correspond to
+the C types @code{int} and @code{double}.  To make this explicit, from
+Fortran 2003 one can use the named constants @code{c_int},
+@code{c_double} and @code{c_double_complex} from module
+@code{iso_c_binding}.
+
+@item
+The Intel compilers only recognize the extnesions @file{.f} (fixed-form)
+and @file{.f90} (free-form) and not @file{.f95}. @command{R CMD INSTALL}
+works around this for packages without a @file{src/Makefile}.
+
+@item
+@c Intel has fpp.
+Use of extensions @file{.F} and @code{.F90} to indicate source code to
+be preprocessed: the preprocessor used is compiler-specific and may or
+may not be @command{cpp}.
+
+@end itemize
+
+
+@node Binary distribution,  , Portable Fortran code, Writing portable packages
 @subsection Binary distribution
 
 If you want to distribute a binary version of a package on Windows or
@@ -6458,8 +6579,13 @@ security risk.  If you want to distribute a source package which needs
 external software on Windows or macOS, options include
 @itemize
 @item
-To arrange for installation of the package to download the
-additional software from a URL, as e.g.@: package @CRANpkg{Cairo} does.
+To arrange for installation of the package to download the additional
+software from a URL, as e.g.@: package @CRANpkg{Cairo} used to.
+
+@item
+To negotiate with Tomas Kalibera to include Windowa software in
+@code{Rtools} or with Simon Urbanek to include macOS software in his
+`recipes' system.
 
 @item
 (For @acronym{CRAN}.)
@@ -6691,8 +6817,8 @@ messages respectively to language with code @samp{@var{ll}}.
 R Installation and Administration}, for details of language codes.
 @end ifset
 @ifclear UseExternalXrefs
-See `Localization of messages' in `R Installation and Administration',
-for details of language codes.
+See `Localization of messages' in the `R Installation and
+Administration' manual for details of language codes.
 @end ifclear
 
 There is an @R{} function, @code{update_pkg_po} in package @pkg{tools},
@@ -6901,30 +7027,31 @@ As an example, let us look at a simplified version of
 \alias@{load@}
 \title@{Reload Saved Datasets@}
 \description@{
-  Reload the datasets written to a file with the function
-  \code@{save@}.
+  Reload datasets written with the function \code@{save@}.
 @}
 \usage@{
-load(file, envir = parent.frame())
+load(file, envir = parent.frame(), verbose = FALSE)
 @}
 \arguments@{
-  \item@{file@}@{a connection or a character string giving the
-    name of the file to load.@}
-  \item@{envir@}@{the environment where the data should be
-    loaded.@}
+  \item@{file@}@{a (readable binary-mode) \link@{connection@}
+    or a character string giving the name of the file to load
+    (when \link@{tilde expansion@} is done).@}
+  \item@{envir@}@{the environment where the data should be loaded.@}
+  \item@{verbose@}@{should item names be printed during loading?@}
+@}
+\value@{
+  A character vector of the names of objects created, invisibly.
 @}
 \seealso@{
   \code@{\link@{save@}@}.
 @}
 \examples@{
+@c reproducing only a minimal and simplified subset of the examples here
 ## save all data
-save(list = ls(), file= "all.RData")
+save(list = ls(all.names = TRUE), file = "all.RData")
 
 ## restore the saved values to the current environment
 load("all.RData")
-
-## restore the saved values to the workspace
-load("all.RData", .GlobalEnv)
 @}
 \keyword@{file@}
 @end smallexample
@@ -7184,7 +7311,9 @@ Description of the function's arguments, using an entry of the form
 @end example
 
 @noindent for each element of the argument list.  (Note that there is
-no whitespace between the three parts of the entry.) There may be
+no whitespace between the three parts of the entry.)  Arguments can also
+be described jointly by separating their names with commas (and optional
+whitespace) in the @code{\item} label.  There may be
 optional text outside the @code{\item} entries, for example to give
 general information about groups of parameters.
 
@@ -7207,12 +7336,15 @@ form
 @end example
 
 @noindent
-for each component of the list returned.  Optional text may
-precede@footnote{Text between or after list items is discouraged.} this
-list (see for example the help for @code{rle}).  Note that @code{\value}
+for each component of the list returned.  There may be
+optional text outside the @code{\item} entries
+(see for example the joint help for @code{rle} and @code{inverse.rle},
+or the sets of items in @code{l10n_info}).  Note that @code{\value}
 is implicitly a @code{\describe} environment, so that environment should
 not be used for listing components, just individual @code{\item@{@}@{@}}
-entries.
+entries.@footnote{@code{\describe} can still be used for more general
+lists, including when @code{\item} labels need special markup such as
+@code{\var} for metasyntactic variables, see @ref{Marking text}.}
 
 @item \references@{@dots{}@}
 @findex \references
@@ -7491,10 +7623,10 @@ another @file{Rd} file, it is helpful to use this as an additional
 @code{\alias}.
 
 Skeletons of documentation for a package can be generated using the
-function @code{promptPackage()}.  If the @code{final = LIBS} argument
+function @code{promptPackage()}.  If the @code{final = TRUE} argument
 is used, then the @file{Rd} file will be generated in final form, containing
-the information that would be produced up to
-@code{library(help = @var{pkgname})}.  Otherwise (the default) comments
+the information that would be produced by
+@code{library(help = @var{pkgname})}. Otherwise (the default) comments
 will be inserted giving suggestions for content.
 
 Apart from the mandatory @code{\name} and @code{\title} and the
@@ -7530,7 +7662,8 @@ For example
 @noindent
 For consistency with the pre-assigned sections, the section name (the
 first argument to @code{\section}) should be capitalized (but not all
-upper case).  Whitespace between the first and second braced expressions
+upper case) and not end in a period.
+Whitespace between the first and second braced expressions
 is not allowed.  Markup (e.g.@: @code{\code}) within the section title
 may cause problems with the latex conversion (depending on the version
 of macro packages such as @samp{hyperref}) and so should be avoided.
@@ -7823,8 +7956,9 @@ Packages referred to by these `other forms' should be declared in the
 @findex \deqn
 
 Mathematical formulae should be set beautifully for printed
-documentation yet we still want something useful for text and @HTML{}
-online help.  To this end, the two commands
+documentation and in KaTeX/MathJax-enhanced @HTML{} help (as from
+@R{} 4.2.0) yet we still want something useful for plain-text (and
+legacy @HTML{}) help.  To this end, the two commands
 @code{\eqn@{@var{latex}@}@{@var{ascii}@}} and
 @code{\deqn@{@var{latex}@}@{@var{ascii}@}} are used.  Whereas @code{\eqn}
 is used for ``inline'' formulae (corresponding to @TeX{}'s
@@ -7848,19 +7982,19 @@ The following example is from @file{Poisson.Rd}:
 @end example
 
 @iftex
-For the @LaTeX{} manual, this becomes
+For the @LaTeX{} manual and in enhanced @HTML{} help, this becomes
 @c: this is TeXinfo markup, not the result of the conversions.
 @quotation
 @cartouche
 @tex
-$$ p(x) = \lambda^x\ {e^{-\lambda} \over x!} $$
+$$ p(x) = {\lambda^x e^{-\lambda} \over x!} $$
 for $x = 0, 1, 2, \ldots$.
 @end tex
 @end cartouche
 @end quotation
 @end iftex
 
-For text on-line help we get
+In plain-text help we get
 
 @quotation
 @cartouche
@@ -7872,12 +8006,13 @@ for x = 0, 1, 2, ....
 @end cartouche
 @end quotation
 
-Greek letters (both cases) will be rendered in @HTML{} if preceded by a
+In legacy @HTML{} help, Greek letters (both cases) will be rendered if preceded by a
 backslash, @code{\dots} and @code{\ldots} will be rendered as ellipses
 and @code{\sqrt}, @code{\ge} and @code{\le} as mathematical symbols.
 
 Note that only basic @LaTeX{} can be used, there being no provision to
-specify @LaTeX{} style files such as the AMS extensions.
+specify @LaTeX{} style files, but AMS extensions are supported
+as from @R{} 4.2.2.
 
 @node Figures, Insertions, Mathematics, Writing R documentation files
 @section Figures
@@ -7925,9 +8060,10 @@ best choice in reference manuals.)  Specify the filename relative to
 @section Insertions
 
 @findex \R
-Use @code{\R} for the @R{} system itself.  Use @code{\dots}
+Use @code{\R} for the @R{} system itself.  The @code{\dots}
 @findex \dots
-for the dots in function argument lists @samp{@dots{}}, and
+macro is a historical alternative to using literal @samp{@dots{}}
+for the dots in function argument lists; use
 @code{\ldots}
 @findex \ldots
 for ellipsis dots in ordinary text.@footnote{There is only a fine
@@ -7935,7 +8071,7 @@ distinction between @code{\dots} and @code{\ldots}.  It is technically
 incorrect to use @code{\ldots} in code blocks and @code{tools::checkRd}
 will warn about this---on the other hand the current converters treat
 them the same way in code blocks, and elsewhere apart from the small
-distinction between the two in @LaTeX{}.}  These can be followed by
+distinction between the two in @LaTeX{}.}  These macros can be followed by
 @code{@{@}}, and should be unless followed by whitespace.
 
 After an unescaped @samp{%}, you can put your own comments regarding the
@@ -8747,8 +8883,7 @@ copying.
 Profiling compiled code is highly system-specific, but this section
 contains some hints gleaned from various @R{} users.  Some methods need
 to be different for a compiled executable and for dynamic/shared
-libraries/objects as used by @R{} packages.  We know of no good way to
-profile DLLs on Windows.
+libraries/objects as used by @R{} packages.
 
 This chapter is based on reports from users and the information may not
 be current.
@@ -8756,6 +8891,7 @@ be current.
 @menu
 * Linux::
 * macOS::
+* Profiling on Windows::
 @end menu
 
 @node Linux, macOS, Profiling compiled code, Profiling compiled code
@@ -8766,16 +8902,17 @@ Options include using @command{sprof} for a shared object, and
 @command{perf} (see
 @uref{https://perf.wiki.kernel.org/index.php/Tutorial}) for any
 executable or shared object.  These seem less widely supplied than they
-used to be (for example Fedora 36 only has @command{perf}).
+used to be.  There is also `Google Performance Tools', also known as
+@pkg{gperftools} or @pkg{google-perftools}.
+
+All of these work best when @R{} and any packages have been built with
+debugging symbols.
 
 @subsubsection oprofile and operf
 
-The @command{oprofile} project has two modes of operation.  In what is
-now called `legacy' mode, it is uses a daemon to collect information on
-a process (see below).  Since version 0.9.8 (August 2012), the preferred
-mode is to use @command{operf}, so we discuss that first.  The modes
-differ in how the profiling data is collected: it is analysed by tools
-such as @command{opreport} and @command{oppannote} in both.
+The @command{oprofile} project has two modes of operation.  Since
+version 0.9.8 (August 2012), the preferred mode is to use
+@command{operf}, so we discuss only that.
 
 Here is an example on @code{x86_64} Linux using @R{} 3.0.2.  File
 @file{pvec.R} contains the part of the examples from @code{pvec} in
@@ -8868,85 +9005,6 @@ The profiling data is by default stored in sub-directory
 @file{oprofile_data} of the current directory, which can be removed at
 the end of the session.
 
-Another way to use this is to run @command{operf -s} as root, run the
-@R{} session in another terminal then shut down @command{operf} and
-analyse as above.
-
-Another example, from @CRANpkg{sm} version 2.2-5.4.  The example for
-@code{sm.variogram} took a long time:
-@example
-system.time(example(sm.variogram))
-...
-   user  system elapsed
-  5.543   3.202   8.785
-@end example
-
-@noindent
-including a lot of system time.  Profiling just the slow part, the
-second plot, showed
-
-@example
-  samples|      %|
-------------------
-   381845 99.9885 R
-        CPU_CLK_UNHALT...|
-          samples|      %|
-        ------------------
-           187484 49.0995 sm.so
-           169627 44.4230 no-vmlinux
-            12636  3.3092 libgfortran.so.3.0.0
-             6455  1.6905 R
-@end example
-
-@noindent
-so the system time was almost all in the Linux kernel.  It is possible
-to dig deeper if you have a matching uncompressed kernel with debug
-symbols to specify @emph{via} @option{--vmlinux}: we did not.
-
-In `legacy' mode @code{oprofile} works by running a daemon which
-collects information.  The daemon must be started as root, e.g.
-
-@example
-% su
-% opcontrol --no-vmlinux
-% (optional, some platforms) opcontrol --callgraph=5
-% opcontrol --start
-% exit
-@end example
-
-Then as a user
-
-@example
-% R
-... run the boot example
-% opcontrol --dump
-% opreport -l /path/to/R_HOME/library/stats/libs/stats.so
-...
-samples  %        symbol name
-1623     75.5939  anonymous symbol from section .plt
-349      16.2552  numeric_deriv
-113       5.2632  nls_iter
-62        2.8878  getListElement
-% opreport -l /path/to/R_HOME/bin/exec/R
-...
-samples  %        symbol name
-76052    11.9912  Rf_eval
-54670     8.6198  Rf_findVarInFrame3
-37814     5.9622  Rf_allocVector
-31489     4.9649  Rf_duplicate
-28221     4.4496  Rf_protect
-26485     4.1759  Rf_cons
-23650     3.7289  Rf_matchArgs
-21088     3.3250  Rf_findFun
-19995     3.1526  findVarLocInFrame
-14871     2.3447  Rf_evalList
-13794     2.1749  R_Newhashpjw
-13522     2.1320  R_gc_internal
-...
-@end example
-
-Shutting down the profiler and clearing the records needs to be done as
-root.
 
 @subsubsection sprof
 
@@ -8956,7 +9014,7 @@ setting the environment variable @env{LD_PROFILE}.  For example
 @example
 % setenv LD_PROFILE /path/to/R_HOME/library/stats/libs/stats.so
 R
-... run the boot example
+... run the boot example from §3.2
 % sprof /path/to/R_HOME/library/stats/libs/stats.so \
   /var/tmp/path/to/R_HOME/library/stats/libs/stats.so.profile
 
@@ -8973,18 +9031,25 @@ rm /var/tmp/path/to/R_HOME/library/stats/libs/stats.so.profile
 ... to clean up ...
 @end example
 
-It is possible that root access is needed to create the directories used
-for the profile data.
+It is possible that root access will be needed to create the directories
+used for the profile data.
 
-@node macOS,  , Linux, Profiling compiled code
+@node macOS, Profiling on Windows, Linux, Profiling compiled code
 @subsection macOS
 
-Developers have recommended @command{sample} (or @command{Sampler.app},
-which is a GUI version), @command{Shark} (in version of @code{Xcode}
-up to those for Snow Leopard), and @command{Instruments} (part of
-@code{Xcode}, see
-@uref{https://help.apple.com/instruments/mac/current/}).
+Developers have recommended @command{Instruments} (part of @code{Xcode},
+see @uref{https://help.apple.com/instruments/mac/current/}), This had a
+command-line version prior to macOS 12.
 
+@node Profiling on Windows,  , macOS, Profiling compiled code
+@subsection Windows
+
+@command{Very Sleepy}
+(@uref{https://github.com/VerySleepy/verysleepy}) has been used.  There were
+problems with accessing the debug information, but the best results which
+included function names were obtained by attaching the profiler to an
+existing @command{Rterm} process, either via GUI or using @option{/a:}
+(pid obtained via @command{Sys.getpid()}).
 
 @node Debugging, System and foreign language interfaces, Tidying and profiling R code, Top
 @chapter Debugging
@@ -9948,8 +10013,8 @@ See
 @node Using `Dr. Memory', Fortran array bounds checking, Other analyses with `gcc', Checking memory access
 @subsection Using `Dr. Memory'
 
-`Dr. Memory' from @uref{https://drmemory.org/} is a memory checker
-for (currently) 32-bit Windows, Linux and macOS with similar aims to
+`Dr. Memory' from @uref{https://drmemory.org/} is a memory checker for
+(currently) Windows, Linux and macOS with similar aims to
 @command{valgrind}.  It works with unmodified executables@footnote{but
 works better if inlining and frame pointer optimizations are disabled.}
 and detects memory access errors, uninitialized reads and memory leaks.
@@ -14423,13 +14488,13 @@ was defined prior to the inclusion of the header.
 @example
 @group
 char * CallocCharBuf(size_t @var{n})
-void * Memcpy(@var{p}, @var{q}, @var{n})
-void * Memzero(@var{p}, @var{m})
+void * Memcpy(@var{q}, @var{p}, @var{n})
+void * Memzero(@var{p}, @var{n})
 @end group
 @end example
-@code{CallocCharBuf} is shorthand for @code{R_Calloc(n+1, char)} to allow
+@code{CallocCharBuf(n)} is shorthand for @code{R_Calloc(n+1, char)} to allow
 for the @code{nul} terminator.  @code{Memcpy} and @code{Memzero} take
-@code{n} items from array @code{p} and copy them to array @code{p} or
+@code{n} items from array @code{p} and copy them to array @code{q} or
 zero them respectively.
 
 @node Error signaling, Random numbers, Memory allocation, The R API
@@ -14538,6 +14603,71 @@ The C code behind @R{}'s @code{r@var{xxx}} functions can be accessed by
 including the header file @file{Rmath.h}; @xref{Distribution functions}.
 Those calls should also be preceded and followed by calls to
 @code{GetRNGstate} and @code{PutRNGstate}.
+
+@menu
+* Random-number generation from Fortran::
+@end menu
+
+@node Random-number generation from Fortran,  , Random numbers, Random numbers
+@subsection Random-number generation from Fortran
+
+It was explained earlier that Fortran raondom-number generators should
+not be used in @R{} packages, not least as packages cannot safely
+initialize them.  Rather a package should call @R{}'s built in
+generators: one way to do so is to use C wrpppers like
+@example
+#include <R_ext/RS.h>
+#include <R_ext/Random.h>
+
+void F77_SUB(getRNGseed)(void) @{
+    GetRNGstate();
+@}
+void F77_SUB(putRNGseed)(void) @{
+    PutRNGstate();
+@}
+double F77_SUB(unifRand)(void) @{
+    return(unif_rand());
+@}
+@end example
+@noindent
+called from Fortran code like
+@example
+      ...
+      double precision X
+      call getRNGseed()
+      X = unifRand()
+      ...
+      call putRNGseed()
+@end example
+
+Alternatively one could use Fortran 2003's @code{iso_c_binding} module
+by something like (fixed-form Fortran 90 code):
+@example
+      module rngfuncs
+        use iso_c_binding
+        interface
+          double precision
+     *      function unifRand() bind(C, name = "unif_rand")
+          end function unifRand
+
+          subroutine getRNGseed() bind(C, name = "GetRNGstate")
+          end subroutine getRNGseed
+
+          subroutine putRNGseed() bind(C, name = "PutRNGstate")
+          end subroutine putRNGseed
+        end interface
+      end module
+      
+      subroutine testit
+      use rngfuncs
+      double precision X
+      call getRNGseed()
+      X = unifRand()
+      print *, X
+      call putRNGSeed()
+      end
+@end example
+
 
 @node Missing and IEEE values, Printing, Random numbers, The R API
 @section Missing and @acronym{IEEE} special values
@@ -14947,8 +15077,8 @@ However, recent versions of @command{gfortran} @emph{via} the option
 @option{-fc-prototypes-external} say the C equivalent is
 @code{int_least32_t *}: `Link-Time Optimization' will report @code{int
 *} as a mismatch. It is possible to use @code{iso_c_binding} in Fortran
-to map LOGICAL variables to the C99 type @code{_Bool}, but it is usually
-simpler to pass integers to and fro.
+2003 to map LOGICAL variables to the C99 type @code{_Bool}, but it is
+usually simpler to pass integers to and fro.
 
 @node Passing functions,  , Fortran LOGICAL, Calling C from Fortran and vice versa
 @subsection Passing functions
@@ -15424,7 +15554,6 @@ constants @code{TRUE} and @code{FALSE} of type @code{Rboolean} in
 order to provide a way of using ``logical'' variables in C consistently.
 This can conflict with other software: for example it conflicts with the
 headers in IJG's @code{jpeg-9} (but not earlier versions).
-
 
 @node Optimization, Integration, Numerical analysis subroutines, The R API
 @section Optimization

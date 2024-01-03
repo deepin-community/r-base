@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2023-04-02 r84142) -- "Unsuffered Consequences"
+R version 4.3.1 Patched (2023-10-16 r85342) -- "Beagle Scouts"
 Copyright (C) 2023 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
@@ -1857,6 +1857,21 @@ Variances:
 > plot(function(x) dt(x, df = 3, ncp = 2), -3, 11, ylim = c(0, 0.32),
 +      main = "Non-central t - Density", yaxs = "i")
 > 
+> ## Relation between F_t(.) = pt(x, n) and pbeta():
+> ptBet <- function(t, n) {
++     x <- n/(n + t^2)
++     r <- pb <- pbeta(x, n/2, 1/2) / 2
++     pos <- t > 0
++     r[pos] <- 1 - pb[pos]
++     r
++ }
+> x <- seq(-5, 5, by = 1/8)
+> nu <- 3:10
+> pt. <- outer(x, nu, pt)
+> ptB <- outer(x, nu, ptBet)
+> ## matplot(x, pt., type = "l")
+> stopifnot(all.equal(pt., ptB, tolerance = 1e-15))
+> 
 > 
 > 
 > cleanEx()
@@ -2548,6 +2563,28 @@ x      1  2  3  4  5  6  7 Sum
 14     40-79      30+      9        20
 15    80-119      30+      7         5
 16      120+      30+     10         3
+> 
+> ## "complete cases" vs. "available cases"
+> colSums(is.na(airquality))  # NAs in Ozone but not Temp
+  Ozone Solar.R    Wind    Temp   Month     Day 
+     37       7       0       0       0       0 
+> ## the default is to summarize *complete cases*:
+> aggregate(cbind(Ozone, Temp) ~ Month, data = airquality, FUN = mean)
+  Month    Ozone     Temp
+1     5 23.61538 66.73077
+2     6 29.44444 78.22222
+3     7 59.11538 83.88462
+4     8 59.96154 83.96154
+5     9 31.44828 76.89655
+> ## to handle missing values *per variable*:
+> aggregate(cbind(Ozone, Temp) ~ Month, data = airquality, FUN = mean,
++           na.action = na.pass, na.rm = TRUE)
+  Month    Ozone     Temp
+1     5 23.61538 65.54839
+2     6 29.44444 79.10000
+3     7 59.11538 83.90323
+4     8 59.96154 83.96774
+5     9 31.44828 76.90000
 > 
 > ## Dot notation:
 > aggregate(. ~ Species, data = iris, mean)

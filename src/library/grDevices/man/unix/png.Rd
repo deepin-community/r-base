@@ -26,7 +26,7 @@ jpeg(filename = "Rplot\%03d.jpeg",
 
 png(filename = "Rplot\%03d.png",
     width = 480, height = 480, units = "px", pointsize = 12,
-     bg = "white",  res = NA, \dots,
+    bg = "white",  res = NA, \dots,
     type = c("cairo", "cairo-png", "Xlib", "quartz"), antialias)
 
 tiff(filename = "Rplot\%03d.tiff",
@@ -99,6 +99,8 @@ tiff(filename = "Rplot\%03d.tiff",
   appropriate) values uncompressed---such files are widely accepted,
   which is their main virtue over PNG.
 
+  The JPEG format only supports opaque backgrounds.
+
   \code{png} supports transparent backgrounds: use \code{bg =
   "transparent"}.  (Not all PNG viewers render files with transparency
   correctly.)  When transparency is in use in the \code{type = "Xlib"}
@@ -153,6 +155,9 @@ tiff(filename = "Rplot\%03d.tiff",
 
 \value{
   A plot device is opened: nothing is returned to the \R interpreter.
+
+  If something goes wrong in writing a TIFF file (for example, an
+  unsupported type of compression), a file is produced, likely invalid.
 }
 
 \section{Warnings}{
@@ -220,6 +225,9 @@ tiff(filename = "Rplot\%03d.tiff",
   \code{\link{bitmap}} provides an alternative way to generate plots in many
   bitmap formats that does not depend on accessing the X11 display but does
   depend on having GhostScript installed.
+
+  Ways to write raster images to bitmap formats are available in
+  packages \CRANpkg{jpeg}, \CRANpkg{png} and \CRANpkg{tiff}.
 }
 
 \section{Conventions}{
