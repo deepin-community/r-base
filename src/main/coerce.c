@@ -24,7 +24,8 @@
 #endif
 
 /* interval at which to check interrupts */
-#define NINTERRUPT 10000000
+/*   if re-enabling, consider a power of two */
+/* #define NINTERRUPT 10000000 */
 
 #include <Parse.h>
 #include <Defn.h> /*-- Maybe modularize into own Coerce.h ..*/
@@ -221,18 +222,26 @@ RealFromString(SEXP x, int *warn)
     return NA_REAL;
 }
 
+#define set_COMPLEX_NA(_Z_) 	\
+	_Z_.r = NA_REAL;	\
+	_Z_.i = NA_REAL
+
 Rcomplex attribute_hidden
 ComplexFromLogical(int x, int *warn)
 {
     Rcomplex z;
     if (x == NA_LOGICAL) {
+#ifdef NA_TO_COMPLEX_NA
+	set_COMPLEX_NA(z);
+#else
 	z.r = NA_REAL;
-	z.i = NA_REAL;
-    }
-    else {
+#endif
+    } else {
 	z.r = x;
-	z.i = 0;
     }
+#ifndef NA_TO_COMPLEX_NA
+    z.i = 0;
+#endif
     return z;
 }
 
@@ -241,13 +250,17 @@ ComplexFromInteger(int x, int *warn)
 {
     Rcomplex z;
     if (x == NA_INTEGER) {
+#ifdef NA_TO_COMPLEX_NA
+	set_COMPLEX_NA(z);
+#else
 	z.r = NA_REAL;
-	z.i = NA_REAL;
-    }
-    else {
+#endif
+    } else {
 	z.r = x;
-	z.i = 0;
     }
+#ifndef NA_TO_COMPLEX_NA
+    z.i = 0;
+#endif
     return z;
 }
 
@@ -255,38 +268,38 @@ Rcomplex attribute_hidden
 ComplexFromReal(double x, int *warn)
 {
     Rcomplex z;
-#ifdef PRE_R_3_3_0
-    if (ISNAN(x)) {
-	z.r = NA_REAL;
-	z.i = NA_REAL;
+#ifdef NA_TO_COMPLEX_NA
+    if (ISNA(x)) { // NA, but not NaN; was ISNAN(x) in R < 3.3.0
+	set_COMPLEX_NA(z);
     }
-    else {
+    else { // also for non-NA NaN's
+#else
+    {
 #endif
 	z.r = x;
 	z.i = 0;
-#ifdef PRE_R_3_3_0
     }
-#endif
     return z;
 }
 
 Rcomplex attribute_hidden
 ComplexFromString(SEXP x, int *warn)
 {
-    double xr, xi;
-    Rcomplex z;
     const char *xx = CHAR(x); /* ASCII */
     char *endp;
-
-    z.r = z.i = NA_REAL;
+    Rcomplex z = { .r = NA_REAL, .i = NA_REAL };
     if (x != R_NaString && !isBlankString(xx)) {
-	xr = R_strtod(xx, &endp);
+	double xr = R_strtod(xx, &endp);
 	if (isBlankString(endp)) {
 	    z.r = xr;
 	    z.i = 0.0;
 	}
-	else if (*endp == '+' || *endp == '-') {
-	    xi = R_strtod(endp, &endp);
+	else if (*endp++ == 'i' && isBlankString(endp)) {
+	    z.r = 0.;
+	    z.i = xr;
+	}
+	else if (*--endp == '+' || *endp == '-') {
+	    double xi = R_strtod(endp, &endp);
 	    if (*endp++ == 'i' && isBlankString(endp)) {
 		z.r = xr;
 		z.i = xi;
@@ -416,7 +429,7 @@ static SEXP coerceToSymbol(SEXP v)
     int warn = 0;
     if (length(v) <= 0)
 	error(_("invalid data of mode '%s' (too short)"),
-	      type2char(TYPEOF(v)));
+	      R_typeToChar(v));
     PROTECT(v);
     switch(TYPEOF(v)) {
     case LGLSXP:
@@ -1017,7 +1030,7 @@ static SEXP coercePairList(SEXP v, SEXPTYPE type)
     }
     else
 	error(_("'%s' object cannot be coerced to type '%s'"),
-	      type2char(TYPEOF(v)), type2char(type));
+	      R_typeToChar(v), type2char(type));
 
     /* If any tags are non-null then we */
     /* need to add a names attribute. */
@@ -1188,7 +1201,7 @@ SEXP coerceVector(SEXP v, SEXPTYPE type)
     }
 
     /* code to allow classes to extend ENVSXP, SYMSXP, etc */
-    if(IS_S4_OBJECT(v) && TYPEOF(v) == S4SXP) {
+    if(IS_S4_OBJECT(v) && TYPEOF(v) == OBJSXP) {
 	SEXP vv = R_getS4DataSlot(v, ANYSXP);
 	if(vv == R_NilValue)
 	  error(_("no method for coercing this S4 class to a vector"));
@@ -1272,7 +1285,7 @@ SEXP coerceVector(SEXP v, SEXPTYPE type)
 #define COERCE_ERROR_STRING "cannot coerce type '%s' to vector of type '%s'"
 
 #define COERCE_ERROR							\
-	error(_(COERCE_ERROR_STRING), type2char(TYPEOF(v)), type2char(type))
+	error(_(COERCE_ERROR_STRING), R_typeToChar(v), type2char(type))
 
 	switch (type) {
 	case SYMSXP:
@@ -1400,7 +1413,7 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
 	return v;
     }
     else errorcall(call, _(COERCE_ERROR_STRING),
-		   type2char(TYPEOF(u)), type2char(type));
+		   R_typeToChar(u), type2char(type));
     return u;/* -Wall */
 }
 
@@ -1558,7 +1571,7 @@ attribute_hidden SEXP do_asvector(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
     }
 
-    if(IS_S4_OBJECT(x) && TYPEOF(x) == S4SXP) {
+    if(IS_S4_OBJECT(x) && TYPEOF(x) == OBJSXP) {
 	SEXP v = R_getS4DataSlot(x, ANYSXP);
 	if(v == R_NilValue)
 	    error(_("no method for coercing this S4 class to a vector"));
@@ -1600,31 +1613,28 @@ attribute_hidden SEXP do_asvector(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 attribute_hidden SEXP do_asfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP arglist, envir, names, pargs, body;
-    int i, n;
-
     checkArity(op, args);
 
     /* Check the arguments; we need a list and environment. */
 
-    arglist = CAR(args);
+    SEXP arglist = CAR(args);
     if (!isNewList(arglist))
 	error(_("list argument expected"));
 
-    envir = CADR(args);
+    SEXP envir = CADR(args);
     if (isNull(envir)) {
 	error(_("use of NULL environment is defunct"));
 	envir = R_BaseEnv;
-    } else
-    if (!isEnvironment(envir))
+    } else if (!isEnvironment(envir))
 	error(_("invalid environment"));
 
-    n = length(arglist);
+    int n = length(arglist);
     if (n < 1)
 	error(_("argument must have length at least 1"));
-    PROTECT(names = getAttrib(arglist, R_NamesSymbol));
-    PROTECT(pargs = args = allocList(n - 1));
-    for (i = 0; i < n - 1; i++) {
+    SEXP
+	names = PROTECT(getAttrib(arglist, R_NamesSymbol)),
+	pargs = PROTECT(args = allocList(n - 1));
+    for (int i = 0; i < n - 1; i++) {
 	SETCAR(pargs, VECTOR_ELT(arglist, i));
 	if (names != R_NilValue && *CHAR(STRING_ELT(names, i)) != '\0') /* ASCII */
 	    SET_TAG(pargs, installTrChar(STRING_ELT(names, i)));
@@ -1632,8 +1642,8 @@ attribute_hidden SEXP do_asfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    SET_TAG(pargs, R_NilValue);
 	pargs = CDR(pargs);
     }
-    CheckFormals(args);
-    PROTECT(body = VECTOR_ELT(arglist, n-1));
+    CheckFormals(args, "as.function");
+    SEXP body = PROTECT(VECTOR_ELT(arglist, n-1));
     /* the main (only?) thing to rule out is body being
        a function already. If we test here then
        mkCLOSXP can continue to overreact when its
@@ -1958,7 +1968,10 @@ Rcomplex asComplex(SEXP x)
 attribute_hidden SEXP do_typeof(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
-    return type2rstr(TYPEOF(CAR(args)));
+    if(TYPEOF(CAR(args)) == OBJSXP && ! IS_S4_OBJECT(CAR(args)))
+	return mkString("object");
+    else
+	return type2rstr(TYPEOF(CAR(args)));
 }
 
 /* Define many of the <primitive> "is.xxx" functions :
@@ -2012,7 +2025,7 @@ attribute_hidden SEXP do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 	LOGICAL0(ans)[0] = (TYPEOF(CAR(args)) == STRSXP);
 	break;
     case SYMSXP:	/* is.symbol === is.name */
-	if(IS_S4_OBJECT(CAR(args)) && (TYPEOF(CAR(args)) == S4SXP)) {
+	if(IS_S4_OBJECT(CAR(args)) && (TYPEOF(CAR(args)) == OBJSXP)) {
 	    SEXP dot_xData = R_getS4DataSlot(CAR(args), SYMSXP);
 	    LOGICAL0(ans)[0] = (TYPEOF(dot_xData) == SYMSXP);
 	}
@@ -2020,7 +2033,7 @@ attribute_hidden SEXP do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    LOGICAL0(ans)[0] = (TYPEOF(CAR(args)) == SYMSXP);
 	break;
     case ENVSXP:	/* is.environment */
-	if(IS_S4_OBJECT(CAR(args)) && (TYPEOF(CAR(args)) == S4SXP)) {
+	if(IS_S4_OBJECT(CAR(args)) && (TYPEOF(CAR(args)) == OBJSXP)) {
 	    SEXP dot_xData = R_getS4DataSlot(CAR(args), ENVSXP);
 	    LOGICAL0(ans)[0] = (TYPEOF(dot_xData) == ENVSXP);
 	}
@@ -2067,8 +2080,10 @@ attribute_hidden SEXP do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     case 200:		/* is.atomic */
 	switch(TYPEOF(CAR(args))) {
+#ifdef S_compatible_BUT_UNDESIRABLE
 	case NILSXP:
 	    /* NULL is atomic (S compatibly), but not in isVectorAtomic(.) */
+#endif
 	case CHARSXP:
 	case LGLSXP:
 	case INTSXP:
@@ -2159,7 +2174,7 @@ attribute_hidden SEXP do_isvector(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     /* So this allows any type, including undocumented ones such as
        "closure", but not aliases such as "name" and "function". */
-    else if (streql(stype, type2char(TYPEOF(x)))) {
+    else if (streql(stype, R_typeToChar(x))) {
 	LOGICAL0(ans)[0] = 1;
     }
     else
@@ -2313,7 +2328,7 @@ attribute_hidden SEXP do_isna(SEXP call, SEXP op, SEXP args, SEXP rho)
     case NILSXP: break;
     default:
 	warningcall(call, _("%s() applied to non-(list or vector) of type '%s'"),
-		    "is.na", type2char(TYPEOF(x)));
+		    "is.na", R_typeToChar(x));
 	for (i = 0; i < n; i++)
 	    pa[i] = 0;
     }
@@ -2431,7 +2446,7 @@ static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
 
     default:
 	error("anyNA() applied to non-(list or vector) of type '%s'",
-	      type2char(TYPEOF(x)));
+	      R_typeToChar(x));
     }
     return FALSE;
 } // anyNA()
@@ -2509,7 +2524,7 @@ attribute_hidden SEXP do_isnan(SEXP call, SEXP op, SEXP args, SEXP rho)
 	break;
     default:
 	errorcall(call, _("default method not implemented for type '%s'"),
-		  type2char(TYPEOF(x)));
+		  R_typeToChar(x));
     }
     copyDimAndNames(x, ans);
     UNPROTECT(2); /* args, ans*/
@@ -2570,7 +2585,7 @@ attribute_hidden SEXP do_isfinite(SEXP call, SEXP op, SEXP args, SEXP rho)
 	break;
     default:
 	errorcall(call, _("default method not implemented for type '%s'"),
-		  type2char(TYPEOF(x)));
+		  R_typeToChar(x));
     }
     if (dims != R_NilValue)
 	setAttrib(ans, R_DimSymbol, dims);
@@ -2646,7 +2661,7 @@ attribute_hidden SEXP do_isinfinite(SEXP call, SEXP op, SEXP args, SEXP rho)
 	break;
     default:
 	errorcall(call, _("default method not implemented for type '%s'"),
-		  type2char(TYPEOF(x)));
+		  R_typeToChar(x));
     }
     if (!isNull(dims))
 	setAttrib(ans, R_DimSymbol, dims);
@@ -3014,7 +3029,7 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 	    }
 	    else if(valueType != TYPEOF(obj))
 		error(_("\"%s\" can only be set as the class if the object has this type; found \"%s\""),
-		      valueString, type2char(TYPEOF(obj)));
+		      valueString, R_typeToChar(obj));
 	    /* else, leave alone */
 	}
 	else if(!strcmp("numeric", valueString)) {

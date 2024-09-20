@@ -1,6 +1,6 @@
 % File src/library/parallel/man/makePSOCKcluster.Rd
 % Part of the R package, https://www.R-project.org
-% Copyright 2003-2020 R Core Team
+% Copyright 2003-2023 R Core Team
 % Distributed under GPL 2 or later
 
 \name{makeCluster}
@@ -8,6 +8,10 @@
 \alias{makePSOCKcluster}
 \alias{makeForkCluster}
 \alias{stopCluster}
+\alias{closeNode}
+\alias{recvData}
+\alias{recvOneData}
+\alias{sendData}
 \alias{setDefaultCluster}
 \alias{getDefaultCluster}
 \alias{R_PARALLEL_PORT}
@@ -101,7 +105,7 @@ getDefaultCluster()
       load the \pkg{methods} package: not loading it saves ca 30\% of the
       startup CPU time of the cluster.}
     \item{\code{useXDR}}{Logical. If true (default) serialization will
-      use XDR: where large amounts of data are to be transferred and
+      use \I{XDR}: where large amounts of data are to be transferred and
       all the nodes are little-endian, communication may be
       substantially faster if this is set to false.}
     \item{\code{setup_strategy}}{Character.  If \code{"parallel"} (default)
@@ -160,6 +164,11 @@ getDefaultCluster()
   
   For the very common usage of running both master and worker on a
   single multi-core host, the default settings are the appropriate ones.
+
+  A socket \link{connection} is used to communicate from the master to
+  each worker so the maximum number of connections (default 128 but some
+  will be in use) may need to be increased when the master process is
+  started.  
 }
 
 \author{

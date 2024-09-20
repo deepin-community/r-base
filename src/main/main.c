@@ -335,7 +335,9 @@ static void check_session_exit(void)
 	    R_Suicide(_("error during cleanup\n"));
 	else {
 	    exiting = TRUE;
-	    if (GetOption1(install("error")) != R_NilValue) {
+	    if (GetOption1(install("error")) != R_NilValue ||
+		R_isTRUE(GetOption1(install("catch.script.errors")))
+		) {
 		exiting = FALSE;
 		return;
 	    }
@@ -494,6 +496,8 @@ static unsigned char ConsoleBuf[CONSOLE_BUFFER_SIZE];
 
 static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 {
+    /* ensure R terminates if the handler segfaults (PR#18551) */
+    signal(signum, SIG_DFL);
     char *s;
 
     /* First check for stack overflow if we know the stack position.
@@ -633,7 +637,6 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 	REprintf("An irrecoverable exception occurred. R is aborting now ...\n");
     R_CleanTempDir();
     /* now do normal behaviour, e.g. core dump */
-    signal(signum, SIG_DFL);
     raise(signum);
 }
 
@@ -651,6 +654,12 @@ static void *signal_stack;
 #define R_USAGE 100000 /* Just a guess */
 static void init_signal_handlers(void)
 {
+    /* On Windows, C signal handling functions are replaced by psignal.
+       Initialization of a psignal Ctrl handler happens on the first
+       signal-related call (typically here). Signal handlers for
+       Ctrl signals set using C API before psignal initialization
+       will have no effect. */
+
     /* Do not set the (since 2005 experimental) SEGV handler
        UI if R_NO_SEGV_HANDLER env var is non-empty.
        This is needed to debug crashes in the handler
@@ -670,7 +679,7 @@ static void init_signal_handlers(void)
 	    warning("failed to allocate alternate signal stack");
 	sa.sa_sigaction = sigactionSegv;
 	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_ONSTACK | SA_SIGINFO;
+	sa.sa_flags = SA_ONSTACK | SA_SIGINFO | SA_NODEFER;
 	sigaction(SIGSEGV, &sa, NULL);
 	sigaction(SIGILL, &sa, NULL);
 #ifdef SIGBUS
@@ -678,7 +687,8 @@ static void init_signal_handlers(void)
 #endif
     }
 
-    signal(SIGINT,  handleInterrupt);
+    if (signal(SIGINT, handleInterrupt) == SIG_IGN)
+	signal(SIGINT, SIG_IGN);
     signal(SIGUSR1, onsigusr1);
     signal(SIGUSR2, onsigusr2);
     signal(SIGPIPE, handlePipe);
@@ -687,7 +697,8 @@ static void init_signal_handlers(void)
 #else /* not sigaltstack and sigaction and sigemptyset*/
 static void init_signal_handlers(void)
 {
-    signal(SIGINT,  handleInterrupt);
+    if (signal(SIGINT,  handleInterrupt) == SIG_IGN)
+	signal(SIGINT, SIG_IGN);
     signal(SIGUSR1, onsigusr1);
     signal(SIGUSR2, onsigusr2);
 #ifndef Win32
@@ -822,7 +833,7 @@ void setup_Rmainloop(void)
 
 #ifdef DEBUG_STACK_DETECTION 
     /* testing stack base and size detection */
-    printf("stack limit %ld, start %lx dir %d \n",
+    printf("stack limit %lu, start %lu dir %d \n",
 	(unsigned long) R_CStackLimit,
         (unsigned long) R_CStackStart,
 	R_CStackDir);
@@ -903,8 +914,13 @@ void setup_Rmainloop(void)
 
 	/* We set R_ARCH here: Unix does it in the shell front-end */
 	char Rarch[30];
-	strcpy(Rarch, "R_ARCH=/");
-	strcat(Rarch, R_ARCH);
+	strcpy(Rarch, "R_ARCH=");
+# ifdef R_ARCH
+	if (strlen(R_ARCH) > 0) {
+	    strcat(Rarch, "/");
+	    strcat(Rarch, R_ARCH);
+	}
+# endif
 	putenv(Rarch);
     }
 #else /* not Win32 */
@@ -995,7 +1011,7 @@ void setup_Rmainloop(void)
     R_Toplevel.restartstack = R_RestartStack;
     R_Toplevel.srcref = R_NilValue;
     R_Toplevel.prstack = NULL;
-    R_Toplevel.returnValue = NULL;
+    R_Toplevel.returnValue = SEXP_TO_STACKVAL(NULL);
     R_Toplevel.evaldepth = 0;
     R_Toplevel.browserfinish = 0;
     R_GlobalContext = R_ToplevelContext = R_SessionContext = &R_Toplevel;
@@ -1155,7 +1171,7 @@ void setup_Rmainloop(void)
     {
 	int i;
 	for(i = 0 ; i < ndeferred_warnings; i++)
-	    warning(deferred_warnings[i]);
+	    warning("%s", deferred_warnings[i]);
     }
     if (R_CollectWarnings) {
 	REprintf(_("During startup - "));
@@ -1312,6 +1328,58 @@ static void PrintCall(SEXP call, SEXP rho)
     R_BrowseLines = old_bl;
 }
 
+static int countBrowserContexts(void)
+{
+    /* passing TRUE for the second argument seems to over-count */
+    return countContexts(CTXT_BROWSER, FALSE);
+}
+
+#ifdef USE_BROWSER_HOOK
+struct callBrowserHookData { SEXP hook, cond, rho; };
+
+static SEXP callBrowserHook(void *data)
+{
+    struct callBrowserHookData *bhdata = data;
+    SEXP hook = bhdata-> hook;
+    SEXP cond = bhdata->cond;
+    SEXP rho = bhdata->rho;
+    SEXP args = CONS(hook, CONS(cond, CONS(rho, R_NilValue)));
+    SEXP hcall = LCONS(hook, args);
+    PROTECT(hcall);
+    R_SetOption(install("browser.hook"), R_NilValue);
+    SEXP val = eval(hcall, R_GlobalEnv);
+    UNPROTECT(1); /* hcall */
+    return val;
+}
+
+static void restoreBrowserHookOption(void *data, Rboolean jump)
+{
+    struct callBrowserHookData *bhdata = data;
+    SEXP hook = bhdata-> hook;
+    R_SetOption(install("browser.hook"), hook); // also on jumps
+}
+
+static void R_browserRepl(SEXP rho)
+{
+    /* save some stuff -- shouldn't be needed unless REPL is sloppy */
+    int savestack = R_PPStackTop;
+    SEXP topExp = PROTECT(R_CurrentExpr);
+    RCNTXT *saveToplevelContext = R_ToplevelContext;
+    RCNTXT *saveGlobalContext = R_GlobalContext;
+
+    int browselevel = countBrowserContexts();
+    R_ReplConsole(rho, savestack, browselevel);
+
+    /* restore the saved stuff */
+    R_CurrentExpr = topExp;
+    UNPROTECT(1); /* topExp */
+    R_PPStackTop = savestack;
+    R_CurrentExpr = topExp;
+    R_ToplevelContext = saveToplevelContext;
+    R_GlobalContext = saveGlobalContext;
+}
+#endif
+
 /* browser(text = "", condition = NULL, expr = TRUE, skipCalls = 0L)
  * ------- but also called from ./eval.c */
 attribute_hidden SEXP do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1331,6 +1399,10 @@ attribute_hidden SEXP do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     SET_TAG(CDR(ap), install("condition"));
     SET_TAG(CDDR(ap), install("expr"));
     SET_TAG(CDDDR(ap), install("skipCalls"));
+#ifdef USE_BROWSER_HOOK
+    SETCDR(CDDDR(ap), CONS(R_NilValue, R_NilValue));
+    SET_TAG(CDR(CDDDR(ap)), install("ignoreHook"));
+#endif
     argList = matchArgs_RC(ap, args, call);
     UNPROTECT(1);
     PROTECT(argList);
@@ -1343,15 +1415,33 @@ attribute_hidden SEXP do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SETCAR(CDDR(argList), ScalarLogical(1));
     if(CADDDR(argList) == R_MissingArg)
 	SETCAR(CDDDR(argList), ScalarInteger(0));
+#ifdef USE_BROWSER_HOOK
+    if(CAR(CDR(CDDDR(argList))) == R_MissingArg)
+	SETCAR(CDR(CDDDR(argList)), ScalarLogical(FALSE));
+#endif
 
     /* return if 'expr' is not TRUE */
-    if( !asLogical(CADDR(argList)) ) {
+    SEXP expr = CADDR(argList);
+    if (! asLogical(expr)) {
 	UNPROTECT(1);
 	return R_NilValue;
     }
 
+#ifdef USE_BROWSER_HOOK
+    /* allow environment to use to be provides as the 'expr' argument */
+    if (TYPEOF(expr) == ENVSXP)
+	rho = expr;
+
+    Rboolean ignoreHook = asLogical(CAR(CDR(CDDDR(argList))));
+    if (ignoreHook) {
+        R_browserRepl(rho);
+        UNPROTECT(1); /* argList */
+        return R_ReturnedValue;
+    }
+#endif
+
     /* trap non-interactive debugger invocation */
-    if(!R_Interactive) {
+    if(! R_Interactive) {
         char *p = getenv("_R_CHECK_BROWSER_NONINTERACTIVE_");
         if (p != NULL && StringTrue(p))
             error(_("non-interactive browser() -- left over from debugging?"));
@@ -1360,7 +1450,7 @@ attribute_hidden SEXP do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* Save the evaluator state information */
     /* so that it can be restored on exit. */
 
-    browselevel = countContexts(CTXT_BROWSER, 1);
+    browselevel = countBrowserContexts();
     savestack = R_PPStackTop;
     PROTECT(topExp = R_CurrentExpr);
     saveToplevelContext = R_ToplevelContext;
@@ -1369,6 +1459,13 @@ attribute_hidden SEXP do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!RDEBUG(rho)) {
 	int skipCalls = asInteger(CADDDR(argList));
 	cptr = R_GlobalContext;
+#ifdef USE_BROWSER_HOOK
+	if (! ignoreHook)
+	    /* skip over the hook closure on the stack */
+	    while ((!(cptr->callflag & CTXT_FUNCTION) || cptr->cloenv != rho)
+		   && cptr->callflag )
+	    cptr = cptr->nextcontext;		
+#endif
 	while ( ( !(cptr->callflag & CTXT_FUNCTION) || skipCalls--)
 		&& cptr->callflag )
 	    cptr = cptr->nextcontext;
@@ -1402,7 +1499,23 @@ attribute_hidden SEXP do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 	R_GlobalContext = &thiscontext;
 	R_InsertRestartHandlers(&thiscontext, "browser");
-	R_ReplConsole(rho, savestack, browselevel+1);
+#ifdef USE_BROWSER_HOOK
+	/* if a browser hook is provided, call it and use the result */
+	SEXP hook = ignoreHook ?
+	    R_NilValue : GetOption1(install("browser.hook"));
+	if (isFunction(hook)) {
+	    struct callBrowserHookData bhdata = {
+	        .hook = hook, .cond = CADR(argList), .rho = rho
+	    };
+	    R_ReturnedValue = R_UnwindProtect(callBrowserHook, &bhdata,
+					      restoreBrowserHookOption, &bhdata,
+					      NULL);
+	}
+	else
+	    R_ReplConsole(rho, savestack, browselevel + 1);
+#else
+	R_ReplConsole(rho, savestack, browselevel + 1);
+#endif
 	endcontext(&thiscontext);
     }
     endcontext(&returncontext);
@@ -1494,6 +1607,20 @@ attribute_hidden SEXP do_quit(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 static R_ToplevelCallbackEl *Rf_ToplevelTaskHandlers = NULL;
 
+  /* The handler currently running or NULL. */
+static R_ToplevelCallbackEl *Rf_CurrentToplevelHandler = NULL;
+
+  /* A running handler attempted to remove itself from Rf_ToplevelTaskHandlers,
+     do it after it finishes. */
+static Rboolean Rf_DoRemoveCurrentToplevelHandler = FALSE;
+
+  /* A handler has been removed from the Rf_ToplevelTaskHandlers. */
+static Rboolean Rf_RemovedToplevelHandlers = FALSE;
+
+  /* Flag to ensure that the top-level handlers aren't called recursively.
+     Simple state to indicate that they are currently being run. */
+static Rboolean Rf_RunningToplevelHandlers = FALSE;
+
 /**
   This is the C-level entry point for registering a handler
   that is to be called when each top-level task completes.
@@ -1544,6 +1671,19 @@ Rf_addTaskCallback(R_ToplevelCallback cb, void *data,
     return(el);
 }
 
+static void removeToplevelHandler(R_ToplevelCallbackEl *e)
+{
+    if (Rf_CurrentToplevelHandler == e)
+	Rf_DoRemoveCurrentToplevelHandler = TRUE; /* postpone */
+    else {
+	Rf_RemovedToplevelHandlers = TRUE;
+	if(e->finalizer)
+	    e->finalizer(e->data);
+	free(e->name);
+	free(e);
+    }
+}
+
 Rboolean
 Rf_removeTaskCallbackByName(const char *name)
 {
@@ -1566,14 +1706,11 @@ Rf_removeTaskCallbackByName(const char *name)
 	prev = el;
 	el = el->next;
     }
-    if(el) {
-	if(el->finalizer)
-	    el->finalizer(el->data);
-	free(el->name);
-	free(el);
-    } else {
+    if(el)
+	removeToplevelHandler(el);
+    else 
 	status = FALSE;
-    }
+
     return(status);
 }
 
@@ -1607,14 +1744,10 @@ Rf_removeTaskCallbackByIndex(int id)
 	    }
 	}
     }
-    if(tmp) {
-	if(tmp->finalizer)
-	    tmp->finalizer(tmp->data);
-	free(tmp->name);
-	free(tmp);
-    } else {
+    if(tmp)
+	removeToplevelHandler(tmp);
+    else
 	status = FALSE;
-    }
 
     return(status);
 }
@@ -1681,10 +1814,6 @@ R_getTaskCallbackNames(void)
   We currently do not pass this to the handler.
  */
 
-  /* Flag to ensure that the top-level handlers aren't called recursively.
-     Simple state to indicate that they are currently being run. */
-static Rboolean Rf_RunningToplevelHandlers = FALSE;
-
 /* This is not used in R and in no header */
 void
 Rf_callToplevelHandlers(SEXP expr, SEXP value, Rboolean succeeded,
@@ -1699,7 +1828,29 @@ Rf_callToplevelHandlers(SEXP expr, SEXP value, Rboolean succeeded,
     h = Rf_ToplevelTaskHandlers;
     Rf_RunningToplevelHandlers = TRUE;
     while(h) {
+	Rf_RemovedToplevelHandlers = FALSE;
+	Rf_DoRemoveCurrentToplevelHandler = FALSE;
+	Rf_CurrentToplevelHandler = h;
 	again = (h->cb)(expr, value, succeeded, visible, h->data);
+	Rf_CurrentToplevelHandler = NULL;
+
+	if (Rf_DoRemoveCurrentToplevelHandler) {
+	    /* the handler attempted to remove itself, PR#18508 */
+	    Rf_DoRemoveCurrentToplevelHandler = FALSE;
+	    again = FALSE;
+	}
+	if (Rf_RemovedToplevelHandlers) {
+	    /* some handlers were removed, but not "h" -> recompute "prev" */
+	    prev = NULL;
+	    R_ToplevelCallbackEl *h2 = Rf_ToplevelTaskHandlers;
+	    while(h2 != h) {
+		prev = h2;
+		h2 = h2->next;
+		if (!h2)
+		    R_Suicide("list of toplevel callbacks was corrupted");
+	    }
+	}
+
 	if(R_CollectWarnings) {
 	    REprintf(_("warning messages from top-level task callback '%s'\n"),
 		     h->name);

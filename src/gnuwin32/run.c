@@ -43,9 +43,21 @@
 
 static char RunError[501] = "";
 
+static Rboolean hasspace(const char *s)
+{
+    if (!s)
+	return FALSE;
+    for(;*s;s++)
+	if (isspace(*s)) return TRUE;
+    return FALSE;
+} 
+
 /* This might be given a command line (whole = 0) or just the
    executable (whole = 1).  In the later case the path may or may not
-   be quoted. */
+   be quoted. 
+
+   When whole = 0, the command will be quoted in the result if it contains
+   space. */
 static char *expandcmd(const char *cmd, int whole)
 {
     char c = '\0';
@@ -142,7 +154,8 @@ static char *expandcmd(const char *cmd, int whole)
     if (res > 0) {
 	/* perform the translation again with sufficient buffer size */
 	// This is the return value.
-	if (!(s = (char *) malloc(res + len))) { /* over-estimate */
+	if (!(s = (char *) malloc(res + len + 2))) {
+	    /* the size over-estimate, +2 in case quotes will be needed */
 	    if (fn) free(fn);
 	    strcpy(RunError, "Insufficient memory (expandcmd)");
 	    return NULL;
@@ -154,15 +167,25 @@ static char *expandcmd(const char *cmd, int whole)
 	   permissions for some component of the path. */
 	if (s) free(s);
 	// This is the return value.
-	if (!(s = (char *) malloc(d + len))) { /* over-estimate */
+	if (!(s = (char *) malloc(d + len + 2))) { /* over-estimate */
 	    if (fn) free(fn);
 	    strcpy(RunError, "Insufficient memory (expandcmd)");
 	    return NULL;
 	}
-        strncpy(s, fn, d + 1);
+	if (!whole && hasspace(fn)) 
+	    snprintf(s, d + 3, "\"%s\"", fn);
+	else
+	    strncpy(s, fn, d + 1);
+    } else if (!whole && hasspace(s)) {
+	/* GetShortPathName succeeded but it may still have returned the
+	   long path (so with spaces) */
+
+	memmove(s + 1, s, res + 1); 
+	s[0] = '"';
+	s[1 + res] = '"';
+	s[1 + res + 1] = '\0';
     }
 
-    /* FIXME: warn if the path contains space? */
     if (!whole) {
 	*q = c;         /* restore character after command */
 	strcat(s, q);   /* add the rest of input (usually arguments) */
@@ -183,10 +206,11 @@ static char *expandcmd(const char *cmd, int whole)
 
 extern size_t Rf_utf8towcs(wchar_t *wc, const char *s, size_t n);
 
+/* NOTE: this doesn't work for CE_UTF8 due to expandcmd() */
 static void pcreate(const char* cmd, cetype_t enc,
 		      int newconsole, int visible,
 		      HANDLE hIN, HANDLE hOUT, HANDLE hERR,
-		      pinfo *pi)
+		      pinfo *pi, int consignals)
 {
     DWORD ret;
     STARTUPINFO si;
@@ -205,7 +229,9 @@ static void pcreate(const char* cmd, cetype_t enc,
     sa.lpSecurityDescriptor = NULL;
     sa.bInheritHandle = TRUE;
 
-    /* FIXME: this might need to be done in wchar_t */
+    /* FIXME: this would have to be done in wchar_t/UTF-16LE to support
+       CE_UTF8; the enc==CE_UTF8 branch could be phased out once UTF-8 as
+       native encoding can be assumed on all Windows systems  */
     if (!(ecmd = expandcmd(cmd, 0))) return; /* error message already set */
 
     inpipe = (hIN != INVALID_HANDLE_VALUE)
@@ -369,6 +395,9 @@ static void pcreate(const char* cmd, cetype_t enc,
 	flags |= CREATE_SUSPENDED; /* assign to job before it runs */
     if (newconsole && (visible == 1))
 	flags |= CREATE_NEW_CONSOLE;
+    else if (newconsole && !consignals)
+	/* prevent interruption of background processes by Ctrl-C, PR#17764 */
+	flags |= CREATE_NEW_PROCESS_GROUP;
     if (job && breakaway)
 	flags |= CREATE_BREAKAWAY_FROM_JOB;
 
@@ -627,12 +656,12 @@ static int pwait2(pinfo *pi, DWORD timeoutMillis, int* timedout)
 int runcmd(const char *cmd, cetype_t enc, int wait, int visible,
 	   const char *fin, const char *fout, const char *ferr)
 {
-    return runcmd_timeout(cmd, enc, wait, visible, fin, fout, ferr, 0, NULL);
+    return runcmd_timeout(cmd, enc, wait, visible, fin, fout, ferr, 0, NULL, 1);
 }
 
 int runcmd_timeout(const char *cmd, cetype_t enc, int wait, int visible,
                    const char *fin, const char *fout, const char *ferr,
-                   int timeout, int *timedout)
+                   int timeout, int *timedout, int consignals)
 {
     if (!wait && timeout)
 	error("Timeout with background running processes is not supported.");
@@ -656,7 +685,7 @@ int runcmd_timeout(const char *cmd, cetype_t enc, int wait, int visible,
 
 
     memset(&(pi.pi), 0, sizeof(PROCESS_INFORMATION));
-    pcreate(cmd, enc, !wait, visible, hIN, hOUT, hERR, &pi);
+    pcreate(cmd, enc, !wait, visible, hIN, hOUT, hERR, &pi, consignals);
     if (pi.pi.hProcess) {
 	if (wait) {
 	    RCNTXT cntxt;
@@ -691,13 +720,16 @@ int runcmd_timeout(const char *cmd, cetype_t enc, int wait, int visible,
 rpipe * rpipeOpen(const char *cmd, cetype_t enc, int visible,
 		  const char *finput, int io,
 		  const char *fout, const char *ferr,
-		  int timeout)
+		  int timeout, int newconsole)
 {
     rpipe *r;
     HANDLE hTHIS, hIN, hOUT, hERR, hReadPipe, hWritePipe;
     DWORD id;
     BOOL res;
     int close1 = 0, close2 = 0, close3 = 0;
+    /* newconsole (~"!wait") means ignore Ctrl handler attribute
+       is set for child. When also visible==1, an actual text
+       console is created. */
 
     if (!(r = (rpipe *) malloc(sizeof(struct structRPIPE)))) {
 	strcpy(RunError, _("Insufficient memory (rpipeOpen)"));
@@ -715,46 +747,41 @@ rpipe * rpipeOpen(const char *cmd, cetype_t enc, int visible,
 	strcpy(RunError, "CreatePipe failed");
 	return NULL;
     }
-    if(io == 1) { /* pipe for R to write to */
-	hTHIS = GetCurrentProcess();
+    hTHIS = GetCurrentProcess();
+    if (io == 1) { /* pipe for R to write to */
 	r->read = hReadPipe;
 	DuplicateHandle(hTHIS, hWritePipe, hTHIS, &r->write,
 			0, FALSE, DUPLICATE_SAME_ACCESS);
 	CloseHandle(hWritePipe);
-	CloseHandle(hTHIS);
-	/* This sends stdout and stderr to NUL: */
-	pcreate(cmd, enc, 1, visible,
-		r->read, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE,
-		&(r->pi));
-	r->active = 1;
-	if (!r->pi.pi.hProcess) return NULL; else return r;
+    } else { /* pipe for R to read from */
+	r->write = hWritePipe;
+	DuplicateHandle(hTHIS, hReadPipe, hTHIS, &r->read,
+			0, FALSE, DUPLICATE_SAME_ACCESS);
+	CloseHandle(hReadPipe);
     }
-
-    /* pipe for R to read from */
-    hTHIS = GetCurrentProcess();
-    r->write = hWritePipe;
-    DuplicateHandle(hTHIS, hReadPipe, hTHIS, &r->read,
-		    0, FALSE, DUPLICATE_SAME_ACCESS);
-    CloseHandle(hReadPipe);
     CloseHandle(hTHIS);
 
-    hIN = getInputHandle(finput); /* a file or (usually NUL:) */
-    
-    if (hIN && finput && finput[0]) close1 = 1;
-    
-    if ((io == 0 || io == 3)) 
+    if (io == 1)
+	hIN = r->read;
+    else {
+	hIN = getInputHandle(finput); /* a file or (usually NUL:) */
+	if (hIN && finput && finput[0]) close1 = 1;
+    }    
+    if (io == 0 || io == 3) 
 	hOUT = r->write;
     else {
-	if (fout && fout[0]) close2 = 1;
  	hOUT = getOutputHandle(fout, 0);
+	if (hOUT && fout && fout[0]) close2 = 1;
     }
     if (io >= 2) 
 	hERR = r->write;
     else {
-	if (ferr && ferr[0]) close3 = 1;
 	hERR = getOutputHandle(ferr, 1);
+	if (hERR && ferr && ferr[0]) close3 = 1;
     }
-    pcreate(cmd, enc, 0, visible, hIN, hOUT, hERR, &(r->pi));
+    
+    pcreate(cmd, enc, newconsole, visible, hIN, hOUT, hERR, &(r->pi), 0);
+
     if (close1) CloseHandle(hIN);
     if (close2) CloseHandle(hOUT);
     if (close3) CloseHandle(hERR);
@@ -762,10 +789,13 @@ rpipe * rpipeOpen(const char *cmd, cetype_t enc, int visible,
     r->active = 1;
     if (!r->pi.pi.hProcess)
 	return NULL;
-    if (!(r->thread = CreateThread(NULL, 0, threadedwait, r, 0, &id))) {
-	rpipeClose(r, NULL);
-	strcpy(RunError, "CreateThread failed");
-	return NULL;
+    if (io != 1) {
+	/* FIXME: if still needed, should it be used also for io == 1? */
+	if (!(r->thread = CreateThread(NULL, 0, threadedwait, r, 0, &id))) {
+	    rpipeClose(r, NULL);
+	    strcpy(RunError, "CreateThread failed");
+	    return NULL;
+	}
     }
     return r;
 }
@@ -899,11 +929,24 @@ typedef struct Wpipeconn {
 static Rboolean Wpipe_open(Rconnection con)
 {
     rpipe *rp;
-    int visible = -1, io, mlen;
+    int visible = -1, io, mlen, newconsole;
+    const char *fin = NULL, *fout = NULL, *ferr = NULL;
 
-    io = con->mode[0] == 'w';
-    if(io) visible = 1; /* Somewhere to put the output */
-    rp = rpipeOpen(con->description, con->enc, visible, NULL, io, NULL, NULL, 0);
+    io = con->mode[0] == 'w'; /* 1 for write, 0 for read */
+    if (CharacterMode == RTerm) {
+	fin = fout = ferr = "";
+	newconsole = 1; /* ensures the child process runs in a new
+	                   process group (ignores Ctrl handler),
+	                   PR#17764 */
+    } else if(io) {
+	/* FIXME: this opens the extra console in Rgui, but it does not
+	   get the output */
+	visible = 1; /* Somewhere to put the output */
+	newconsole = 1;
+    } else
+	newconsole = 0;
+    rp = rpipeOpen(con->description, con->enc, visible, fin, io, fout, ferr, 0,
+                   newconsole);
     if(!rp) {
 	warning("cannot open cmd `%s'", con->description);
 	return FALSE;
