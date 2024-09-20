@@ -14,9 +14,9 @@
   methods for an S3 or S4 class.
 }
 \usage{% --> ../R/objects.R :
-   methods(generic.function, class, dropPath = FALSE)
+   methods(generic.function, class, all.names = FALSE, dropPath = FALSE)
 .S3methods(generic.function, class, envir = parent.frame(),
-                                    dropPath = FALSE)
+                                    all.names = FALSE, dropPath = FALSE)
 
 \S3method{format}{MethodsFunction}(x, byclass = attr(x, "byclass"), \dots)
 \S3method{print}{MethodsFunction}(x, byclass = attr(x, "byclass"), \dots)
@@ -29,11 +29,14 @@
   \item{envir}{the environment in which to look for the definition of
     the generic function, when the generic function is passed as a
     character string.}
+  \item{all.names}{a \code{\link{logical}} indicating if all
+    object names are returned.  When \code{FALSE} as by default, names
+    beginning with a \samp{.} are omitted.}
   \item{dropPath}{a \code{\link{logical}} indicating if the
     \code{\link{search}()} path, apart from \code{\link{.GlobalEnv}} and
     \code{package:base} (i.e., \code{\link{baseenv}()}), should be skipped
     when searching for method definitions.  The default \code{FALSE} is
-    back compatible and typically desired for \code{print()}ing, with or
+    back compatible and typically desired for \I{\code{print()}ing}, with or
     without asterisk; \code{dropPath=TRUE} has been hard coded in \R 4.3.0
     and is faster for non-small \code{\link{search}()} paths.}
   \item{x}{typically the result of \code{methods(..)}, an \R object of S3
@@ -47,9 +50,11 @@
 
 \details{
   \code{methods()} finds S3 and S4 methods associated with either the
-  \code{generic.function} or \code{class} argument.  Methods are found in
+  \code{generic.function} or \code{class} argument.
+  Methods found are those provided by all loaded namespaces via
+  registration, see \code{\link{UseMethod}}; normally, this includes
   all packages on the current \code{search()} path.  \code{.S3methods()}
-  finds only S3 methods, \code{.S4methods()} finds only S4 methods.
+  finds only S3 methods, \code{\link{.S4methods}()} finds only S4 methods.
 
   When invoked with the \code{generic.function} argument, the
   \code{"byclass"} attribute (see Details) is \code{FALSE}, and the
@@ -102,7 +107,7 @@
 }
 
 \note{
-  The original \code{methods} function was written by Martin Maechler.
+  The original \code{methods} function was written by \I{Martin Maechler}.
 }
 
 \seealso{

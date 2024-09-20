@@ -2,8 +2,8 @@ Source: r-base
 Section: gnu-r
 Priority: optional
 Maintainer: Dirk Eddelbuettel <edd@debian.org>
-Standards-Version: 4.6.2
-Build-Depends: gcc (>= 4:4.9.2-2), g++ (>= 4:4.9.2-2), gfortran (>= 4:4.9.2-2), libblas-dev, liblapack-dev, tcl8.6-dev, tk8.6-dev, bison, groff-base, libncurses-dev, libreadline-dev, debhelper-compat (= 12), texinfo, libbz2-dev, liblzma-dev, libpcre2-dev, libcurl4-openssl-dev | libcurl4-dev, xdg-utils, zlib1g-dev, libpng-dev, libjpeg-dev, libx11-dev, libxt-dev, x11proto-core-dev, libpango1.0-dev, libcairo2-dev, libtiff-dev, xvfb, xauth, xfonts-base, texlive-base, texlive-latex-base, texlive-plain-generic, texlive-fonts-recommended, texlive-fonts-extra, texlive-extra-utils, texlive-latex-recommended, texlive-latex-extra, default-jdk [!arm !hppa !kfreebsd-i386 !kfreebsd-amd64 !hurd-i386] | openjdk-10-jdk [!arm !hppa !kfreebsd-i386 !kfreebsd-amd64 !hurd-i386], mpack, bash-completion
+Standards-Version: 4.7.0
+Build-Depends: gcc (>= 4:4.9.2-2), g++ (>= 4:4.9.2-2), gfortran (>= 4:4.9.2-2), libblas-dev, liblapack-dev, tcl8.6-dev, tk8.6-dev, bison, groff-base, libncurses-dev, libreadline-dev, debhelper-compat (= 13), texinfo, libbz2-dev, liblzma-dev, libpcre2-dev, libcurl4-openssl-dev | libcurl4-dev, xdg-utils, zlib1g-dev, libpng-dev, libjpeg-dev, libx11-dev, libxt-dev, x11proto-core-dev, libpango1.0-dev, libcairo2-dev, libtiff-dev, xvfb, xauth, xfonts-base, texlive-base, texlive-latex-base, texlive-plain-generic, texlive-fonts-recommended, texlive-fonts-extra, texlive-extra-utils, texlive-latex-recommended, texlive-latex-extra, default-jdk [!arm !hppa !kfreebsd-any !hurd-any] | openjdk-10-jdk [!arm !hppa !kfreebsd-any !hurd-any], mpack, bash-completion, libtirpc-dev
 Vcs-Browser: https://salsa.debian.org/edd/r-base
 Vcs-Git: https://salsa.debian.org/edd/r-base.git
 Homepage: http://www.r-project.org/
@@ -95,7 +95,7 @@ Description: GNU R core of statistical computation and graphics system
 
 Package: r-base-dev
 Architecture: all
-Depends: ${misc:Depends}, r-base-core (>= ${source:Version}), build-essential, gcc, g++, gfortran, libblas-dev | libatlas-base-dev, liblapack-dev | libatlas-base-dev, libncurses-dev, libreadline-dev, libjpeg-dev, libpcre2-dev, libpng-dev, zlib1g-dev, libbz2-dev, liblzma-dev, libicu-dev, xauth, pkg-config
+Depends: ${misc:Depends}, r-base-core (>= ${source:Version}), build-essential, gcc, g++, gfortran, libblas-dev | libatlas-base-dev, liblapack-dev | libatlas-base-dev, libncurses-dev, libreadline-dev, libjpeg-dev, libpcre2-dev, libpng-dev, zlib1g-dev, libbz2-dev, liblzma-dev, libicu-dev, xauth, pkgconf, libtirpc-dev, libdeflate-dev
 Suggests: texlive-base, texlive-latex-base, texlive-plain-generic, texlive-fonts-recommended, texlive-fonts-extra, texlive-extra-utils, texlive-latex-recommended, texlive-latex-extra, texinfo
 Description: GNU R installation of auxiliary GNU R packages 
  R is a system for statistical computation and graphics.  It consists 

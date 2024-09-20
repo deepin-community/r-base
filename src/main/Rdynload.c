@@ -476,7 +476,19 @@ attribute_hidden SEXP Rf_registerRoutines(SEXP sSymbolList) {
 	SEXP sArgNum = getSymbolComponent(sSym, "numParameters", INTSXP, 1);
 	SEXP sDll = getSymbolComponent(sSym, "dll", VECSXP, 0);
 	SEXP sDllInfo = getSymbolComponent(sDll, "info", EXTPTRSXP, 0);
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wpedantic"
+#elif defined __GNUC__
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wpedantic"	
+#endif
 	DL_FUNC addr = (DL_FUNC) EXTPTR_PTR(sAddr);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#elif defined __GNUC__
+# pragma GCC diagnostic pop
+#endif
 	R_NativePrimitiveArgType* types = NULL;
 	int numArgs = -1;
 	if (LENGTH(sName) != 1)
@@ -1376,7 +1388,7 @@ Rf_MakeDLLInfo(DllInfo *info)
     SEXP ref, elNames, tmp;
     int i, n;
     const char *const names[] = {"name", "path", "dynamicLookup",
-				 "handle", "info"};
+				 "handle", "info", "forceSymbols"};
 
     n = sizeof(names)/sizeof(names[0]);
 
@@ -1394,6 +1406,7 @@ Rf_MakeDLLInfo(DllInfo *info)
     SEXP einfo = Rf_makeDllInfoReference(info);
     SET_VECTOR_ELT(ref, 4, einfo);
     R_registerSymbolEptr(ehandle, einfo);
+    SET_VECTOR_ELT(ref, 5, ScalarLogical(info->forceSymbols));
 
     PROTECT(elNames = allocVector(STRSXP, n));
     for(i = 0; i < n; i++)

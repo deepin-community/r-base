@@ -380,8 +380,8 @@ function(package, dir, subdirs = NULL, lib.loc = NULL, output = FALSE,
     if(!dir.exists(docdir)) return(NULL)
 
     # Locate all vignette files
-    buildPkgs <- loadVignetteBuilder(dir, mustwork = FALSE)
-    engineList <- vignetteEngine(package = buildPkgs)
+    buildPkgs <- loadVignetteBuilder(dir, mustwork = FALSE, lib.loc = lib.loc)
+    engineList <- vignetteEngine(package = buildPkgs) # could be character()
 
     docs <- names <- engines <- patterns <- character()
     allFiles <- list.files(docdir, all.files = FALSE, full.names = TRUE)
@@ -1190,9 +1190,13 @@ vignetteEngine <- local({
                pkgs <- sapply(result, function(engine) engine$package)
                keep <- is.element(pkgs, package)
                if (!any(keep)) {
-                   stop(gettextf("None of packages %s have registered vignette engines",
-                                 paste(sQuote(package), collapse = ", ")),
-                        domain = NA)
+                   ## was stop() in R 4.4.0
+                   msg <-ngettext(length(package),
+                                  "Package %s does not have a registered vignette engine",
+                                  "None of packages %s have registered vignette engines")
+                   warning(sprintf(msg, paste(sQuote(package), collapse = ", ")),
+                           domain = NA, call. = FALSE)
+                   ## return character() below
                }
                result <- result[keep]
                pkgs <- pkgs[keep]
@@ -1308,7 +1312,7 @@ vignetteEngine <- local({
 })
 
 loadVignetteBuilder <-
-function(pkgdir, mustwork = TRUE)
+function(pkgdir, mustwork = TRUE, lib.loc = NULL)
 {
     pkgs <- .get_package_metadata(pkgdir)["VignetteBuilder"]
     if (is.na(pkgs))
@@ -1320,7 +1324,8 @@ function(pkgdir, mustwork = TRUE)
     pkgs <- unique(c(pkgs, "utils"))
 
     for (pkg in pkgs) {
-	res <- tryCatch(suppressPackageStartupMessages(loadNamespace(pkg)),
+	res <- tryCatch(suppressPackageStartupMessages(loadNamespace(pkg,
+                                                                     lib.loc = lib.loc)),
                         error = identity)
 	if (mustwork && inherits(res, "error"))
             stop(gettextf("vignette builder '%s' not found", pkg), domain = NA)
@@ -1359,7 +1364,7 @@ getVignetteInfo <- function(package = NULL, lib.loc = NULL, all = TRUE)
             entries <- readRDS(INDEX)
         if (NROW(entries) > 0) {
             # FIXME:  this test is unnecessary?
-            R <- if (is.null(entries$R)) rep.int("", NROW(entries)) else entries$R
+            R <- entries$R %||% rep.int("", NROW(entries))
             file <- basename(entries$File)
             pdf <- entries$PDF
             topic <- file_path_sans_ext(ifelse(R == "", ifelse(pdf == "", file, pdf), R))

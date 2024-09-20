@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-2023  The R Core Team.
+ *  Copyright (C) 2000-2024  The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -172,10 +172,14 @@ extern char *tzname[2];
 #endif
 
 #include <stdlib.h> /* for setenv or putenv */
+#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Internal.h>
 
-Rboolean warn1902 = FALSE;
+#ifndef USE_INTERNAL_MKTIME
+/* PATH 1 */
+static Rboolean warn1902 = FALSE;
+#endif
 
 /* Substitute based on glibc code. */
 #include "Rstrptime.h"
@@ -326,6 +330,14 @@ static double mkdate00 (stm *tm)
 }
 
 
+/* if d is negative and non-integer then t will be off by one second
+   since we really need floor(). But floor() is slow, so we just
+   fix t instead as needed. */
+#define LOCALTIME_MK_(t_)			\
+        time_t t_ = (time_t) d;			\
+	if (d < 0. && d != (double) t_) t_--
+
+
 #ifdef USE_INTERNAL_MKTIME
 /*
    PATH 2), internal tzcode
@@ -353,7 +365,8 @@ static double mktime0 (stm *tm, const int local)
 */
 static stm * localtime0(const double *tp, const int local, stm *ltm)
 {
-    time_t t = (time_t) *tp;
+    double d = *tp;
+    LOCALTIME_MK_(t);
     return local ? R_localtime_r(&t, ltm) : R_gmtime_r(&t, ltm);
 }
 
@@ -588,11 +601,7 @@ static stm * localtime0(const double *tp, const int local, stm *ltm)
 #endif
     }
     if(OK) {
-	time_t t = (time_t) d;
-	/* if d is negative and non-integer then t will be off by one day
-	   since we really need floor(). But floor() is slow, so we just
-	   fix t instead as needed. */
-	if (d < 0.0 && (double) t != d) t--;
+	LOCALTIME_MK_(t);
 #ifndef HAVE_POSIX_LEAPSECONDS
 	for(int y = 0; y < n_leapseconds; y++) if(t > leapseconds[y] + y - 1) t++;
 #endif
@@ -709,19 +718,77 @@ static stm * localtime0(const double *tp, const int local, stm *ltm)
 } /* localtime0() */
 #endif // end of PATH 1) ---------------------------------------------
 
-static Rboolean set_tz(const char *tz, char *oldtz)
-{
-    Rboolean settz = TRUE; // typical result
+/* Some functions below need to set environment variable TZ and then
+   (attempt to) set the time-zone accordingly (via set_tz, tzset).
+   On exit, they attempt to restore the previous TZ and re-set the time-zone
+   (via reset_tz, tzset). Functions set_tz, reset_tz and the internal tzcode
+   tzset() may issue warnings, which may be turned into errors and cause a long
+   jump (PR#17966), before or after setting the time-zone (to the required one,
+   or as a fallback to UTC).
 
-    strcpy(oldtz, "");
+   struct tzset_info ... holds information for resetting the time zone
+                         during local and non-local returns
+
+   prepare_reset_tz() .. initializes tzset_info and sets up context
+   set_tz()           .. local setting of tz
+   reset_tz()         .. local re-setting, also invoked non-locally
+
+   prepare_dummy_reset_tz()
+                      .. initializes tzset_info for local invocation
+                         so that it does nothing (could go away
+                         after some refactoring)
+*/
+
+typedef struct tzset_info {
+    char oldtz[1001];	/* previous value of TZ variable */
+    Rboolean hadtz;	/* TZ variable existed previously */
+    Rboolean settz;	/* TZ variable was set by us */
+    RCNTXT cntxt;
+    Rboolean end_context_on_reset;
+			/* should endcontext() be called from reset_tz()? */
+} tzset_info;
+
+static void reset_tz(tzset_info *si);
+
+static void cend_reset_tz(void *data)
+{
+    tzset_info *si = (tzset_info *)data;
+    si->end_context_on_reset = FALSE;
+    reset_tz(si);
+}
+
+static void prepare_reset_tz(tzset_info *si)
+{
+    si->settz = FALSE;
+    /* set up a context which will reset tz if there is an error */
+    begincontext(&si->cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+                 R_NilValue, R_NilValue);
+    si->cntxt.cend = &cend_reset_tz;
+    si->cntxt.cenddata = si;
+    si->end_context_on_reset = TRUE;
+}
+
+static void prepare_dummy_reset_tz(tzset_info *si)
+{
+    si->settz = FALSE;
+    si->end_context_on_reset = FALSE;
+}
+    
+static Rboolean set_tz(const char *tz, tzset_info *si)
+{
+    si->settz = FALSE;
+
     char *p = getenv("TZ");
     if(p) {
 	if (strlen(p) > 1000)
 	    error("time zone specification is too long");
-	strcpy(oldtz, p);
-    }
+	strcpy(si->oldtz, p);
+	si->hadtz = TRUE;
+    } else
+	si->hadtz = FALSE;
 #ifdef HAVE_SETENV
     if(setenv("TZ", tz, 1)) warning(_("problem with setting timezone"));
+    else si->settz = TRUE;
 #elif defined(HAVE_PUTENV)
     {
 	/* This could be dynamic, but setenv is strongly preferred
@@ -733,24 +800,33 @@ static Rboolean set_tz(const char *tz, char *oldtz)
 	    error("time zone specification is too long");
 	strcpy(buff, "TZ="); strcat(buff, tz);
 	if(putenv(buff)) warning(_("problem with setting timezone"));
+	else si->settz = TRUE;
     }
 #else
     warning(_("cannot set timezones on this system"));
-    settz = FALSE;
 #endif
     tzset();
-    return settz;
+    return si->settz;
 }
 
-static void reset_tz(char *tz)
+static void reset_tz(tzset_info *si)
 {
-    if(strlen(tz)) {
+    if (si->end_context_on_reset) {
+	endcontext(&si->cntxt);
+	si->end_context_on_reset = FALSE; /* guard against double reset */
+    }
+    if (!si->settz)
+	return;
+
+    si->settz = FALSE; /* better avoid recursive attempts */
+    if(si->hadtz) {
 #ifdef HAVE_SETENV
-	if(setenv("TZ", tz, 1)) warning(_("problem with setting timezone"));
+	if(setenv("TZ", si->oldtz, 1))
+	    warning(_("problem with setting timezone"));
 #elif defined(HAVE_PUTENV)
 	{
 	    static char buff[1010];
-	    strcpy(buff, "TZ="); strcat(buff, tz); // could use strncat
+	    strcpy(buff, "TZ="); strcat(buff, si->oldtz); // could use strncat
 	    if(putenv(buff)) warning(_("problem with setting timezone"));
 	}
 #endif
@@ -847,7 +923,7 @@ makelt(stm *tm, SEXP ans, R_xlen_t i, Rboolean valid, double frac_secs)
     }
 
 // Used in do_asPOSIXlt do_strptime do_D2POSIXlt
-// Uses ans ansnames tzone settz oldtz  from enclosing function
+// Uses ans ansnames tzone tzsi from enclosing function
 #define END_MAKElt					\
     setAttrib(ans, R_NamesSymbol, ansnames);		\
     SEXP klass = PROTECT(allocVector(STRSXP, 2));	\
@@ -855,7 +931,7 @@ makelt(stm *tm, SEXP ans, R_xlen_t i, Rboolean valid, double frac_secs)
     SET_STRING_ELT(klass, 1, mkChar("POSIXt"));		\
     classgets(ans, klass);				\
     if(isString(tzone)) setAttrib(ans, install("tzone"), tzone);	\
-    if(settz) reset_tz(oldtz);				\
+    reset_tz(&tzsi);				\
     SEXP nm = getAttrib(x, R_NamesSymbol);				\
     if(nm != R_NilValue) setAttrib(VECTOR_ELT(ans, 5), R_NamesSymbol, nm); \
     MAYBE_INIT_balanced							\
@@ -983,10 +1059,12 @@ attribute_hidden SEXP do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
        It controls setting TZ, the use of gmtime vs localtime, forcing
        isdst = 0 and how the "tzone" attribute is set.
     */
-    Rboolean isUTC = (strcmp(tz, "GMT") == 0  || strcmp(tz, "UTC") == 0),
-      settz = FALSE;
-    char oldtz[1001] = "";
-    if(!isUTC && strlen(tz) > 0) settz = set_tz(tz, oldtz);
+    Rboolean isUTC = (strcmp(tz, "GMT") == 0  || strcmp(tz, "UTC") == 0);
+
+    tzset_info tzsi;
+    prepare_reset_tz(&tzsi);
+
+    if(!isUTC && strlen(tz) > 0) set_tz(tz, &tzsi);
 #ifdef USE_INTERNAL_MKTIME
     else R_tzsetwall(); // to get the system timezone recorded
 #else
@@ -1043,7 +1121,6 @@ attribute_hidden SEXP do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
     END_MAKElt
-    if(settz) reset_tz(oldtz);
     UNPROTECT(6);
     return ans;
 } // asPOSIXlt
@@ -1080,9 +1157,9 @@ attribute_hidden SEXP do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
       if !isUTC we need to set the tz, not set tm_isdst and use mktime
       not timegm (or an emulation).
     */
-    char oldtz[1001] = "";
-    Rboolean settz = FALSE;
-    if(!isUTC && strlen(tz) > 0) settz = set_tz(tz, oldtz);
+    tzset_info tzsi;
+    prepare_reset_tz(&tzsi);
+    if(!isUTC && strlen(tz) > 0) set_tz(tz, &tzsi);
 #ifdef USE_INTERNAL_MKTIME
     else R_tzsetwall(); // to get the system timezone recorded
 #else
@@ -1123,16 +1200,23 @@ attribute_hidden SEXP do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
 	    errno = 0;
 	    // Interface to mktime or timegm00, PATH-specific
 	    double tmp = mktime0(&tm, !isUTC);
-#ifdef MKTIME_SETS_ERRNO
-	    REAL(ans)[i] = errno ? NA_REAL : tmp + (secs - fsecs);
-#else
+/*
+    POSIX
+
+    POSIX requires that on error, mktime() returns (time_t)-1 and sets errno,
+    but previous versions of the specification made setting of errno optional.
+    errno on its own is not a reliable indication of error (PR#18532).
+*/
 	    REAL(ans)[i] = ((tmp == -1.)
+#ifdef MKTIME_SETS_ERRNO
+	                    && errno
+#else
 			    /* avoid silly gotcha at epoch minus one sec */
 			    && (tm.tm_sec != 59)
 			    && ((tm.tm_sec = 58), (mktime0(&tm, !isUTC) != -2.))
+#endif
 			    ) ?
 	      NA_REAL : tmp + (secs - fsecs);
-#endif
 	}
     }
 
@@ -1144,7 +1228,7 @@ attribute_hidden SEXP do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
     SET_STRING_ELT(klass, 1, mkChar("POSIXt"));
     classgets(ans, klass);
 
-    if(settz) reset_tz(oldtz);
+    reset_tz(&tzsi);
     UNPROTECT(4);
     return ans;
 } // as.POSIXct()
@@ -1167,8 +1251,8 @@ attribute_hidden SEXP do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     if(!isNull(tz) && !isString(tz))
 	error(_("invalid '%s'"), "attr(x, \"tzone\")");
 
-    Rboolean settz = FALSE;
-    char oldtz[1001] = "";
+    tzset_info tzsi;
+    prepare_reset_tz(&tzsi);
     const char *tz1;
     if (!isNull(tz) && strlen(tz1 = CHAR(STRING_ELT(tz, 0)))) {
 	/* If the format includes %Z or %z
@@ -1181,7 +1265,7 @@ attribute_hidden SEXP do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* strftime (per POSIX) calls settz(), so we need to set TZ, but
 	   we would not have to call settz() directly (except for the
 	   old OLD_Win32 code) */
-	if(needTZ) settz = set_tz(tz1, oldtz);
+	if(needTZ) set_tz(tz1, &tzsi);
     }
 
     /* workaround for glibc/FreeBSD/macOS strftime: they have
@@ -1215,7 +1299,10 @@ attribute_hidden SEXP do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	// This codes assumes a fixed order of components.
 	double secs = REAL(VECTOR_ELT(x, 0))[i%nlen[0]], fsecs = floor(secs);
 	// avoid (int) NAN
-	tm.tm_sec   = R_FINITE(secs) ? (int) fsecs: NA_INTEGER;
+	if (R_FINITE(secs) && fsecs >= INT_MIN && fsecs <= INT_MAX)
+	    tm.tm_sec = (int) fsecs;
+	else
+	    tm.tm_sec = NA_INTEGER;
 	tm.tm_min   = INTEGER(VECTOR_ELT(x, 1))[i%nlen[1]];
 	tm.tm_hour  = INTEGER(VECTOR_ELT(x, 2))[i%nlen[2]];
 	tm.tm_mday  = INTEGER(VECTOR_ELT(x, 3))[i%nlen[3]];
@@ -1315,7 +1402,10 @@ attribute_hidden SEXP do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 #else
 	    res = strftime(buff, 2049, buf2, &tm);
 #endif
-	    if (res == 0) { // overflow for at least internal and glibc
+	    if (res == 0 // overflow for at least internal and glibc
+	        // if not from a format string that may give zero bytes
+	        && strcmp(buf2, "%Z") && strcmp(buf2, "%z")
+	        && strcmp(buf2, "%P") && strcmp(buf2, "%p")) {
 		Rf_error("output string exceeded 2048 bytes");
 	    }
 
@@ -1355,7 +1445,7 @@ attribute_hidden SEXP do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	UNPROTECT(1);
     }
 
-    if(settz) reset_tz(oldtz);
+    reset_tz(&tzsi);
     UNPROTECT(3);
     return ans;
 }
@@ -1385,11 +1475,13 @@ attribute_hidden SEXP do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     PROTECT(stz); /* it might be new */
 
-    char oldtz[1001] = "";
     // Usage of isUTC here follows do_asPOSIXlt
-    Rboolean isUTC = (strcmp(tz, "GMT") == 0  || strcmp(tz, "UTC") == 0),
-      settz = FALSE;
-   if(!isUTC && strlen(tz) > 0) settz = set_tz(tz, oldtz);
+    Rboolean isUTC = (strcmp(tz, "GMT") == 0  || strcmp(tz, "UTC") == 0);
+
+    tzset_info tzsi;
+    prepare_reset_tz(&tzsi);
+
+    if(!isUTC && strlen(tz) > 0) set_tz(tz, &tzsi);
 #ifdef USE_INTERNAL_MKTIME
     else R_tzsetwall(); // to get the system timezone recorded
 #else
@@ -1461,10 +1553,23 @@ attribute_hidden SEXP do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
 		/* we do want to set wday, yday, isdst, but not to
 		   adjust structure at DST boundaries */
 		memcpy(&tm2, &tm, sizeof(stm));
-		mktime0(&tm2, !isUTC); /* set wday, yday, isdst */
-		tm.tm_wday = tm2.tm_wday;
-		tm.tm_yday = tm2.tm_yday;
-		tm.tm_isdst = isUTC ? 0: tm2.tm_isdst;
+		if (isUTC) tm.tm_isdst = 0;
+		/* mktime _may_ result in error e.g. during the spring-forward gap */
+		if (mktime0(&tm2, !isUTC) != -1) {
+		    /* set wday, yday, isdst */
+		    tm.tm_wday = tm2.tm_wday;
+		    tm.tm_yday = tm2.tm_yday;
+		    if (!isUTC && tm.tm_hour == tm2.tm_hour
+		               && tm.tm_min == tm2.tm_min) {
+			/* do not adjust tm_isdst when the hours/minutes have
+			   been adjusted; some mktime implementations adjust
+			   the (non-existent) time in the spring-forward gap to
+			   the time after the gap and they adjust the tm_isdst
+			   value accordingly; taking just one of the two of
+			   these adjustments would be incorrect (PR#18581). */
+			tm.tm_isdst = tm2.tm_isdst;
+		    }
+		}
 	    }
 	    invalid = validate_tm(&tm) != 0;
 	}
@@ -1500,7 +1605,6 @@ attribute_hidden SEXP do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
 	    setAttrib(VECTOR_ELT(ans, 5), R_NamesSymbol, nm3);
 	}
     }
-    if(settz) reset_tz(oldtz);
     UNPROTECT(5);
     return ans;
 } // strptime()
@@ -1548,16 +1652,19 @@ attribute_hidden SEXP do_D2POSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 		for ( ; day < 0; --y, day += days_in_year(y) );
 	    // Avoid overflows
 	    double year0 =  y - 1900 + rounds * 400;
-	    if (year0 > INT_MAX || year0 < INT_MIN) valid = FALSE;
-	    y = tm.tm_year = (int)year0;
-	    tm.tm_yday = day;
-	    /* month within year */
-	    for (mon = 0;
-		 day >= (tmp = days_in_month(mon, y));
-		 day -= tmp, mon++);
-	    tm.tm_mon = mon;
-	    tm.tm_mday = day + 1;
-	    tm.tm_isdst = 0; /* no dst in GMT */
+	    if (year0 > INT_MAX || year0 < INT_MIN)
+		valid = FALSE;
+	    else {
+		y = tm.tm_year = (int)year0;
+		tm.tm_yday = day;
+		/* month within year */
+		for (mon = 0;
+		     day >= (tmp = days_in_month(mon, y));
+		     day -= tmp, mon++);
+		tm.tm_mon = mon;
+		tm.tm_mday = day + 1;
+		tm.tm_isdst = 0; /* no dst in GMT */
+	    }
 	}
 	makelt(&tm, ans, i, valid, valid ? 0.0 : x_i);
 	SET_STRING_ELT(VECTOR_ELT(ans, 9), i, mkChar(tz));
@@ -1565,8 +1672,9 @@ attribute_hidden SEXP do_D2POSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     SEXP tzone = mkString(tz);
     PROTECT(tzone);
-    Rboolean settz = FALSE;
-    char oldtz[1] = ""; // unused
+
+    tzset_info tzsi; /* tz reset not used */
+    prepare_dummy_reset_tz(&tzsi);
     END_MAKElt
 
     UNPROTECT(5);
@@ -1627,7 +1735,7 @@ attribute_hidden SEXP do_POSIXlt2D(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP balancePOSIXlt(SEXP x, Rboolean fill_only, Rboolean do_class)
+static SEXP balancePOSIXlt(SEXP x, Rboolean fill_only, Rboolean do_class)
 {
     MAYBE_INIT_balanced
     const SEXP _filled_ = ScalarLogical(NA_LOGICAL);
