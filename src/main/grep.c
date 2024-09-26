@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1997--2022  The R Core Team
+ *  Copyright (C) 1997--2024  The R Core Team
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -55,7 +55,8 @@ As from R 4.1.0 we translate latin1 strings in a non-latin1-locale to UTF-8.
 #endif
 
 /* interval at which to check interrupts */
-#define NINTERRUPT 1000000
+/*   if re-enabling, consider a power of two */
+/* #define NINTERRUPT 1000000 */
 
 /* How many encoding warnings to give */
 #define NWARN 5
@@ -179,17 +180,19 @@ static SEXP mkCharWLenASCII(const wchar_t *wc, int nc, Rboolean maybe_ascii)
     }
 
     /* possibly not ASCII */
-    size_t nb = (nc + 1) * 4;
+    size_t nb = ((size_t)nc + 1) * 4;
     if (nb <= 8192) {
 	char xi[8192];
 	nb = wcstoutf8(xi, wc, nb);
-	return mkCharLenCE(xi, (int)nb-1, CE_UTF8);
+	return mkCharLenCE(xi, (int)(nb-1), CE_UTF8);
     }
 
-    nb = wcstoutf8(NULL, wc, INT_MAX);
+    nb = wcstoutf8(NULL, wc, (size_t)INT_MAX+2);
+    if (nb-1 > INT_MAX)
+	error("R character strings are limited to 2^31-1 bytes");
     char *xi = R_Calloc(nb, char);
     nb = wcstoutf8(xi, wc, nb);
-    SEXP ans = mkCharLenCE(xi, (int)nb-1, CE_UTF8);
+    SEXP ans = mkCharLenCE(xi, (int)(nb-1), CE_UTF8);
     R_Free(xi);
     return ans;
 }
@@ -621,7 +624,8 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		    buf = trCharUTF82(STRING_ELT(x, i));
 		    if (!buf || !utf8Valid(buf)) {
 			if(nwarn++ < NWARN)
-			    warning(_("input string %d is invalid UTF-8"), i+1);
+			    warning(_("input string %lld is invalid UTF-8"),
+			            (long long)i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
@@ -629,7 +633,8 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		    buf = translateCharFP2(STRING_ELT(x, i));
 		    if (!buf || (mbcslocale && !mbcsValid(buf))) {
 			if(nwarn++ < NWARN)
-			    warning(_("input string %d is invalid in this locale"), i+1);
+			    warning(_("input string %lld is invalid in this locale"),
+			            (long long)i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
@@ -697,12 +702,13 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 	    else if (use_UTF8) { // includes Latin-1 support
 		split = trCharUTF82(STRING_ELT(tok, itok));
 		if (!split || !utf8Valid(split))
-		    error(_("'split' string %d is invalid UTF-8"), itok+1);
+		    error(_("'split' string %lld is invalid UTF-8"),
+		          (long long)itok+1);
 	    } else {
 		split = translateCharFP2(STRING_ELT(tok, itok));
 		if (!split || (mbcslocale && !mbcsValid(split)))
-		    error(_("'split' string %d is invalid in this locale"),
-			  itok+1);
+		    error(_("'split' string %lld is invalid in this locale"),
+			  (long long)itok+1);
 	    }
 	    int slen = (int) strlen(split);
 
@@ -720,7 +726,8 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		    buf = trCharUTF82(STRING_ELT(x, i));
 		    if (!buf || !utf8Valid(buf)) {
 			if(nwarn++ < NWARN)
-			    warning(_("input string %d is invalid UTF-8"), i+1);
+			    warning(_("input string %lld is invalid UTF-8"),
+			            (long long)i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
@@ -728,7 +735,8 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		    buf = translateCharFP2(STRING_ELT(x, i));
 		    if (!buf || (mbcslocale && !mbcsValid(buf))) {
 			if(nwarn++ < NWARN)
-			    warning(_("input string %d is invalid in this locale"), i+1);
+			    warning(_("input string %lld is invalid in this locale"),
+			            (long long)i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
@@ -761,7 +769,7 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 			    (slen > 1 && strncmp(bufp, split, slen))) continue;
 			if (slen) {
 			    if (bufp > laststart)
-				strncpy(pt, laststart, bufp - laststart);
+				memcpy(pt, laststart, bufp - laststart);
 			    pt[bufp - laststart] = '\0';
 			} else {
 			    pt[0] = *bufp; pt[1] ='\0';
@@ -794,11 +802,13 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 	    else if (use_UTF8) {
 		split = trCharUTF82(STRING_ELT(tok, itok));
 		if (!split || !utf8Valid(split))
-		    error(_("'split' string %d is invalid UTF-8"), itok+1);
+		    error(_("'split' string %lld is invalid UTF-8"),
+		          (long long)itok+1);
 	    } else {
 		split = translateCharFP2(STRING_ELT(tok, itok));
 		if (!split || (mbcslocale && !mbcsValid(split)))
-		    error(_("'split' string %d is invalid in this locale"), itok+1);
+		    error(_("'split' string %lld is invalid in this locale"),
+		          (long long)itok+1);
 	    }
 #ifdef HAVE_PCRE2
 	    pcre2_code *re = NULL;
@@ -832,7 +842,8 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		    buf = trCharUTF82(STRING_ELT(x, i));
 		    if (!buf || !utf8Valid(buf)) {
 			if(nwarn++ < NWARN)
-			    warning(_("input string %d is invalid UTF-8"), i+1);
+			    warning(_("input string %lld is invalid UTF-8"),
+			            (long long)i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
@@ -840,7 +851,8 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		    buf = translateCharFP2(STRING_ELT(x, i));
 		    if (!buf || (mbcslocale && !mbcsValid(buf))) {
 			if(nwarn++ < NWARN)
-			    warning(_("input string %d is invalid in this locale"), i+1);
+			    warning(_("input string %lld is invalid in this locale"),
+			            (long long)i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
@@ -861,7 +873,10 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 					  0, 0, ovector, ovecsize)) >= 0) {
 #endif
 			/* Empty matches get the next char, so move by one. */
-			bufp += MAX(ovector[1], 1);
+			if (ovector[1] > 0)
+			    bufp += ovector[1];
+			else if (*bufp)
+			    bufp += utf8clen(*bufp);
 			ntok++;
 			if (*bufp == '\0')
 			    break;
@@ -892,9 +907,10 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 			bufp += ovector[1];
 		    } else {
 			/* Match was empty. */
-			pt[0] = *bufp;
-			pt[1] = '\0';
-			bufp++;
+			int clen = utf8clen(*bufp);
+			strncpy(pt, bufp, clen);
+			pt[clen] = '\0';
+			bufp += clen;
 		    }
 		    if (useBytes)
 			SET_STRING_ELT(t, j, mkBytesNew(pt, haveBytesInput));
@@ -937,7 +953,7 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 
 	    wsplit = wtransChar2(STRING_ELT(tok, itok));
 	    if (!wsplit)
-		error(_("'split' string %d is invalid"), itok+1);
+		error(_("'split' string %lld is invalid"), (long long)itok+1);
 	    if ((rc = tre_regwcomp(&reg, wsplit, cflags)))
 		reg_report(rc, &reg, translateChar(STRING_ELT(tok, itok)));
 	    Rboolean ascii_split = IS_ASCII(STRING_ELT(tok, itok));
@@ -953,7 +969,8 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		Rboolean ascii_xi = IS_ASCII(STRING_ELT(x, i));
 		if (!wbuf) {
 		    if(nwarn++ < NWARN)
-			warning(_("input string %d is invalid"), i+1);
+			warning(_("input string %lld is invalid"),
+			        (long long)i+1);
 		    SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 		    continue;
 		}
@@ -999,7 +1016,8 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		vmaxset(vmax2);
 	    }
 	    tre_regfree(&reg);
-	} else { /* ERE in normal chars -- single byte or MBCS */
+	} else { /* ERE in normal chars -- single byte */
+	         /* previously used also with MBCS */
 	    regex_t reg;
 	    regmatch_t regmatch[1];
 	    int rc;
@@ -1017,7 +1035,8 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 	    else {
 		split = translateCharFP2(STRING_ELT(tok, itok));
 		if (!split || (mbcslocale && !mbcsValid(split)))
-		    error(_("'split' string %d is invalid in this locale"), itok+1);
+		    error(_("'split' string %lld is invalid in this locale"),
+		          (long long)itok+1);
 	    }
 	    if (useBytes)
 		rc = tre_regcompb(&reg, split, cflags);
@@ -1040,7 +1059,8 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		    buf = translateCharFP2(STRING_ELT(x, i));
 		    if (!buf || (mbcslocale && !mbcsValid(buf))) {
 			if(nwarn++ < NWARN)
-			    warning(_("input string %d is invalid in this locale"), i+1);
+			    warning(_("input string %lld is invalid in this locale"),
+			            (long long)i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
@@ -1060,6 +1080,8 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		    } else {
 			while(!(rc = tre_regexec(&reg, bufp, 1, regmatch, 0))) {
 			    /* Empty matches get the next char, so move by one. */
+                            /* Not necessarily correct with MBCS, but only used
+			       with single bytes */
 			    bufp += MAX(regmatch[0].rm_eo, 1);
 			    ntok++;
 			    if (*bufp == '\0') break;
@@ -1094,6 +1116,8 @@ attribute_hidden SEXP do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 			/* Match was empty. */
 			pt[0] = *bufp;
 			pt[1] = '\0';
+			/* Not necessarily correct with MBCS, but only used
+			   with single bytes */
 			bufp++;
 		    }
 		    if (useBytes)
@@ -1366,21 +1390,24 @@ attribute_hidden SEXP do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
 		ws = wtransChar2(STRING_ELT(text, i));
 		if (!ws) {
 		    if(nwarn++ < NWARN)
-			warning(_("input string %d is invalid"), i+1);
+			warning(_("input string %lld is invalid"),
+			        (long long)i+1);
 		    continue;
 		}
 	    } else if (use_UTF8) {
 		s = trCharUTF82(STRING_ELT(text, i));
 		if (!s || !utf8Valid(s)) {
 		    if(nwarn++ < NWARN)
-			warning(_("input string %d is invalid UTF-8"), i+1);
+			warning(_("input string %lld is invalid UTF-8"),
+			        (long long)i+1);
 		    continue;
 		}
 	    } else {
 		s = translateCharFP2(STRING_ELT(text, i));
 		if (!s || (mbcslocale && !mbcsValid(s))) {
 		    if(nwarn++ < NWARN)
-			warning(_("input string %d is invalid in this locale"), i+1);
+			warning(_("input string %lld is invalid in this locale"),
+			        (long long)i+1);
 		    continue;
 		}
 	    }
@@ -2007,6 +2034,69 @@ static int wcount_subs(const wchar_t *repl)
     return i;
 }
 
+static int sub_buffer_check_overflow(double d)
+{
+    /* 2147483647 is a length limit for R strings and 32-bit ints can be
+       precisely represented in IEEE double (but not 64-bit ints) */
+    if (!(d < INT_MAX) || !(d < 2147483647))
+	error(_("result string is too long"));
+    return (int)d;
+}
+
+static void
+sub_buffer_size_init(size_t replen, int ns, int nsubs, int global,
+                     int *nns, int *maxrep)
+{
+   /* worst possible scenario is to put a copy of the
+      replacement after every character, unless there are
+      backrefs */
+    *maxrep = sub_buffer_check_overflow((double)replen + (ns-2.) * nsubs);
+    if (global) {
+	double dnns = (double)ns * (*maxrep + 1.) + 1000.;
+	if (dnns > 10000) dnns = 2.*ns + (double)replen + 1000.;
+	*nns = sub_buffer_check_overflow(dnns);
+    } else
+	*nns = sub_buffer_check_overflow((double)ns +
+	                                 (double)*maxrep + 1000.);
+}
+
+static int
+sub_buffer_size_expand(double needed, int *nns)
+{
+    int ineeded = sub_buffer_check_overflow(needed);
+    if (*nns < ineeded) {
+	/* This could fail at smaller value on a 32-bit platform:
+	   it is merely an integer overflow check */
+	if (*nns < INT_MAX/2)
+	    (*nns) *= 2;
+	if (*nns < ineeded)
+	    (*nns) = ineeded;
+	return 1; 
+    } else
+	return 0;
+}
+
+static void
+sub_buffer_expand(double needed, int *nns, char **cbuf, char **u)
+{
+    if (sub_buffer_size_expand(needed, nns)) {
+       char *tmp;
+       tmp = R_Realloc(*cbuf, *nns, char);
+       *u = tmp + (*u - *cbuf);
+       *cbuf = tmp;
+   }
+}
+
+static void
+wsub_buffer_expand(double needed, int *nns, wchar_t **cbuf, wchar_t **u)
+{
+    if (sub_buffer_size_expand(needed, nns)) {
+       wchar_t *tmp;
+       tmp = R_Realloc(*cbuf, *nns, wchar_t);
+       *u = tmp + (*u - *cbuf);
+       *cbuf = tmp;
+   }
+}
 
 /* The following R functions do substitution for regular expressions,
  * either once or globally.
@@ -2172,15 +2262,17 @@ attribute_hidden SEXP do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 	else if (use_WC) {
 	    ws = wtransChar2(STRING_ELT(text, i));
 	    if (!ws)
-		error(_("input string %d is invalid"), i+1);
+		error(_("input string %lld is invalid"), (long long)i+1);
 	} else if (use_UTF8) {
 	    s = trCharUTF82(STRING_ELT(text, i));
 	    if (!s || !utf8Valid(s))
-		error(_("input string %d is invalid UTF-8"), i+1);
+		error(_("input string %lld is invalid UTF-8"),
+		     (long long)i+1);
 	} else {
 	    s = translateCharFP2(STRING_ELT(text, i));
 	    if (!s || (mbcslocale && !mbcsValid(s)))
-		error(_("input string %d is invalid in this locale"), i+1);
+		error(_("input string %lld is invalid in this locale"),
+		      (long long)i+1);
 	}
 
 	if (fixed_opt) {
@@ -2239,35 +2331,28 @@ attribute_hidden SEXP do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 	   memset(ovector, 0, ovecsize*sizeof(int));
 #endif
 	   ns = (int) strlen(s);
-	   /* worst possible scenario is to put a copy of the
-	      replacement after every character, unless there are
-	      backrefs */
-	   maxrep = (int)(replen + (ns-2) * count_subs(srep));
-	   if (global) {
-	       /* Integer overflow has been seen */
-	       double dnns = ns * (maxrep + 1.) + 1000;
-	       if (dnns > 10000) dnns = (double)(2*ns + replen + 1000);
-	       nns = (int) dnns;
-	   } else nns = ns + maxrep + 1000;
+	   sub_buffer_size_init(replen, ns, count_subs(srep), global,
+	                        &nns, &maxrep);
 	   u = cbuf = R_Calloc(nns, char);
 	   offset = 0; nmatch = 0; eflag = 0; last_end = -1;
 	   /* ncap is one more than the number of capturing patterns */
 #ifdef HAVE_PCRE2
 	   if (use_UTF8) eflag |= PCRE2_NO_UTF_CHECK;
 	   /* PCRE2 has also pcre2_substitute */
-	   while ((ncap = pcre2_match(re, (PCRE2_SPTR) s, (PCRE2_SIZE) ns,
-	                              (PCRE2_SIZE) offset, eflag, mdata,
-	                              mcontext)) >= 0 ) {
+	   while ((rc = pcre2_match(re, (PCRE2_SPTR) s, (PCRE2_SIZE) ns,
+				    (PCRE2_SIZE) offset, eflag, mdata,
+				    mcontext)) >= 0 ) {
 
 	       ovector = pcre2_get_ovector_pointer(mdata);
 #else
-	   while ((ncap = pcre_exec(re_pcre, re_pe, s, ns, offset, eflag,
-				   ovector, 30)) >= 0) {
+	   while ((rc = pcre_exec(re_pcre, re_pe, s, ns, offset, eflag,
+				  ovector, 30)) >= 0) {
 #endif
 	       /* printf("%s, %d, %d %d\n", s, offset,
 		  ovector[0], ovector[1]); */
 	       nmatch++;
 	       for (j = offset; j < ovector[0]; j++) *u++ = s[j];
+	       ncap = rc > 0 ? rc : 10;
 	       if (last_end == -1 /* for PCRE2 */ || ovector[1] > last_end) {
 		   u = R_pcre_string_adj(u, s, srep, ovector, use_UTF8, ncap);
 		   last_end = (int) ovector[1];
@@ -2289,14 +2374,9 @@ attribute_hidden SEXP do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 		   } else
 		       *u++ = s[offset++];
 	       }
-	       if (nns < (u - cbuf) + (ns-offset) + maxrep + 100) {
-		   char *tmp;
-		   if (nns > INT_MAX/2) error(_("result string is too long"));
-		   nns *= 2;
-		   tmp = R_Realloc(cbuf, nns, char);
-		   u = tmp + (u - cbuf);
-		   cbuf = tmp;
-	       }
+	       double needed = (double)(u-cbuf) + (double)(ns-offset)
+	                       + (double)maxrep + 100.;
+	       sub_buffer_expand(needed, &nns, &cbuf, &u);
 #ifdef HAVE_PCRE2
 	       eflag = PCRE2_NOTBOL;  /* probably not needed */
 	       if (use_UTF8) eflag |= PCRE2_NO_UTF_CHECK;
@@ -2304,7 +2384,7 @@ attribute_hidden SEXP do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 	       eflag = PCRE_NOTBOL;  /* probably not needed */
 #endif
 	   }
-	   R_pcre_exec_error(ncap, i);
+	   R_pcre_exec_error(rc, i);
 	   if (nmatch == 0)
 	       SET_STRING_ELT(ans, i, markBytesOld(STRING_ELT(text, i),
 		                                   useBytes, haveBytesInput));
@@ -2312,14 +2392,8 @@ attribute_hidden SEXP do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 	       SET_STRING_ELT(ans, i, NA_STRING);
 	   else {
 	       /* copy the tail */
-	       if (nns < (u - cbuf) + (ns-offset)+1) {
-		   char *tmp;
-		   if (nns > INT_MAX/2) error(_("result string is too long"));
-		   nns *= 2;
-		   tmp = R_Realloc(cbuf, nns, char);
-		   u = tmp + (u - cbuf);
-		   cbuf = tmp;
-	       }
+	       double needed = (double)(u-cbuf) + (double)(ns-offset) + 1.0;
+	       sub_buffer_expand(needed, &nns, &cbuf, &u);
 	       for (j = offset ; s[j] ; j++) *u++ = s[j];
 	       *u = '\0';
 	       if (useBytes)
@@ -2331,19 +2405,12 @@ attribute_hidden SEXP do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 	   }
 	   R_Free(cbuf);
        } else if (!use_WC) {
-	    int maxrep, rc;
+	    int maxrep;
 	    /* extended regexp in bytes */
 
 	    ns = (int) strlen(s);
-	    /* worst possible scenario is to put a copy of the
-	       replacement after every character, unless there are
-	       backrefs */
-	    maxrep = (int)(replen + (ns-2) * count_subs(srep));
-	    if (global) {
-		double dnns = ns * (maxrep + 1.) + 1000;
-		if (dnns > 10000) dnns = (double)(2*ns + replen + 1000);
-		nns = (int) dnns;
-	    } else nns = ns + maxrep + 1000;
+	    sub_buffer_size_init(replen, ns, count_subs(srep), global,
+	                         &nns, &maxrep);
 	    u = cbuf = R_Calloc(nns, char);
 	    offset = 0; nmatch = 0; eflags = 0; last_end = -1;
 	    while ((rc = tre_regexecb(&reg, s+offset, 10, regmatch, eflags))
@@ -2361,14 +2428,9 @@ attribute_hidden SEXP do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 		if (s[offset] == '\0' || !global) break;
 		if (regmatch[0].rm_eo == regmatch[0].rm_so)
 		    *u++ = s[offset++];
-		if (nns < (u - cbuf) + (ns-offset) + maxrep + 100) {
-		    char *tmp;
-		    if (nns > INT_MAX/2) error(_("result string is too long"));
-		    nns *= 2;
-		    tmp = R_Realloc(cbuf, nns, char);
-		    u = tmp + (u - cbuf);
-		    cbuf = tmp;
-		}
+		double needed = (double)(u-cbuf) + (double)(ns-offset)
+		                + (double)maxrep + 100.;
+		sub_buffer_expand(needed, &nns, &cbuf, &u);
 		eflags = REG_NOTBOL;
 	    }
 	    // AFAICS the only possible error report is REG_ESPACE
@@ -2383,14 +2445,8 @@ attribute_hidden SEXP do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 		SET_STRING_ELT(ans, i, NA_STRING);
 	    else {
 		/* copy the tail */
-		if (nns < (u - cbuf) + (ns-offset)+1) {
-		    char *tmp;
-		    if (nns > INT_MAX/2) error(_("result string is too long"));
-		    nns *= 2;
-		    tmp = R_Realloc(cbuf, nns, char);
-		    u = tmp + (u - cbuf);
-		    cbuf = tmp;
-		}
+		double needed = (double)(u-cbuf) + (double)(ns-offset) + 1.0;
+		sub_buffer_expand(needed, &nns, &cbuf, &u);
 		for (j = offset ; s[j] ; j++) *u++ = s[j];
 		*u = '\0';
 		if (useBytes)
@@ -2406,14 +2462,8 @@ attribute_hidden SEXP do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 	    Rboolean ascii_texti = IS_ASCII(STRING_ELT(text, i));
 
 	    ns = (int) wcslen(ws);
-	    maxrep = (int)(replen + (ns-2) * wcount_subs(wrep));
-	    if (global) {
-		/* worst possible scenario is to put a copy of the
-		   replacement after every character */
-		double dnns = ns * (maxrep + 1.) + 1000;
-		if (dnns > 10000) dnns = 2*ns + maxrep + 1000;
-		nns = (int) dnns;
-	    } else nns = ns + maxrep + 1000;
+	    sub_buffer_size_init(replen, ns, wcount_subs(wrep), global,
+	                         &nns, &maxrep);
 	    u = cbuf = R_Calloc(nns, wchar_t);
 	    offset = 0; nmatch = 0; eflags = 0; last_end = -1;
 	    while (tre_regwexec(&reg, ws+offset, 10, regmatch, eflags) == 0) {
@@ -2428,16 +2478,9 @@ attribute_hidden SEXP do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 		if (ws[offset] == L'\0' || !global) break;
 		if (regmatch[0].rm_eo == regmatch[0].rm_so)
 		    *u++ = ws[offset++];
-		if (nns < (u - cbuf) + (ns-offset) + maxrep + 100) {
-		    wchar_t *tmp;
-		    /* This could fail at smaller value on a 32-bit platform:
-		       it is merely an integer overflow check */
-		    if (nns > INT_MAX/2) error(_("result string is too long"));
-		    nns *= 2;
-		    tmp = R_Realloc(cbuf, nns, wchar_t);
-		    u = tmp + (u - cbuf);
-		    cbuf = tmp;
-		}
+		double needed = (double)(u-cbuf) + (double)(ns-offset)
+		                + (double)maxrep + 100.;
+		wsub_buffer_expand(needed, &nns, &cbuf, &u);
 		eflags = REG_NOTBOL;
 	    }
 	    if (nmatch == 0)
@@ -2447,14 +2490,8 @@ attribute_hidden SEXP do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 		SET_STRING_ELT(ans, i, NA_STRING);
 	    else {
 		/* copy the tail */
-		if (nns < (u - cbuf) + (ns-offset)+1) {
-		    wchar_t *tmp;
-		    if (nns > INT_MAX/2) error(_("result string is too long"));
-		    nns *= 2;
-		    tmp = R_Realloc(cbuf, nns, wchar_t);
-		    u = tmp + (u - cbuf);
-		    cbuf = tmp;
-		}
+		double needed = (double)(u-cbuf) + (double)(ns-offset) + 1.;
+		wsub_buffer_expand(needed, &nns, &cbuf, &u);
 		for (j = offset ; ws[j] ; j++) *u++ = ws[j];
 		*u = L'\0';
 		SET_STRING_ELT(ans, i,
@@ -2524,7 +2561,8 @@ gregexpr_Regexc(const regex_t *reg, SEXP sstr, int useBytes, int use_WC,
 	string = translateCharFP2(sstr);
 	if (!string || (mbcslocale && !mbcsValid(string))) {
 	    if ((*nwarn)++ < NWARN)
-		warning(_("input string %d is invalid in this locale"), i+1);
+		warning(_("input string %lld is invalid in this locale"),
+		        (long long)i+1);
 	    return gregexpr_BadStringAns();
 	}
 	len = strlen(string);
@@ -2532,7 +2570,7 @@ gregexpr_Regexc(const regex_t *reg, SEXP sstr, int useBytes, int use_WC,
 	ws = wtransChar2(sstr);
 	if (!ws) {
 	    if ((*nwarn)++ < NWARN)
-		warning(_("input string %d is invalid"), i+1);
+		warning(_("input string %lld is invalid"), (long long)i+1);
 	    return gregexpr_BadStringAns();
 	}
 	len = wcslen(ws);
@@ -3056,7 +3094,8 @@ attribute_hidden SEXP do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 	for(i = 0; i < name_count; i++) {
 	    char *entry = name_table + name_entry_size * i;
 	    PROTECT(thisname = mkChar(entry + 2));
-	    int capture_num = (entry[0]<<8) + entry[1] - 1;
+	    int capture_num = ((unsigned char)entry[0]<<8)
+	                     + (unsigned char)entry[1] - 1;
 	    SET_STRING_ELT(capture_names, capture_num, thisname);
 	    UNPROTECT(1);
 	}
@@ -3114,7 +3153,8 @@ attribute_hidden SEXP do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 		    ws = wtransChar2(STRING_ELT(text, i));
 		    if (!ws) {
 			if(nwarn++ < NWARN)
-			    warning(_("input string %d is invalid"), i+1);
+			    warning(_("input string %lld is invalid"),
+			            (long long)i+1);
 			INTEGER(ans)[i] = INTEGER(matchlen)[i] = -1;
 			continue;
 		    }
@@ -3122,7 +3162,8 @@ attribute_hidden SEXP do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 		    s = trCharUTF82(STRING_ELT(text, i));
 		    if (!s || !utf8Valid(s)) {
 			if(nwarn++ < NWARN)
-			    warning(_("input string %d is invalid UTF-8"), i+1);
+			    warning(_("input string %lld is invalid UTF-8"),
+			            (long long)i+1);
 			INTEGER(ans)[i] = INTEGER(matchlen)[i] = -1;
 			continue;
 		    }
@@ -3130,7 +3171,8 @@ attribute_hidden SEXP do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 		    s = translateCharFP2(STRING_ELT(text, i));
 		    if (!s || (mbcslocale && !mbcsValid(s))) {
 			if(nwarn++ < NWARN)
-			    warning(_("input string %d is invalid in this locale"), i+1);
+			    warning(_("input string %lld is invalid in this locale"),
+			            (long long)i+1);
 			INTEGER(ans)[i] = INTEGER(matchlen)[i] = -1;
 			continue;
 		    }
@@ -3209,16 +3251,16 @@ attribute_hidden SEXP do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 			s = trCharUTF82(STRING_ELT(text, i));
 			if (!s || !utf8Valid(s)) {
 			    if (nwarn++ < NWARN)
-				warning(_("input string %d is invalid UTF-8"),
-				        i+1);
+				warning(_("input string %lld is invalid UTF-8"),
+				        (long long)i+1);
 			    s = NULL;
 			}
 		    } else {
 			s = translateCharFP2(STRING_ELT(text, i));
 			if (!s || (mbcslocale && !mbcsValid(s))) {
 			    if (nwarn++ < NWARN)
-				warning(_("input string %d is invalid in this locale"),
-				        i+1);
+				warning(_("input string %lld is invalid in this locale"),
+				        (long long)i+1);
 			    s = NULL;
 			}
 		    }
@@ -3380,15 +3422,15 @@ attribute_hidden SEXP do_regexec(SEXP call, SEXP op, SEXP args, SEXP env)
 	    else if(use_WC) {
 		wt = wtransChar2(STRING_ELT(text, i));
 		if (!wt)
-		    error(_("input string %d is invalid in this locale"),
-		          i + 1);
+		    error(_("input string %lld is invalid in this locale"),
+		          (long long)i + 1);
 		rc = tre_regwexec(&reg, wt, nmatch, pmatch, 0);
 		vmaxset(vmax);
 	    } else {
 		t = translateCharFP2(STRING_ELT(text, i));
 		if (!t || (mbcslocale && !mbcsValid(t)))
-		    error(_("input string %d is invalid in this locale"),
-			  i + 1);
+		    error(_("input string %lld is invalid in this locale"),
+			  (long long)i + 1);
 		rc = tre_regexec(&reg, t,
 				 nmatch, pmatch, 0);
 		vmaxset(vmax);

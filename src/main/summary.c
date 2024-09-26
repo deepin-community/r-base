@@ -409,12 +409,15 @@ static Rboolean cprod(SEXP sx, Rcomplex *value, Rboolean narm)
 attribute_hidden
 SEXP fixup_NaRm(SEXP args)
 {
-    SEXP t, na_value;
-
     /* Need to make sure na.rm is last and exists */
-    na_value = ScalarLogical(FALSE);
+    SEXP na_value = ScalarLogical(FALSE);
+    Rboolean seen_NaRm = FALSE;
     for(SEXP a = args, prev = R_NilValue; a != R_NilValue; a = CDR(a)) {
 	if(TAG(a) == R_NaRmSymbol) {
+	    if(seen_NaRm)
+	        error(_("formal argument \"%s\" matched by multiple actual arguments"),
+		      "na.rm");
+	    seen_NaRm = TRUE;
 	    if(CDR(a) == R_NilValue) return args;
 	    na_value = CAR(a);
 	    if(prev == R_NilValue) args = CDR(a);
@@ -424,7 +427,7 @@ SEXP fixup_NaRm(SEXP args)
     }
 
     PROTECT(na_value);
-    t = CONS(na_value, R_NilValue);
+    SEXP t = CONS(na_value, R_NilValue);
     UNPROTECT(1);
     PROTECT(t);
     SET_TAG(t, R_NaRmSymbol);
@@ -549,7 +552,7 @@ attribute_hidden SEXP do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 	case REALSXP: return real_mean(x);
 	case CPLXSXP: return complex_mean(x);
 	default:
-	    error(R_MSG_type, type2char(TYPEOF(x)));
+	    error(R_MSG_type, R_typeToChar(x));
 	    return R_NilValue; // -Wall on clang 4.2
 	}
     }
@@ -987,7 +990,7 @@ na_answer: /* only sum(INTSXP, ...) case currently used */
     return ans;
 
 invalid_type:
-    errorcall(call, R_MSG_type, type2char(TYPEOF(a)));
+    errorcall(call, R_MSG_type, R_typeToChar(a));
     return R_NilValue;
 }/* do_summary */
 
@@ -1015,10 +1018,7 @@ attribute_hidden SEXP do_range(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(prargs = promiseArgs(args, R_GlobalEnv));
     for (a = args, b = prargs; a != R_NilValue; a = CDR(a), b = CDR(b))
 	IF_PROMSXP_SET_PRVALUE(CAR(b), CAR(a));
-    ans = applyClosure(call, op, prargs, env, R_NilValue);
-#ifdef ADJUST_ENVIR_REFCNTS
-    unpromiseArgs(prargs);
-#endif
+    ans = applyClosure(call, op, prargs, env, R_NilValue, TRUE);
     UNPROTECT(3);
     return(ans);
 }
