@@ -2942,6 +2942,11 @@ cmi.o dmi.o: iface.o
 @end example
 
 @noindent
+Some maintainers have found it difficult to find @emph{all} the module
+dependencies which leads to hard-to-reproduce installation failures.
+There are tools available to find these, including the Intel compiler's
+flag @option{-gen-dep} and @code{makedepf90}.
+
 Note that it is not portable (although some platforms do accept it) to
 define a module of the same name in multiple source files.
 @c As was done by frailtypack in 2018-12: gfortran accepted this, ODS
@@ -3129,9 +3134,9 @@ The discussion above is about the standard @R{} ways of compiling C++:
 it will not apply to packages using @file{src/Makefile} or building in a
 subdirectory that do not set the C++ standard.  And compilers' default
 C++ standards varies widely and gets changed frequently by vendors --
-for example Apple clang up to at least 15 defaults to C++98, @I{LLVM}
+for example Apple clang up to at least 16 defaults to C++98, @I{LLVM}
 clang 14--15 to C++14, @I{LLVM} clang 16--18 to C++17 and @command{g++}
-11--13 to C++17.
+11--14 to C++17.
 
 For a package with a @file{src/Makefile} (or a Windows analogue),
 a non-default C++ compiler can be selected by including something like
@@ -3193,7 +3198,7 @@ compiler is to include an empty C++ file in @file{src}..
 @subsection C standards
 
 C has had standards C89/C90, C99, C11, C17 (also known as C18), and C23
-is in final draft and expected to be published in early 2024.  C11 was a
+is in final draft and expected to be published in 2024.  C11 was a
 minor change to C99 which introduced some new features and made others
 optional, and C17 is a `bug-fix' update to C11.  On the other hand, C23
 makes extensive changes, including making @code{bool}, @code{true} and
@@ -4969,7 +4974,9 @@ SystemRequirements: GNU make
 and ensure that you use the value of environment variable @env{MAKE}
 (and not just @command{make}) in your scripts.  (On some platforms GNU
 make is available under a name such as @command{gmake}, and there
-@code{SystemRequirements} is used to set @env{MAKE}.)
+@code{SystemRequirements} is used to set @env{MAKE}.)  Your
+@code{configure} script (or similar) does need to check that the
+executable pointed to by @env{MAKE} is indeed GNU make.
 
 If you only need GNU make for parts of the package which are rarely
 needed (for example to create bibliography files under
@@ -6148,14 +6155,18 @@ conflicts with @code{std::make_unique} from C++14 and @code{std::byte},
 @item
 In C++ code
 @example
-using namesapace std; 
+using namespace std; 
 @end example
 @noindent
 is not good practice, and has caused platform-dependent errors if
 included before headers, especially system headers (which may be
 included by other headers). The best practice is to use explicit
 @code{std::} prefixes for all functions declared by the C++ standard to
-be in that namespace.
+be in that namespace.  It is an error to use @code{using namespace
+std} before including any C++ headers, and some recent compilers will
+warn if this is done.
+@c LLVM and Apple clang and Intel icpx do.
+
 
 @item
 @c including @I{LLVM} clang as from 4.0.0
@@ -6312,6 +6323,15 @@ The most portable way to interface to other software with a C API is to
 use C code (which can normally be mixed with C++ code in a package).
 
 @item
+Include only what is essential in @code{extern "C" @{@}} blocks in C++
+code.  In particular it is not portable to include @R{} headers in such
+blocks (although they are themselves C code, they may include C++ system
+headers and the public ones already enclose their declarations in such a
+block).  And maintainers have include @R{} headers from other headers
+included in such a block.
+@c obscure compilation failures seen with clang++/libc++
+
+@item
 @code{reinterpret_cast} in C++ is not safe for pointers: for example the types
 may have different alignment requirements.  Use @code{memcpy} to copy
 the contents to a fresh variable of the destination type.
@@ -6359,20 +6379,21 @@ include it.
 Be careful if using @code{malloc} or @code{calloc}.  First, their return
 value must always be checked to see if the allocation succeeded -- it is
 almost always easier to use @R{}'s @code{R_Calloc}, which does check.
-Second, the first argument is of type @code{size_t} and recent compilers
-are warning about passing signed arguments (which could get promoted to
-ridiculously large values).
+Second, the first argument is of type @code{size_t}@footnote{an unsigned
+64-bit integer type on recent @R{} platforms.} and some recent compilers
+warn about passing @code{int} (signed) arguments (which could get
+promoted to ridiculously large values).
 
 @item
 For C code, consider using the flag @option{-Wstrict-prototypes} which
-is supported by @command{gcc} and @I{LLVM} and Apple @command{clang}.  This
-has found quite a number of errors where functions have been declared
-without arguments and is likely to become the default in future
-compilers.  (It already is for @I{LLVM} @command{clang} in C23 mode.)  Note
-that using @code{f()} for a function without any parameters was
-deprecated in C99 and C11, but it expected to be non-deprecated in C23.
-However, @code{f(void)} is supported by all standards and avoids any
-uncertainty.
+is supported by @command{gcc} and @I{LLVM} and Apple @command{clang}.
+This has found quite a number of errors where functions have been
+declared without arguments and is likely to become the default in future
+compilers.  (It already is for Apple @command{clang} and for @I{LLVM}
+@command{clang} in C23 mode.)  Note that using @code{f()} for a function
+without any parameters was deprecated in C99 and C11, but it expected to
+be non-deprecated in C23.  However, @code{f(void)} is supported by all
+standards and avoids any uncertainty.
 @c draft n3054 §6.7.6.3 point 13 and footnote.
 
 @I{LLVM} @command{clang} has a separate warning
@@ -12721,7 +12742,7 @@ indicate @var{TRUE} or @var{FALSE}.
 
 What happens if the @code{SEXP} is not of the correct type?  Sometimes
 you have no other option except to generate an error.  You can use the
-function @code{error} for this.  It is usually better to coerce the
+function @code{Rf_error} for this.  It is usually better to coerce the
 object to the correct type.  For example, if you find that an
 @code{SEXP} is of the type @code{INTEGER}, but you need a @code{REAL}
 object, you can change the type by using
@@ -14543,7 +14564,9 @@ there that can be included too, but many of the features they contain
 should be regarded as undocumented and unstable.
 
 Most of these header files, including all those included by @file{R.h},
-can be used from C++ code.
+can be used from C++ code.  (However, they cannot safely be included in
+a @code{extern "C" @{ @}} block as they may include C++ headers when
+included from C++ code---and whether this succeeds is system-specific).
 
 @quotation Note
 Because @R{} re-maps many of its external names to avoid clashes with
@@ -14789,8 +14812,9 @@ simplest case can be called with a single character string argument
 giving the error message. (Don't do this if the string contains @samp{%}
 or might otherwise be interpreted as a format.)
 
-These are defined in header @file{R_ext/Error.h} included by
-@file{R.h}.
+These are defined in header @file{R_ext/Error.h} included by @file{R.h}.
+@strong{NB}: when @code{R_NO_REMAP} is defined (as is recommeneded for
+C++ code), @code{Rf_error} etc must be used.
 
 @menu
 * Error signaling from Fortran::
@@ -14800,8 +14824,8 @@ These are defined in header @file{R_ext/Error.h} included by
 @subsection Error signaling from Fortran
 @cindex Error signaling from Fortran
 
-There are two interface function provided to call @code{error} and
-@code{warning} from Fortran code, in each case with a simple character
+There are two interface function provided to call @code{Rf_error} and
+@code{Rf_warning} from Fortran code, in each case with a simple character
 string argument.  They are defined as
 
 @example
@@ -14920,7 +14944,7 @@ by something like (fixed-form Fortran 90 code):
           subroutine putRNGseed() bind(C, name = "PutRNGstate")
           end subroutine putRNGseed
         end interface
-      end module
+      end module rngfuncs
       
       subroutine testit
       use rngfuncs
@@ -14929,7 +14953,7 @@ by something like (fixed-form Fortran 90 code):
       X = unifRand()
       print *, X
       call putRNGSeed()
-      end
+      end subroutine testit
 @end example
 
 
@@ -15085,10 +15109,11 @@ to define a function in C to be called from Fortran
 to declare a Fortran routine in C before use
 @item F77_CALL(@var{name})
 to call a Fortran routine from C
-@item F77_COMDECL(@var{name})
-to declare a Fortran common block in C
-@item F77_COM(@var{name})
-to access a Fortran common block from C
+@c Never used in R nor current packages
+@c @item F77_COMDECL(@var{name})
+@c to declare a Fortran common block in C
+@c @item F77_COM(@var{name})
+@c to access a Fortran common block from C
 @end table
 
 On most current platforms these are all the same, but it is unwise to
@@ -15748,15 +15773,15 @@ Performs ``transfer of sign'' and is defined as @eqn{|x| *
 @end deftypefun
 
 @deftypefun double fprec (double @var{x}, double @var{digits})
-Returns the value of @var{x} rounded to @var{digits} decimal digits
-(after the decimal point).
+Returns the value of @var{x} rounded to @var{digits} @emph{significant}
+decimal digits.
 
 This is the function used by @R{}'s @code{signif()}.
 @end deftypefun
 
 @deftypefun double fround (double @var{x}, double @var{digits})
-Returns the value of @var{x} rounded to @var{digits} @emph{significant}
-decimal digits.
+Returns the value of @var{x} rounded to @var{digits} decimal digits
+(after the decimal point).
 
 This is the function used by @R{}'s @code{round()}.  (Note that C99/C++11
 provide a @code{round} function but C++98 need not.)
@@ -15811,11 +15836,11 @@ natural logarithm (@code{log(x)} in @R{}).
 @end multitable
 @end quotation
 
-There are a set of constants (@code{PI}, @code{DOUBLE_EPS}) (and so on)
-defined (unless @code{STRICT_R_HEADERS} is defined) in the included
-header @file{R_ext/Constants.h}, mainly for compatibility with @Sl{}.
-All but @code{PI} are deprecated and should be replaced by the C99/C++11
-versions used in that file.
+For compatibility with @Sl{} this file defines the constant @code{PI}
+(unless @code{STRICT_R_HEADERS} is defined): this is deprecated and
+should be replaced by @code{M_PI}. @file{Constants.h} includes either C
+header @file{float.h} or C++ header @file{cfloat}, which provide
+constants such as @code{DBL_MAX}.
 
 @findex TRUE
 @findex FALSE
@@ -16235,7 +16260,7 @@ These are currently implemented using the R-level @code{tryCatch}
 mechanism so are subject to some overhead.
 
 @code{R_withCallingErrorHandler} establishes a calling handler for
-conditions inheriting form class @code{error}.  It establishes the
+conditions inheriting from class @code{error}.  It establishes the
 handler without calling back into @R{} and will therefore be more
 efficient.
 

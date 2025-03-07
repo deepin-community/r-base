@@ -3,7 +3,7 @@
 <!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- This manual is for R, version 4.4.1 (2024-06-14).
+<!-- This manual is for R, version 4.4.2 (2024-10-31).
 
 Copyright (C) 2001-2024 R Core Team
 
@@ -163,7 +163,7 @@ p {
 
 <p>This is a guide to installation and administration for R.
 </p>
-<p>This manual is for R, version 4.4.1 (2024-06-14).
+<p>This manual is for R, version 4.4.2 (2024-10-31).
 </p>
 <p>Copyright &copy; 2001&ndash;2024 R Core Team
 </p>
@@ -421,10 +421,13 @@ the patched version of the current release being available via
 Subversion.)
 </p>
 <p>The tarballs are available from
-<a href="https://stat.ethz.ch/R/daily/">https://stat.ethz.ch/R/daily/</a>.  Download
+<a href="https://cran.r-project.org/src/base-prerelease">https://cran.r-project.org/src/base-prerelease</a>.  Download
 <samp>R-patched.tar.gz</samp> or <samp>R-devel.tar.gz</samp> (or the <samp>.tar.bz2</samp>
 versions) and unpack as described in the previous section.  They are
-built in exactly the same way as distributions of R releases.
+built in exactly the same way and on the same platform as distributions
+of R releases. Notice, that you probably want to use the CRAN master
+site for this, due to propagation delays. An
+alternative source of daily snapshots is maintained at <a href="https://stat.ethz.ch/R/daily/">https://stat.ethz.ch/R/daily/</a>.
 </p>
 
 <hr>
@@ -939,13 +942,13 @@ specified on the <code>make install</code> command line (at least for
 <code>libdir</code>.  The C header files can be installed to the value of
 <code>rincludedir</code>: note that as the headers are not installed into a
 subdirectory you probably want something like
-<code>rincludedir=/usr/local/include/R-4.4.1</code>.
+<code>rincludedir=/usr/local/include/R-4.4.2</code>.
 </p>
 <p>If you want the R home to be something other than
 <samp><var>libdir</var>/R</samp>, use <samp>rhome</samp>: for example
 </p>
 <div class="example">
-<pre class="example">make install rhome=/usr/local/lib64/R-4.4.1
+<pre class="example">make install rhome=/usr/local/lib64/R-4.4.2
 </pre></div>
 
 <p>will use a version-specific R home on a non-Debian Linux 64-bit
@@ -1288,13 +1291,13 @@ Intel compilers.  Currently accepted values are (plus some synonyms)
          c++20 gnu++20 (from 10) c++23 gnu++23 c++2b gnu++2b (from 11)
 Intel:   c++11  gnu+11 c++14 gnu++14 c++17 gnu++17
          c++20 gnu++20 (from 2021.1) c++2b gnu++2b (from 2022.2)
+         c++23 gnu++23 (at least from 2024.0)
 </pre></div>
 <p>(Those for LLVM <code>clang++</code> are documented at
 <a href="https://clang.llvm.org/cxx_status.html">https://clang.llvm.org/cxx_status.html</a>, and follow <code>g++</code>:
 <code>-std=c++20</code> is supported from Clang 10, <code>-std=c++2b</code> from
 Clang 13 and <code>-std=c++23</code> from Clang 17.  Apple Clang supports
-<code>-std=c++2b</code> from 13.1.6: version 15.0.0 does not support
-<code>-std=c++23</code>.)
+<code>-std=c++2b</code> from 13.1.6 and <code>-std=c++23</code> from 16.0.0.)
 </p>
 
 <p>&lsquo;Standards&rsquo; for <code>g++</code> starting with &lsquo;<samp>gnu</samp>&rsquo; enable &lsquo;GNU
@@ -1591,7 +1594,7 @@ conversion to short name equivalents (a.k.a. DOS 8.3 names), then R
 <em>must</em> be installed in a path that does not contain spaces.
 </p>
 <p>Installation is <em>via</em> the installer
-<samp>R-4.4.1-win.exe</samp>.  Just double-click on the icon and
+<samp>R-4.4.2-win.exe</samp>.  Just double-click on the icon and
 follow the instructions. You can uninstall R from the Control Panel.
 </p>
 <p>You will be asked to choose a language for installation: that choice
@@ -1769,7 +1772,7 @@ and run
 <p>[The rest of this paragraph is only relevant after release.]
 The front page of a <acronym>CRAN</acronym> site has a link &lsquo;Download R for (Mac)
 OS X&rsquo; which takes you to a new page. Two files are offered for download,
-<samp>R-4.4.1-arm64.pkg</samp> and <samp>R-4.4.1-x86_64.pkg</samp>.
+<samp>R-4.4.2-arm64.pkg</samp> and <samp>R-4.4.2-x86_64.pkg</samp>.
 Both are for macOS 11 or later (Big Sur, Monterey, Ventura,
 Sonoma, &hellip;).
 </p>
@@ -4945,14 +4948,14 @@ identified by the C/C++ macro <code>__INTEL_LLVM_COMPILER</code> (and do not
 define <code>__INTEL_COMPILER</code>: they also define <code>__clang__</code> and
 <code>__clang_major__</code>).
 </p>
-<p>The C++ compiler uses the system&rsquo;s <code>lidstdc++</code> as its runtime
+<p>The C++ compiler uses the system&rsquo;s <code>libstdc++</code> as its runtime
 library rather than LLVM&rsquo;s <code>libc++</code>.
 </p>
 <p>Standalone installers (which are free-of-charge) are available from
 <a href="https://www.intel.com/content/www/us/en/developer/articles/tool/oneapi-standalone-components.html">https://www.intel.com/content/www/us/en/developer/articles/tool/oneapi-standalone-components.html</a>:
 they are also part of the oneAPI Base and HPC (for Fortran) toolkits.
 </p>
-<p>We tried the compilers in oneAPI 2024.1.x<a id="DOCF75" href="#FOOT75"><sup>75</sup></a> and 2023.x.y using (the paths
+<p>We tried the compilers in oneAPI 2024.2.1 and 2023.x.y using (the paths
 do differ by compiler version)
 </p><div class="example">
 <pre class="example">IP=/path/to/compilers/bin/
@@ -4998,7 +5001,7 @@ version of <code>clang</code>: the Intel manual suggests checking
 <code>icx -help</code>.)  The C/C++ compilers support clang-style
 <abbr>LTO</abbr>: it is not clear if the Fortran one does.
 </p>
-<p>For some recent versions (including 2023.2.0) all CPU times in e.g.
+<p>For some earlier versions (including 2023.2.0) all CPU times in e.g.
 <code>proc.time()</code> are reported as zero.  If you see this, uncomment the
 &lsquo;<samp>INTEL_ICX_FIX</samp>&rsquo; setting in <samp>config.site</samp> and re-build.
 </p>
@@ -5009,7 +5012,7 @@ affect warnings on non-standard features: the default is no such
 warnings.
 </p>
 <p>Warning to package maintainers: the Intel Fortran compiler interprets
-comments intended for Visual Fortran<a id="DOCF76" href="#FOOT76"><sup>76</sup></a> like
+comments intended for Visual Fortran<a id="DOCF75" href="#FOOT75"><sup>75</sup></a> like
 </p><div class="example">
 <pre class="example">!DEC$ ATTRIBUTES DLLEXPORT,C,REFERENCE,ALIAS:'kdenestmlcvb' :: kdenestmlcvb
 </pre></div>
@@ -5039,7 +5042,7 @@ there.)
 <span id="Prerequisites-1"></span><h4 class="subsection">C.3.1 Prerequisites</h4>
 
 <p>The Apple silicon conmponents install into <samp>/opt/R/arm64</samp>, the
-Intel ones into <samp>/opt/R/x86_64</samp>.  That may not exist<a id="DOCF77" href="#FOOT77"><sup>77</sup></a>
+Intel ones into <samp>/opt/R/x86_64</samp>.  That may not exist<a id="DOCF76" href="#FOOT76"><sup>76</sup></a>
 so it is simplest to first create the directory and adjust its ownership
 if desired: for example by
 </p>
@@ -5074,7 +5077,7 @@ versioning (so Apple clang 15 is unrelated to LLVM clang 15).
 </p>
 </li><li> A Fortran compiler. See <a href="#Fortran-compilers">Fortran compiler</a>.
 
-</li><li> Binary components <code>pcre2</code><a id="DOCF78" href="#FOOT78"><sup>78</sup></a> and
+</li><li> Binary components <code>pcre2</code><a id="DOCF77" href="#FOOT77"><sup>77</sup></a> and
 <code>xz</code> (for <code>liblzma</code>) from
 <a href="https://mac.r-project.org/bin/">https://mac.r-project.org/bin/</a>.  There is an R script there to
 help with installing all the needed components.  (At the time of writing
@@ -5098,7 +5101,7 @@ sudo tar -xvzf xz-5.4.2-darwin.20-arm64.tar.xz -C /
 </p></li></ul>
 <p>and desirable
 </p><ul>
-<li> Component <code>readline5</code>.<a id="DOCF79" href="#FOOT79"><sup>79</sup></a>  If <code>readline</code> is
+<li> Component <code>readline5</code>.<a id="DOCF78" href="#FOOT78"><sup>78</sup></a>  If <code>readline</code> is
 not present, the emulation in Apple&rsquo;s version of <code>libedit</code> (aka
 <code>editline</code>) will be used: if you wish to avoid that, configure with
 <samp>--without-readline</samp>.
@@ -5212,7 +5215,7 @@ generate &lsquo;<samp>x86_64</samp>&rsquo; code &hellip;.
 at <a href="https://openradar.appspot.com/FB8914243">https://openradar.appspot.com/FB8914243</a> but <em>ab initio</em>
 builds work.  This has been far rarer since macOS 13.
 </p>
-<p>If you are using the macOS 13 <abbr>SDK</abbr><a id="DOCF80" href="#FOOT80"><sup>80</sup></a>,
+<p>If you are using the macOS 13 <abbr>SDK</abbr><a id="DOCF79" href="#FOOT79"><sup>79</sup></a>,
 you may need to add something like <code>-mmacos-version-min=12.0</code> to
 &lsquo;<samp>CFLAGS</samp>&rsquo;.
 </p>
@@ -5229,7 +5232,7 @@ ld: warning: could not create compact unwind for ___emutls_get_address:
 run-time libraries.
 </p>
 <p>The default security settings can make it difficult to install Apple
-packages which have not been &lsquo;notarized&rsquo;<a id="DOCF81" href="#FOOT81"><sup>81</sup></a>
+packages which have not been &lsquo;notarized&rsquo;<a id="DOCF80" href="#FOOT80"><sup>80</sup></a>
 by Apple.  And not just packages, as this has been seen for executables
 contained in tarballs/zipfiles (for example, for <code>pandoc</code>).
 Usually one can use &lsquo;<samp>Open With</samp>&rsquo; (Control/right/two-finger-click in
@@ -5417,13 +5420,13 @@ non-default options
 <p>were used. (<samp>--enable-R-framework</samp> implies <samp>--enable-R-shlib</samp>.)
 </p>
 <p>The main TeX implementation used by the developers is
-MacTeX<a id="DOCF82" href="#FOOT82"><sup>82</sup></a>
+MacTeX<a id="DOCF81" href="#FOOT81"><sup>81</sup></a>
 (<a href="https://www.tug.org/mactex/">https://www.tug.org/mactex/</a>): the full installation is about
 8.5GB, but a much smaller version (&lsquo;Basic TeX&rsquo;) is available at
 <a href="https://www.tug.org/mactex/morepackages.html">https://www.tug.org/mactex/morepackages.html</a> to which you will
 need to add some packages to build R, e.g. for the 2022 version we
-needed to add<a id="DOCF83" href="#FOOT83"><sup>83</sup></a> <strong>helvetic</strong>, <strong>inconsolata</strong> and
-<strong>texinfo</strong> which brought this to about 310MB.<a id="DOCF84" href="#FOOT84"><sup>84</sup></a>
+needed to add<a id="DOCF82" href="#FOOT82"><sup>82</sup></a> <strong>helvetic</strong>, <strong>inconsolata</strong> and
+<strong>texinfo</strong> which brought this to about 310MB.<a id="DOCF83" href="#FOOT83"><sup>83</sup></a>
 &lsquo;<samp>TeX Live Utility</samp>&rsquo; (available <em>via</em> the MacTeX front page)
 provides a graphical means to manage TeX packages.  These contain
 executables which run natively on both &lsquo;<samp>arm64</samp>&rsquo; and
@@ -5460,7 +5463,7 @@ path.
 <span id="index-BLAS-library-1"></span>
 <span id="index-LAPACK-library-1"></span>
 <p>The <code>Accelerate</code>
-library<a id="DOCF85" href="#FOOT85"><sup>85</sup></a>
+library<a id="DOCF84" href="#FOOT84"><sup>84</sup></a>
 can be used <em>via</em> the configuration option
 </p>
 <div class="example">
@@ -5468,17 +5471,17 @@ can be used <em>via</em> the configuration option
 </pre></div>
 
 <p>to provide potentially higher-performance versions of the <acronym>BLAS</acronym>
-and LAPACK routines.<a id="DOCF86" href="#FOOT86"><sup>86</sup></a>
+and LAPACK routines.<a id="DOCF85" href="#FOOT85"><sup>85</sup></a>
 This includes a full LAPACK which can be used <em>via</em>
 <samp>--with-lapack</samp>: however, the version of LAPACK it contains has
 often been seriously old (and is not used unless <samp>--with-lapack</samp>
 is specified).  Some <acronym>CRAN</acronym> builds of R can be
-switched<a id="DOCF87" href="#FOOT87"><sup>87</sup></a>
+switched<a id="DOCF86" href="#FOOT86"><sup>86</sup></a>
 to use Accelerate&rsquo;s BLAS.
 </p>
 <p>As from macOS 13.3, the BLAS and LAPACK libraries under the Accelerate
 framework are &lsquo;now inline with reference version
-3.9.1&rsquo;.<a id="DOCF88" href="#FOOT88"><sup>88</sup></a> However, this has been done by
+3.9.1&rsquo;.<a id="DOCF87" href="#FOOT87"><sup>87</sup></a> However, this has been done by
 naming new entry points and so only accessible <em>via</em> their C
 headers.  That version can be used for BLAS calls <em>via</em>
 <code>configure</code> option <samp>--with-newAccelerate</samp>: it requires at
@@ -5488,7 +5491,7 @@ BLAS and LAPACK calls, configure with
 others such as <samp>--with-blas</samp> and <samp>--with-lapack</samp>.
 </p>
 <p>Threading in Accelerate is controlled by &lsquo;Grand Central
-Dispatch&rsquo;<a id="DOCF89" href="#FOOT89"><sup>89</sup></a> and is
+Dispatch&rsquo;<a id="DOCF88" href="#FOOT88"><sup>88</sup></a> and is
 said not to need user control.  Test <samp>nls.R</samp> in package <strong>stats</strong>
 has often failed with the Accelerate BLAS on Intel macOS.  All versions
 of Accelerate show differences from the reference BLAS (and most others)
@@ -5522,7 +5525,7 @@ large SVD (which was slightly faster than Accelerate).
 install a distribution of Tcl/Tk.  There are two alternatives.  If you
 use <small>R.APP</small> you will want to use X11-based Tcl/Tk (as used on other
 Unix-alikes), which is installed under <samp>$LOCAL/lib</samp> as part of the <acronym>CRAN</acronym> binary for
-R.<a id="DOCF90" href="#FOOT90"><sup>90</sup></a>  This may need <code>configure</code>
+R.<a id="DOCF89" href="#FOOT89"><sup>89</sup></a>  This may need <code>configure</code>
 options
 </p><div class="example">
 <pre class="example">--with-tcltk=$LOCAL/lib
@@ -5540,7 +5543,7 @@ conflicts over the macOS menu, but for those only using command-line
 R this provides a much more intuitive interface to Tk for experienced
 Mac users.  Earlier versions of macOS came with an Aqua Tcl/Tk
 distribution but these were often not at all recent versions of Tcl/Tk.
-It is better to install Tcl/Tk 8.6.x from the sources<a id="DOCF91" href="#FOOT91"><sup>91</sup></a> or a binary distribution from
+It is better to install Tcl/Tk 8.6.x from the sources<a id="DOCF90" href="#FOOT90"><sup>90</sup></a> or a binary distribution from
 <a href="https://www.activestate.com/products/tcl/">https://www.activestate.com/products/tcl/</a>.  For the latter,
 configure R with
 </p><div class="example">
@@ -5571,11 +5574,11 @@ installed at first use.  Check if a <abbr>JRE</abbr> is installed by running
 <code>java -version</code> in a <code>Terminal</code> window: if Java is not
 installed on an Intel Mac this may prompt you to install it. We
 recommend you install a version with long-term support, e.g. 17 or
-21<a id="DOCF92" href="#FOOT92"><sup>92</sup></a>
+21<a id="DOCF91" href="#FOOT91"><sup>91</sup></a>
 but not 18&ndash;20, 22&ndash;24 with a 6-month lifetime.
 </p>
 <p>The currently simplest way to install Java is from
-<a href="https://adoptium.net">Adoptium</a><a id="DOCF93" href="#FOOT93"><sup>93</sup></a>: this installs into an
+<a href="https://adoptium.net">Adoptium</a><a id="DOCF92" href="#FOOT92"><sup>92</sup></a>: this installs into an
 Apple-standard location and so works with <code>/usr/bin/java</code>. Other
 builds are available from
 <a href="https://www.azul.com/downloads/zulu-community/?os=macos&amp;architecture=arm-64-bit&amp;package=jdk">https://www.azul.com/downloads/zulu-community/?os=macos&amp;architecture=arm-64-bit&amp;package=jdk</a>
@@ -6474,62 +6477,59 @@ routinely tested.</p>
 also needs the <abbr>OpenMP</abbr> runtime which has sometimes been distributed
 separately.</p>
 <h5><a id="FOOT75" href="#DOCF75">(75)</a></h5>
-<p>2024.1.2 for
-C/C++, 2024.1.0 for Fortran.</p>
-<h5><a id="FOOT76" href="#DOCF76">(76)</a></h5>
 <p>as the &lsquo;Classic&rsquo; compiler
 has been known on Windows.</p>
-<h5><a id="FOOT77" href="#DOCF77">(77)</a></h5>
+<h5><a id="FOOT76" href="#DOCF76">(76)</a></h5>
 <p>it
 will if R has been installed from <acronym>CRAN</acronym> since R 4.3.0.</p>
-<h5><a id="FOOT78" href="#DOCF78">(78)</a></h5>
+<h5><a id="FOOT77" href="#DOCF77">(77)</a></h5>
 <p>If compiling it from source on
 &lsquo;<samp>arm64</samp>&rsquo;, <code>pcre2</code> (at least up to version 10.39) needs to
 be built without JIT support (the default) as the R build segfaults
 if that is enabled, so do run <code>make check</code> on your build.</p>
-<h5><a id="FOOT79" href="#DOCF79">(79)</a></h5>
+<h5><a id="FOOT78" href="#DOCF78">(78)</a></h5>
 <p>For licence reasons this is version
 5.2 of <code>readline</code>: for those who want a more recent version it is
 straightforward to compile it from its sources.</p>
-<h5><a id="FOOT80" href="#DOCF80">(80)</a></h5>
+<h5><a id="FOOT79" href="#DOCF79">(79)</a></h5>
 <p><code>ls -l `xcrun
 -show-sdk-path`</code> in a terminal will show you which <abbr>SDK</abbr> is selected.</p>
-<h5><a id="FOOT81" href="#DOCF81">(81)</a></h5>
+<h5><a id="FOOT80" href="#DOCF80">(80)</a></h5>
 <p>See
 <a href="https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution">https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution</a>.</p>
-<h5><a id="FOOT82" href="#DOCF82">(82)</a></h5>
+<h5><a id="FOOT81" href="#DOCF81">(81)</a></h5>
 <p>An essentially equivalent TeX installation can be
 obtained by the Unix TeX Live installation scripts.</p>
-<h5><a id="FOOT83" href="#DOCF83">(83)</a></h5>
+<h5><a id="FOOT82" href="#DOCF82">(82)</a></h5>
 <p>E.g. <em>via</em> <code>tlmgr install helvetic
 inconsolata texinfo</code> .</p>
-<h5><a id="FOOT84" href="#DOCF84">(84)</a></h5>
+<h5><a id="FOOT83" href="#DOCF83">(83)</a></h5>
 <p>Adding all the
 packages needed to check <acronym>CRAN</acronym> increased this to about 600MB.</p>
-<h5><a id="FOOT85" href="#DOCF85">(85)</a></h5>
+<h5><a id="FOOT84" href="#DOCF84">(84)</a></h5>
 <p><a href="https://developer.apple.com/documentation/accelerate">https://developer.apple.com/documentation/accelerate</a>.</p>
-<h5><a id="FOOT86" href="#DOCF86">(86)</a></h5>
+<h5><a id="FOOT85" href="#DOCF85">(85)</a></h5>
 <p>It has been reported that for some
 non-Apple toolchains <code>CPPFLAGS</code> needed to contain
 <code>-D__ACCELERATE__</code>: not needed for <code>clang</code> from LLVM.</p>
-<h5><a id="FOOT87" href="#DOCF87">(87)</a></h5>
+<h5><a id="FOOT86" href="#DOCF86">(86)</a></h5>
 <p><a href="https://cran.r-project.org/bin/macosx/RMacOSX-FAQ.html#Which-BLAS-is-used-and-how-can-it-be-changed_003f">https://cran.r-project.org/bin/macosx/RMacOSX-FAQ.html#Which-BLAS-is-used-and-how-can-it-be-changed_003f</a></p>
-<h5><a id="FOOT88" href="#DOCF88">(88)</a></h5>
+<h5><a id="FOOT87" href="#DOCF87">(87)</a></h5>
 <p>Released 2021-04-01.</p>
-<h5><a id="FOOT89" href="#DOCF89">(89)</a></h5>
+<h5><a id="FOOT88" href="#DOCF88">(88)</a></h5>
 <p>E.g.,
 <a href="https://en.wikipedia.org/wiki/Grand_Central_Dispatch">https://en.wikipedia.org/wiki/Grand_Central_Dispatch</a> .</p>
-<h5><a id="FOOT90" href="#DOCF90">(90)</a></h5>
+<h5><a id="FOOT89" href="#DOCF89">(89)</a></h5>
 <p>Just that component can be selected from the installer
 for R: at the &lsquo;Installation Type&rsquo; screen select &lsquo;Customise&rsquo; and then
 just the &lsquo;Tcl/Tk 8.6.11&rsquo; component.</p>
-<h5><a id="FOOT91" href="#DOCF91">(91)</a></h5>
+<h5><a id="FOOT90" href="#DOCF90">(90)</a></h5>
 <p>Configure
 Tk with <samp>--enable-aqua</samp>.</p>
-<h5><a id="FOOT92" href="#DOCF92">(92)</a></h5>
+<h5><a id="FOOT91" href="#DOCF91">(91)</a></h5>
 <p>The planned nextLTS release is 25 in September 2025.  Java 8
 <em>aka</em> 1.8.0 is still LTS but some packages require 11 or later.</p>
-<h5><a id="FOOT93" href="#DOCF93">(93)</a></h5>
+<h5><a id="FOOT92" href="#DOCF92">(92)</a></h5>
 <p>which website works with
 Safari but not some other browsers.</p>
 </div>

@@ -18,6 +18,59 @@ function processMathHTML() {
 
 <h2>R News</h2>
 
+<h3><img src="../help/figures/../../html/Rlogo.svg" class="toplogo" alt="[R logo]" /> CHANGES IN R 4.4.2</h3>
+
+
+
+<h4>C-LEVEL FACILITIES</h4>
+
+
+<ul>
+<li><p> The S-compatibility macros <code>F77_COM</code> and
+<code>F77_COMDECL</code> defined in header &lsquo;<span class="file">R_ext/RS.h</span>&rsquo; are
+deprecated and will be removed shortly.  We could find no record
+of their use.
+</p>
+</li></ul>
+
+
+
+
+<h4>BUG FIXES</h4>
+
+
+<ul>
+<li> <p>Mathlib function <code>lgammacor(x)</code> no longer warns about
+underflow to zero for large <code>x</code>.
+</p>
+</li>
+<li><p> Text widths and heights were incorrectly reported by the
+Quartz device if the drawing context didn't exist yet (typically
+when drawing off-screen to a window that is yet to appear, see
+<a href="https://bugs.R-project.org/show_bug.cgi?id=18591">PR#18591</a>).
+</p>
+</li>
+<li><p> The Quartz device could segfault in cases where paths with
+spaces are used in the new glyph drawing API.
+Thanks to Tomek Gieorgijewski (<a href="https://bugs.R-project.org/show_bug.cgi?id=18758">PR#18758</a>).
+</p>
+</li>
+<li><p> On macOS in R CRAN builds, it is again possible to read
+little-endian UTF-16 text with a <abbr>BOM</abbr> from a connection using
+<code>encoding="UTF-16"</code>.  Users building R from source should avoid
+using the system <code>libiconv</code> in macOS 14.1 and later.
+</p>
+</li>
+<li> <p><span class="pkg">methods</span>' internal <code>.requirePackage()</code> now re-enables
+primitive method dispatch when needed; thanks to Ivan Krylov
+for demystifying CRAN package check failures on the R-devel mailing
+list.
+</p>
+</li></ul>
+
+
+
+
 <h3><img src="../help/figures/../../html/Rlogo.svg" class="toplogo" alt="[R logo]" /> CHANGES IN R 4.4.1</h3>
 
 
