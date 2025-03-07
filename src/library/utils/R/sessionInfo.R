@@ -72,13 +72,14 @@
                                       "16" = "Big Sur ...",
                                       ""),
                                ver)
-                   else if(ver1[1L] <= "14")
+                   else if(ver1[1L] <= "15")
                         sprintf("macOS %s %s",
                                switch(ver1[1L],
                                       "11" = "Big Sur",
                                       "12" = "Monterey",
                                       "13" = "Ventura",
-                                      "14" = "Sonoma"),
+                                      "14" = "Sonoma",
+                                      "15" = "Sequoia"),
                                ver)
                    else
                        sprintf("macOS %s", ver)

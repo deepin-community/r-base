@@ -285,7 +285,9 @@ Sources, binaries and documentation for R can be obtained via CRAN, the
 Subversion repository, but currently not via anonymous rsync (nor CVS).
 
    Tarballs with daily snapshots of the r-devel and r-patched development
-versions of R can be found at <https://stat.ethz.ch/R/daily/>.
+versions of R can be found at
+<https://cran.r-project.org/src/base-prerelease>.  An alternative source is
+<https://stat.ethz.ch/R/daily/>.
 
 2.5 How can R be installed?
 ===========================
