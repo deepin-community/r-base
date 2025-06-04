@@ -1,0 +1,84 @@
+diff --git a/configure b/configure
+index a9a29c0..3c777cf 100755
+--- a/configure
++++ b/configure
+@@ -29773,7 +29773,7 @@ if test "${GCC}" = yes; then
+ ## However, although the gcc docs do not mention it, it seems s390/s390x
+ ## also supports and needs -fPIC
+ ## See <https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1004747> for alpha.
+-    aarch64*|alpha*|sparc*|ppc64*|powerpc64*|s390*)
++    aarch64*|alpha*|sparc*|ppc64*|powerpc64*|s390*|sw_64)
+       cpicflags="-fPIC"
+       ;;
+     *)
+@@ -29787,7 +29787,7 @@ fi
+ ## Use same flang for gfortran as for gcc.
+ if test "${ac_cv_fc_compiler_gnu}" = yes; then
+   case "${host_cpu}" in
+-    aarch64*|alpha*|sparc*|ppc64*|powerpc64*|s390*)
++    aarch64*|alpha*|sparc*|ppc64*|powerpc64*|s390*|sw_64)
+       fpicflags="-fPIC"
+       ;;
+     *)
+@@ -29818,7 +29818,7 @@ fi
+ 
+ if test "${GXX}" = yes; then
+   case "${host_cpu}" in
+-    aarch64*|alpha*|sparc*|ppc64*|powerpc64*|s390*)
++    aarch64*|alpha*|sparc*|ppc64*|powerpc64*|s390*|sw_64)
+       cxxpicflags="-fPIC"
+       ;;
+     *)
+@@ -56104,7 +56104,7 @@ then :
+ 
+           # Guess based on the CPU.
+           case "$host_cpu" in
+-            alpha* | i3456786 | m68k | s390*)
++            alpha* | i3456786 | m68k | s390*|sw_64)
+               gt_cv_int_divbyzero_sigfpe="guessing yes";;
+             *)
+               gt_cv_int_divbyzero_sigfpe="guessing no";;
+@@ -63699,4 +63699,3 @@ fi
+ ### mode: outline-minor ***
+ ### outline-regexp: "### [*]+" ***
+ ### End: ***
+-
+diff --git a/m4/gettext.m4 b/m4/gettext.m4
+index c275ac5..a6931d0 100644
+--- a/m4/gettext.m4
++++ b/m4/gettext.m4
+@@ -631,7 +631,7 @@ int main ()
+ ]])],[gt_cv_int_divbyzero_sigfpe=yes],[gt_cv_int_divbyzero_sigfpe=no],[
+           # Guess based on the CPU.
+           case "$host_cpu" in
+-            alpha* | i[34567]86 | m68k | s390*)
++            alpha* | i[34567]86 | m68k | s390* | sw_64)
+               gt_cv_int_divbyzero_sigfpe="guessing yes";;
+             *)
+               gt_cv_int_divbyzero_sigfpe="guessing no";;
+diff --git a/tools/config.guess b/tools/config.guess
+index 354a8cc..773f33b 100755
+--- a/tools/config.guess
++++ b/tools/config.guess
+@@ -1149,6 +1149,9 @@ EOF
+     sparc:Linux:*:* | sparc64:Linux:*:*)
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
++	sw_64:Linux:*:*)
++	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
++	;;
+     tile*:Linux:*:*)
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
+diff --git a/tools/config.sub b/tools/config.sub
+index 9865d6e..9245db7 100755
+--- a/tools/config.sub
++++ b/tools/config.sub
+@@ -1268,6 +1268,7 @@ case $cpu-$vendor in
+ 			| sparclite \
+ 			| sparcv8 | sparcv9 | sparcv9b | sparcv9v | sv1 | sx* \
+ 			| spu \
++			| sw_64 \
+ 			| tahoe \
+ 			| thumbv7* \
+ 			| tic30 | tic4x | tic54x | tic55x | tic6x | tic80 \

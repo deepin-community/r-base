@@ -1,3 +1,9 @@
+r-base (4.4.1-3deepin1) unstable; urgency=medium
+
+  * feat: add sw64 support.
+
+ -- hudeng <hudeng@deepin.org>  Wed, 04 Jun 2025 16:21:13 +0800
+
 r-base (4.4.1-3) unstable; urgency=medium
 
   * src/library/utils/R/tar.R: Apply upstream patch to deal more
