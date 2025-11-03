@@ -1,6 +1,6 @@
 % File src/library/tools/man/texi2dvi.Rd
 % Part of the R package, https://www.R-project.org
-% Copyright 1995-2016 R Core Team
+% Copyright 1995-2025 R Core Team
 % Distributed under GPL 2 or later
 
 \name{texi2dvi}
@@ -34,7 +34,7 @@ texi2pdf(file, clean = FALSE, quiet = TRUE,
     otherwise emulate the script with \code{system2} calls (which
     can be selected by the value \code{"emulation"}).  See also
     \sQuote{Details}.} 
-  \item{texinputs}{\code{NULL} or a character vector of paths to add to
+  \item{texinputs}{\code{NULL} or a character vector of paths to prepend to
     the LaTeX and BibTeX input search paths.}
   \item{index}{logical: should indices be prepared?}
 }
@@ -42,15 +42,15 @@ texi2pdf(file, clean = FALSE, quiet = TRUE,
   \code{texi2pdf} is a wrapper for the common case of
   \code{texi2dvi(pdf = TRUE)}.
 
-  Despite the name, this is used in \R to compile LaTeX files,
+  Despite the name, this is used in \R to compile \LaTeX files,
   specifically those generated from vignettes and by the
   \code{\link{Rd2pdf}} script (used for package reference manuals).  It
   ensures that the \file{\var{\link{R_HOME}}/share/texmf} directory is
   in the \env{TEXINPUTS} path, so \R style files such as \file{Sweave.sty}
   and \file{Rd.sty} will be found.  The TeX search path used is first the
+  elements of argument \code{texinputs}, then the
   existing \env{TEXINPUTS} setting (or the current directory if unset),
-  then elements of argument \code{texinputs}, then
-  \file{\var{R_HOME}/share/texmf} and finally the default path.
+  then \file{\var{R_HOME}/share/texmf} and finally the system paths.
   Analogous changes are made to \env{BIBINPUTS} and \env{BSTINPUTS}
   settings.
 
@@ -62,7 +62,7 @@ texi2pdf(file, clean = FALSE, quiet = TRUE,
   
   %% issues included not re-running latex in texinfo 6.1 and bashisms in
   %% the /bin/sh script in <= 6.0.
-  A shell script \command{texi2dvi} is part of GNU's \pkg{texinfo}.
+  A shell script \command{texi2dvi} is part of GNU \I{Texinfo}.
   Several issues have been seen with released versions, so if yours does
   not work correctly try \env{R_TEXI2DVICMD=emulation}.
 #endif
@@ -86,8 +86,8 @@ texi2pdf(file, clean = FALSE, quiet = TRUE,
 
 \note{
   %% configure just looks for a texi2dvi command and does not check its
-  %% version.  Howvever, it is normally distributed with texinfo, and
-  %% that is checked to be >= 5.1.
+  %% version.  However, it is normally distributed with texinfo, and
+  %% that is checked to be >= 6.1.
   %% The macOS distribution by default installs /usr/local/bin/texi2dvi,
   %% but that is optional and macOS has /usr/bin/texi2dvi stuck at 4.8.
   There are various versions of the \command{texi2dvi} script on
@@ -104,8 +104,7 @@ texi2pdf(file, clean = FALSE, quiet = TRUE,
   exist but the other two approaches do not (and may get confused by
   such files).
   
-  Where supported (\command{texi2dvi} 5.0 and later;
-  \command{texify.exe} from \I{MiKTeX}), option \option{--max-iterations=20}
+  Option \option{--max-iterations=20}
   is used to avoid infinite retries.
   
   The emulation mode supports \code{quiet = TRUE} from \R 3.2.3 only.

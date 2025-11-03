@@ -7,19 +7,10 @@
 # packages. Note that you still need to provide the other files in debian/*,
 # in particular control, changelog and copyright. 
 # 
-# Copyright 2003 - 2023 by Dirk Eddelbuettel <edd@debian.org>
+# Copyright 2003 - 2024 by Dirk Eddelbuettel <edd@debian.org>
 
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/langcore.mk
-## include /usr/share/cdbs/1/rules/dpatch.mk
-## include /usr/share/cdbs/1/rules/simple-patchsys.mk
-
-# Check whether source format 3.0 (quilt) is used.  If yes, do not include the conflicting simple-patchsys.mk
-formatfile 	:= $(CURDIR)/debian/source/format
-format_3_quilt	= $(shell if [ -f $(formatfile) ] ; then if grep -q '3.0[[:space:]]*(quilt)' $(formatfile) ; then echo 1 ; else echo 0 ; fi else echo 0 ; fi )
-ifeq ($(format_3_quilt),0)
-  include /usr/share/cdbs/1/rules/simple-patchsys.mk
-endif
 
 # awk command to extract word after Package or Bundle, not lowercased
 awkString	:= "'/^(Package|Bundle):/ {print $$2 }'"

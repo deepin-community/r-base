@@ -1,6 +1,6 @@
 % File src/library/base/man/locales.Rd
 % Part of the R package, https://www.R-project.org
-% Copyright 1995-2024 R Core Team
+% Copyright 1995-2025 R Core Team
 % Distributed under GPL 2 or later
 
 \name{locales}
@@ -161,6 +161,8 @@ Sys.setlocale (category = "LC_ALL", locale = "")
 
   The \sQuote{R Installation and Administration} manual for background
   on locales and how to find out locale names on your system.
+
+  \code{\link{Sys.setLanguage}}
 }
 \examples{
 Sys.getlocale()
@@ -195,15 +197,15 @@ Sys.setenv("LANGUAGE" = "es") # set the language for error/warning messages
  sep <- switch(Sys.info()[["sysname"]],
                "Darwin"=, "SunOS" = "/",
                "Linux" =, "Windows" = ";")
- ##' show a "full" Sys.getlocale() nicely:
- showL <- function(loc) {
+ ##' named vector from a "full" Sys.getlocale() :
+ asNvec <- function(loc) {
      sl <- strsplit(strsplit(loc, sep)[[1L]], "=")
-     if(all(sapply(sl, length) == 2L))
+     if(all(lengths(sl) == 2L))
         setNames(sapply(sl, `[[`, 2L), sapply(sl, `[[`, 1L))
      else
        setNames(as.character(sl), .LC.categories[1+seq_along(sl)])
  }
- print.Dlist(lloc <- showL(Sys.getlocale()))
+ print.Dlist(lloc <- asNvec(Sys.getlocale()))
  ## R-supported ones (but LC_ALL):
  lloc[.LC.categories[-1]]
 }

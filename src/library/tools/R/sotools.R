@@ -1,7 +1,7 @@
 #  File src/library/tools/R/sotools.R
 #  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 2011-2023 The R Core Team
+#  Copyright (C) 2011-2025 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -49,7 +49,12 @@ if(.Platform$OS.type == "windows") {
         l2 <- grep("^The Export Tables", s0)
         if (!length(l1) || !length(l2)) return()
         s1 <- s0[(l1[1L] + 2L):(l2 - 4L)]
-        s2 <- grep("\t[0-9a-f]+\t +[0-9]+", s1, value = TRUE)
+
+        # The format of the dump of import tables changed in Rtools45
+        # (binutils 2.43.1).  Previously, there was a joint column
+        # "Hint/Ord".  Newly these are split ("Ordinal" and "Hint").  The
+        # regex below has been relaxed to match both.
+        s2 <- grep("\t[0-9a-f]+[\t ]+", s1, value = TRUE)
         sub(".* ([_A-Za-z0-9]+)$", "\\1", s2)
     }
 }
@@ -608,11 +613,11 @@ nonAPI <- c("chol_", "chol2inv_", "cg_", "ch_", "rg_",
             "Rf_sortVector", "Rf_strIsASCII", "Rf_strchr",
             "Rf_strrchr", "Rf_ucstomb", "Rf_utf8towcs",
             "Rf_wcstoutf8", "Rg_PolledEvents", "Rg_set_col_ptrs",
-            "Rg_wait_usec", "Ri18n_iswctype", "Ri18n_wcswidth",
+            "Rf_wait_usec", "Ri18n_iswctype", "Ri18n_wcswidth",
             "Ri18n_wctype", "Ri18n_wcwidth", "Rsockclose",
             "Rsockconnect", "Rsocklisten", "Rsockopen", "Rsockread",
             "Rsockwrite", "Runzip", "UNIMPLEMENTED_TYPE",
-            "baseRegisterIndex", "csduplicated", "currentTime",
+            "baseRegisterIndex", "Rf_csduplicated", "Rf_currentTime",
             "dcar", "dcdr", "do_Rprof", "do_Rprofmem", "do_X11",
             "do_contourLines", "do_edit", "do_getGraphicsEventEnv",
             "do_getSnapshot", "do_playSnapshot", "do_saveplot",
@@ -621,11 +626,13 @@ nonAPI <- c("chol_", "chol2inv_", "cg_", "ch_", "rg_",
             "extR_HTTPDCreate", "extR_HTTPDStop", "fdhess",
             "getConnection", "getPRIMNAME", "known_to_be_latin1",
             "locale2charset", "match5", "matherr",
-            "max_contour_segments", "mbcsToUcs2", "memtrace_report",
+            "max_contour_segments", "Rf_mbcsToUcs2", "Rf_memtrace_report",
             "parseError", "pythag_", "rs_", "rwarnc_",
             "tql2_", "tqlrat_", "tred1_", "tred2_", "utf8locale", "yylloc",
             "R_opendir", "R_readdir", "R_closedir",
             # "signrank_free", "wilcox_free" are API only from 4.2.0
+            "ENSURE_NAMEDMAX", "IS_ASCII", "IS_UTF8", "SET_PRSEEN",
+            "ddfind",
 
 ## Rinterface.h, Rembedded.h, R_ext/{RStartup,eventloop}.h
             "AllDevicesKilled", "R_CStackLimit", "R_CStackStart",
@@ -633,7 +640,7 @@ nonAPI <- c("chol_", "chol2inv_", "cg_", "ch_", "rg_",
             "R_DefCallbacks", "R_DefParams", "R_DefParamsEx",
             "R_DirtyImage", "R_GUIType", "R_GlobalContext",
             "R_HistoryFile", "R_HistorySize", "R_Home", "R_HomeDir",
-            "R_InputHandlers", "R_Interactive", "R_Outputfile",
+            "R_Interactive", "R_Outputfile",
             "R_PolledEvents", "R_ReplDLLdo1", "R_ReplDLLinit",
             "R_RestoreGlobalEnv", "R_RestoreGlobalEnvFromFile",
             "R_RestoreHistory", "R_RunExitFinalizers", "R_SaveGlobalEnv",
@@ -646,9 +653,9 @@ nonAPI <- c("chol_", "chol2inv_", "cg_", "ch_", "rg_",
             "R_wait_usec", "RestoreAction", "Rf_CleanEd",
             "Rf_KillAllDevices", "Rf_endEmbeddedR", "Rf_initEmbeddedR",
             "Rf_initialize_R", "Rf_jump_to_toplevel", "Rf_mainloop",
-            "SaveAction", "addInputHandler", "editorcleanall", "fpu_setup",
+            "SaveAction", "editorcleanall", "fpu_setup",
             "freeRUser", "free_R_HOME",
-            "getDLLVersion", "getInputHandler", "getRUser", "get_R_HOME",
+            "getDLLVersion", "getRUser", "get_R_HOME",
             "getSelectedHandler", "initStdinHandler",
             "process_site_Renviron", "process_system_Renviron",
             "process_user_Renviron", "ptr_R_Busy", "ptr_R_ChooseFile",
@@ -658,24 +665,56 @@ nonAPI <- c("chol_", "chol2inv_", "cg_", "ch_", "rg_",
             "ptr_R_ShowMessage", "ptr_R_Suicide", "ptr_R_WriteConsole",
             "ptr_R_WriteConsoleEx", "ptr_R_addhistory", "ptr_R_loadhistory",
             "ptr_R_savehistory", "ptr_do_dataentry", "ptr_do_dataviewer",
-            "ptr_do_selectlist", "readconsolecfg", "removeInputHandler",
+            "ptr_do_selectlist", "readconsolecfg",
             "run_Rmainloop", "setup_Rmainloop",
 
-## non-API and long deprecated in R_ext/RS.h (and as call_S in S.h)
+## non-API, removed in R 4.5.0 and long deprecated in R_ext/RS.h (and as call_S in S.h)
             "call_R",
 ## non-API, declared in Defn.h
             "Rf_setSVector",
-## non-API, declared in Utils.h
-            "Rf_StringFalse", "Rf_StringTrue", "Rf_isBlankString",
-
+## non-API, declared in Rinternals.h
+            ## not yet, in Rcpp headers "SET_TYPEOF",
+            ## not yet, used in an example in R-exts "SET_OBJECT",
+            "SET_S4_OBJECT", "UNSET_S4_OBJECT",
+            "R_curErrorBuf",
+            "SETLENGTH", "SET_TRUELENGTH", "SETLEVELS",
+            "SET_ENVFLAGS", "SET_FRAME", "SET_ENCLOS", "SET_HASHTAB",
+            "SET_PRENV", "SET_PRVALUE", "SET_PRCODE", "STDVEC_DATAPTR",
+            "IS_GROWABLE", "SET_GROWABLE_BIT", "SET_NAMED",
+            "R_PromiseExpr",
+            "R_tryWrap",
+            "DDVAL", "NAMED", "INTERNAL", "SYMVALUE", "PRSEEN",
+            "REAL0", "COMPLEX0", "LEVELS", "FRAME", "HASHTAB",
+            "ENVFLAGS", "RDEBUG", "SET_RDEBUG",
+            "STRING_PTR", "VECTOR_PTR",
+            "SET_FORMALS", "SET_BODY", "SET_CLOENV", "Rf_findVarInFrame3",
+            "PRCODE", "PRENV", "PRVALUE", "R_nchar",
+            "Rf_NonNullStringMatch",
+            "SET_TYPEOF", "TRUELENGTH", "XLENGTH_EX",
+            "XTRUELENGTH", "Rf_gsetVar",
+            "Rf_isValidString", "Rf_isValidStringF",
+            "R_shallow_duplicate_attr",
+            ## Documented in WRE in section "Some API replacements for
+            ## non-API entry points":
+            "EXTPTR_PROT", "EXTPTR_TAG", "EXTPTR_PTR",
+            "OBJECT", "IS_S4_OBJECT",
+            "Rf_GetOption", "R_lsInternal",
+            "REAL0", "COMPLEX0",
+            "STRING_PTR", "DATAPTR", "STDVEC_DATAPTR",
+            "Rf_allocSExp",
+            "Rf_isFrame",
+            "BODY", "FORMALS", "CLOENV", "ENCLOS",
+            "IS_ASCII", "IS_UTF8",
 ## in the non-API header R_ext/Connections.h
             "R_new_custom_connection", "R_ReadConnection",
-            "R_WriteConnection", "R_GetConnection")
+            "R_WriteConnection", "R_GetConnection",
 
-## non-API in Applic.h
-## future <- c("dqrcf_", "dqrdc2_", "dqrls_", "dqrqty_", "dqrqy_", "optif9")
-## d1mach_ and i1mach_ are mentioned (since R 2.15.3) in R-exts.
-
+## in ../../../include/R_ext/Applic.h -- these are API now:
+## 	"dqrcf_", "dqrqty_", "dqrqy_", "dqrrsd_", "dqrxb_",
+##	"dqrdc2_", "dqrls_",
+## "d1mach_" and "i1mach_" are API now in R-exts.
+            "R_Pretty") ## hidden, so unlikely to be usable
+##          "optif9")   ## used by pcaPP
 
 ## grDevices uses R_Home R_InputHandlers R_TempDir R_Visible R_cairoCdynload R_fopen R_gzclose R_gzgets R_gzopen R_isForkedChild Rf_envlength Rf_strIsASCII Rf_utf8towcs Rg_set_col_ptrs Ri18n_wcwidth addInputHandler do_X11 do_contourLines do_getGraphicsEventEnv do_getSnapshot do_playSnapshot do_saveplot locale2charset mbcsToUcs2 ptr_R_ProcessEvents
 
@@ -931,6 +970,16 @@ if(.Platform$OS.type == "windows") {
         if(!length(so_files)) return(invisible(NULL)) # typically a fake install
 
         bad <- Filter(length, lapply(so_files, check_so_symbols))
+        ## Allow experimenting with finding bad symbols not in
+        ## symbols.rds, likely from following the "best approach" from
+        ## section "Compiling in sub-directories" of WRE and compiling
+        ## code in subdirs into static libraries instead of adding to
+        ## OBJECTS. 
+        ## See PR#18789 <https://bugs.r-project.org/show_bug.cgi?id=18789>,
+        ## "R CMD check does not check symbol tables of linked static
+        ## libraries".
+        if(config_val_to_logical(Sys.getenv("_R_CHECK_COMPILED_CODE_USE_OBJECTS_SYMBOL_TABLES_",
+                                    "TRUE"))) {
         objects_symbol_tables_file <- if(nzchar(r_arch))
             file.path(dir, "libs", r_arch, "symbols.rds")
         else file.path(dir, "libs", "symbols.rds")
@@ -939,6 +988,7 @@ if(.Platform$OS.type == "windows") {
             bad <- Filter(length, lapply(bad, compare))
         } else if(useST)
             cat("Note: information on .o files is not available\n")
+        }
         nAPIs <- lapply(lapply(so_files, check_so_symbols),
                         function(x) if(length(z <- attr(x, "nonAPI")))
                         structure(z,
@@ -1003,7 +1053,29 @@ function(x, ...)
 .shlib_objects_symbol_tables <-
 function(file = "symbols.rds")
 {
-    objects <- commandArgs(trailingOnly = TRUE)
+    args <- commandArgs(trailingOnly = TRUE)
+    pos <- which(args == "--pkglibs")[1L]
+    objects <- args[seq_len(pos - 1L)]
+    pkglibs <- args[-seq_len(pos)]
+    ## Also determine the local static libraries linked against by
+    ## following the approach suggested in section "Compiling in
+    ## sub-directories" of WRE.
+    if(length(pkglibs)) {
+        files <- list.files("..", recursive = TRUE, pattern = "[.]a$",
+                            all.files = TRUE, full.names = TRUE)
+        if(any(ind <- startsWith(files, "../src/")))
+            files[ind] <- substring(files[ind], 8L)
+        ## Case A: local static libs given via their path.
+        libpaths <- pkglibs[file.exists(pkglibs)]
+        ## Case B: local static libs given as '-lfoo'.
+        libnames <- pkglibs[startsWith(pkglibs, "-l")]
+        libnames <- sprintf("lib%s.a", substring(libnames, 3L))
+        objects <- c(objects,
+                     files[normalizePath(files) %in%
+                           normalizePath(libpaths)],
+                     files[basename(files) %in% libnames])
+        objects <- unique(objects)
+    }
     tables <- lapply(objects, read_symbols_from_object_file)
     names(tables) <- objects
     saveRDS(tables, file = file, version = 2)

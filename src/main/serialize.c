@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1995--2024  The R Core Team
+ *  Copyright (C) 1995--2025  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -750,9 +750,9 @@ static void UnpackFlags(int flags, SEXPTYPE *ptype, int *plevs,
 {
     *ptype = DECODE_TYPE(flags);
     *plevs = DECODE_LEVELS(flags);
-    *pisobj = flags & IS_OBJECT_BIT_MASK ? TRUE : FALSE;
-    *phasattr = flags & HAS_ATTR_BIT_MASK ? TRUE : FALSE;
-    *phastag = flags & HAS_TAG_BIT_MASK ? TRUE : FALSE;
+    *pisobj = flags & IS_OBJECT_BIT_MASK ? true : FALSE;
+    *phasattr = flags & HAS_ATTR_BIT_MASK ? true : FALSE;
+    *phastag = flags & HAS_TAG_BIT_MASK ? true : FALSE;
 }
 
 
@@ -1040,7 +1040,7 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	PROTECT(new_s = R_cmpfun1(s));
 	WriteItem (new_s, ref_table, stream);
 	UNPROTECT(1);
-	R_compile_pkgs = TRUE;
+	R_compile_pkgs = true;
 	return;
     }
 
@@ -1121,8 +1121,8 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	case LANGSXP:
 	case PROMSXP:
 	case DOTSXP: hastag = TAG(s) != R_NilValue; break;
-	case CLOSXP: hastag = TRUE; break;
-	default: hastag = FALSE;
+	case CLOSXP: hastag = true; break;
+	default: hastag = false;
 	}
 	/* With the CHARSXP cache chains maintained through the ATTRIB
 	   field the content of that field must not be serialized, so
@@ -1257,7 +1257,7 @@ static SEXP MakeCircleHashTable(void)
     return CONS(R_NilValue, allocVector(VECSXP, HASHSIZE));
 }
 
-static Rboolean AddCircleHash(SEXP item, SEXP ct)
+static bool AddCircleHash(SEXP item, SEXP ct)
 {
     SEXP table, bucket, list;
 
@@ -1271,14 +1271,14 @@ static Rboolean AddCircleHash(SEXP item, SEXP ct)
 		SETCAR(list, R_UnboundValue); /* anything different will do */
 		SETCAR(ct, CONS(item, CAR(ct)));
 	    }
-	    return TRUE;
+	    return true;
 	}
 
     /* If we get here then this is a new item; enter in the table */
     bucket = CONS(R_NilValue, bucket);
     SET_TAG(bucket, item);
     SET_VECTOR_ELT(table, pos, bucket);
-    return FALSE;
+    return false;
 }
 
 static void ScanForCircles1(SEXP s, SEXP ct)
@@ -1343,7 +1343,7 @@ static void WriteBCLang(SEXP s, SEXP ref_table, SEXP reps,
 		/* we've seen it before, so just put out the index */
 		OutInteger(stream, BCREPREF);
 		OutInteger(stream, INTEGER(TAG(r))[0]);
-		output = FALSE;
+		output = false;
 	    }
 	}
 	if (output) {
@@ -1822,7 +1822,7 @@ static SEXP ReadItem_Iterative(int flags, SEXP ref_table, R_inpstream_t stream)
 	SETLEVELS(s, levs);
 	SET_OBJECT(s, objf);
 	R_ReadItemDepth++;
-	Rboolean set_lastname = FALSE;
+	bool set_lastname = false;
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
 	if (hastag && R_ReadItemDepth == R_InitReadItemDepth + 1 &&
@@ -1985,6 +1985,8 @@ static SEXP ReadItem_Recursive (int flags, SEXP ref_table, R_inpstream_t stream)
 	    {
 		/* These are all short strings */
 		length = InInteger(stream);
+		if (length < 0)
+		    error(_("invalid length"));
 		R_CheckStack2(length+1);
 		char cbuf[length+1];
 		InString(stream, cbuf, length);
@@ -2000,7 +2002,9 @@ static SEXP ReadItem_Recursive (int flags, SEXP ref_table, R_inpstream_t stream)
 	case CHARSXP:
 	    /* these are currently limited to 2^31 -1 bytes */
 	    length = InInteger(stream);
-	    if (length == -1)
+	    if (length < -1)
+		error(_("invalid length"));
+	    else if (length == -1)
 		PROTECT(s = NA_STRING);
 	    else if (length < 1000) {
 		char cbuf[length+1];
@@ -2132,7 +2136,7 @@ static SEXP ReadBCLang(int type, SEXP ref_table, SEXP reps,
 	{
 	    SEXP ans;
 	    int pos = -1;
-	    int hasattr = FALSE;
+	    int hasattr = false;
 	    if (type == BCREPDEF) {
 		pos = InInteger(stream);
 		type = InInteger(stream);
@@ -2247,7 +2251,7 @@ SEXP R_Unserialize(R_inpstream_t stream)
     case 3:
     {
 	int nelen = InInteger(stream);
-	if (nelen > R_CODESET_MAX)
+	if (nelen > R_CODESET_MAX || nelen < 0)
 	    error(_("invalid length of encoding name"));
 	InString(stream, stream->native_encoding, nelen);
 	stream->native_encoding[nelen] = '\0';
@@ -2287,7 +2291,7 @@ SEXP R_Unserialize(R_inpstream_t stream)
     return obj;
 }
 
-SEXP R_SerializeInfo(R_inpstream_t stream)
+attribute_hidden SEXP R_SerializeInfo(R_inpstream_t stream)
 {
     int version;
     int writer_version, min_reader_version, vv, vp, vs;
@@ -2338,7 +2342,7 @@ SEXP R_SerializeInfo(R_inpstream_t stream)
     if (version == 3) {
 	SET_STRING_ELT(names, 4, mkChar("native_encoding"));
 	int nelen = InInteger(stream);
-	if (nelen > R_CODESET_MAX)
+	if (nelen > R_CODESET_MAX || nelen < 0)
 	    error(_("invalid length of encoding name"));
 	char nbuf[nelen + 1];
 	InString(stream, nbuf, nelen);
@@ -2537,6 +2541,7 @@ static void OutCharConn(R_outpstream_t stream, int c)
     }
 }
 
+attribute_hidden
 void R_InitConnOutPStream(R_outpstream_t stream, Rconnection con,
 			  R_pstream_format_t type, int version,
 			  SEXP (*phook)(SEXP, SEXP), SEXP pdata)
@@ -2549,6 +2554,7 @@ void R_InitConnOutPStream(R_outpstream_t stream, Rconnection con,
 		     OutCharConn, OutBytesConn, phook, pdata);
 }
 
+attribute_hidden
 void R_InitConnInPStream(R_inpstream_t stream,  Rconnection con,
 			 R_pstream_format_t type,
 			 SEXP (*phook)(SEXP, SEXP), SEXP pdata)
@@ -2589,7 +2595,7 @@ do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     /* serializeToConn(object, conn, ascii, version, hook) */
 
     SEXP object, fun;
-    Rboolean ascii, wasopen;
+    bool ascii, wasopen;
     int version;
     Rconnection con;
     struct R_outpstream_st out;
@@ -2602,9 +2608,10 @@ do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     object = CAR(args);
     con = getConnection(asInteger(CADR(args)));
 
-    if (TYPEOF(CADDR(args)) != LGLSXP)
+/*    if (TYPEOF(CADDR(args)) != LGLSXP)
 	error(_("'ascii' must be logical"));
-    ascii = INTEGER(CADDR(args))[0];
+	ascii = INTEGER(CADDR(args))[0]; */
+    ascii = asRbool(CADDR(args), call);
     if (ascii == NA_LOGICAL) type = R_pstream_asciihex_format;
     else if (ascii) type = R_pstream_ascii_format;
     else type = R_pstream_xdr_format;
@@ -2639,7 +2646,7 @@ do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 	cntxt.cenddata = con;
     }
     if (!ascii && con->text)
-	error(_("binary-mode connection required for ascii=FALSE"));
+	error(_("binary-mode connection required for ascii=false"));
     if(!con->canwrite)
 	error(_("connection not open for writing"));
 
@@ -2670,7 +2677,7 @@ do_unserializeFromConn(SEXP call, SEXP op, SEXP args, SEXP env)
     Rconnection con;
     SEXP fun, ans;
     SEXP (*hook)(SEXP, SEXP);
-    Rboolean wasopen;
+    bool wasopen;
     RCNTXT cntxt;
 
     checkArity(op, args);
@@ -2745,7 +2752,8 @@ static void OutBytesBB(R_outpstream_t stream, void *buf, int length)
     if (bb->count + length > BCONBUFSIZ)
 	flush_bcon_buffer(bb);
     if (length <= BCONBUFSIZ) {
-	memcpy(bb->buf + bb->count, buf, length);
+	if (length)
+	    memcpy(bb->buf + bb->count, buf, length);
 	bb->count += length;
     }
     else if (R_WriteConnection(bb->con, buf, length) != length)
@@ -2845,7 +2853,8 @@ static void OutBytesMem(R_outpstream_t stream, void *buf, int length)
 	error(_("serialization is too large to store in a raw vector"));
 #endif
     if (needed > mb->size) resize_buffer(mb, needed);
-    memcpy(mb->buf + mb->count, buf, length);
+    if (length)
+	memcpy(mb->buf + mb->count, buf, length);
     mb->count = needed;
 }
 
@@ -2862,7 +2871,8 @@ static void InBytesMem(R_inpstream_t stream, void *buf, int length)
     membuf_t mb = stream->data;
     if (mb->count + (R_size_t) length > mb->size)
 	error(_("read error"));
-    memcpy(buf, mb->buf + mb->count, length);
+    if (length)
+	memcpy(buf, mb->buf + mb->count, length);
     mb->count += length;
 }
 
@@ -2908,7 +2918,8 @@ static SEXP CloseMemOutPStream(R_outpstream_t stream)
 	error(_("serialization is too large to store in a raw vector"));
 #endif
     PROTECT(val = allocVector(RAWSXP, mb->count));
-    memcpy(RAW(val), mb->buf, mb->count);
+    if (mb->count)
+	memcpy(RAW(val), mb->buf, mb->count);
     free_mem_buffer(mb);
     UNPROTECT(1);
     return val;
@@ -2971,7 +2982,7 @@ R_serialize(SEXP object, SEXP icon, SEXP ascii, SEXP Sversion, SEXP fun)
 }
 
 
-attribute_hidden SEXP R_unserialize(SEXP icon, SEXP fun)
+static SEXP R_unserialize(SEXP icon, SEXP fun)
 {
     struct R_inpstream_st in;
     SEXP (*hook)(SEXP, SEXP);
@@ -3114,7 +3125,8 @@ static SEXP readRawFromFile(SEXP file, SEXP key)
     for (i = 0; i < used; i++)
 	if(names[i] != NULL && strcmp(cfile, names[i]) == 0) {icache = i; break;}
     if (icache >= 0) {
-	memcpy(RAW(val), ptr[icache]+offset, len);
+	if (len)
+	    memcpy(RAW(val), ptr[icache]+offset, len);
 	vmaxset(vmax);
 	return val;
     }
@@ -3152,7 +3164,8 @@ static SEXP readRawFromFile(SEXP file, SEXP key)
 		in = (int) fread(p, 1, filelen, fp);
 		fclose(fp);
 		if (filelen != in) error(_("read failed on %s"), cfile);
-		memcpy(RAW(val), p+offset, len);
+		if (len)
+		    memcpy(RAW(val), p+offset, len);
 	    } else {
 		if (p)
 		    free(p);
@@ -3201,7 +3214,7 @@ static SEXP readRawFromFile(SEXP file, SEXP key)
 static SEXP R_getVarsFromFrame(SEXP vars, SEXP env, SEXP forcesxp)
 {
     SEXP val, tmp, sym;
-    Rboolean force;
+    bool force;
     int i, len;
 
     if (TYPEOF(env) == NILSXP) {
@@ -3212,14 +3225,14 @@ static SEXP R_getVarsFromFrame(SEXP vars, SEXP env, SEXP forcesxp)
 	error(_("bad environment"));
     if (TYPEOF(vars) != STRSXP)
 	error(_("bad variable names"));
-    force = asLogical(forcesxp);
+    force = asRbool(forcesxp, R_NilValue);
 
     len = LENGTH(vars);
     PROTECT(val = allocVector(VECSXP, len));
     for (i = 0; i < len; i++) {
 	sym = installTrChar(STRING_ELT(vars, i));
 
-	tmp = findVarInFrame(env, sym);
+	tmp = R_findVarInFrame(env, sym);
 	if (tmp == R_UnboundValue) {
 /*		PrintValue(env);
 		PrintValue(R_GetTraceback(0)); */  /* DJM debugging */

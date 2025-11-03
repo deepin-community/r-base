@@ -1,0 +1,21 @@
+Description: Add "${boot_path}/zero" for OpenJDK zero build. 
+ .
+ r-base (4.5.0-1+loong64.1) unstable; urgency=medium
+ .
+   * src/scripts/javareconf.in: Add "${boot_path}/zero" for OpenJDK zero build.
+Author: Dandan Zhang <zhangdandan@loongson.cn>
+
+---
+Last-Update: 2025-04-17
+
+--- r-base-4.5.0.orig/src/scripts/javareconf.in
++++ r-base-4.5.0/src/scripts/javareconf.in
+@@ -226,7 +226,7 @@ if test "${JAVA_LIBS}" = '~autodetect~';
+ 	if test ${has_libjvm} = no; then
+ 	    boot_path=`"$JAVA" -classpath "${tools_classpath}" getsp sun.boot.library.path| ${SED-sed} -e 's/:$//' -e 's/^://'`
+ 	    if test -n "${boot_path}"; then
+-		for dir in "${boot_path}" "${boot_path}/client" "${boot_path}/server"; do
++		for dir in "${boot_path}" "${boot_path}/client" "${boot_path}/server" "${boot_path}/zero"; do
+ 		    if test -f "$dir/libjvm${DYLIB_EXT}"; then
+ 			has_libjvm=yes
+ 			java_library_path="${dir}"

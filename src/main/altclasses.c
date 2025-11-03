@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2016--2023   The R Core Team
+ *  Copyright (C) 2016--2025   The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -690,7 +690,8 @@ static R_INLINE SEXP ExpandDeferredStringElt(SEXP x, R_xlen_t i)
     if (val == R_NilValue) {
 	R_xlen_t n = XLENGTH(x);
 	val = allocVector(STRSXP, n);
-	memset(STDVEC_DATAPTR(val), 0, n * sizeof(SEXP));
+	if (n)
+	    memset(STDVEC_DATAPTR(val), 0, n * sizeof(SEXP));
 	SET_DEFERRED_STRING_EXPANDED(x, val);
     }
 
@@ -1103,9 +1104,9 @@ static SEXP mmap_Unserialize(SEXP class, SEXP state)
 {
     SEXP file = MMAP_STATE_FILE(state);
     int type = MMAP_STATE_TYPE(state);
-    Rboolean ptrOK = MMAP_STATE_PTROK(state);
-    Rboolean wrtOK = MMAP_STATE_WRTOK(state);
-    Rboolean serOK = MMAP_STATE_SEROK(state);
+    Rboolean ptrOK = (Rboolean) MMAP_STATE_PTROK(state);
+    Rboolean wrtOK = (Rboolean) MMAP_STATE_WRTOK(state);
+    Rboolean serOK = (Rboolean) MMAP_STATE_SEROK(state);
 
     SEXP val = mmap_file(file, type, ptrOK, wrtOK, serOK, TRUE);
     if (val == NULL) {
@@ -1122,9 +1123,9 @@ static SEXP mmap_Unserialize(SEXP class, SEXP state)
 static Rboolean mmap_Inspect(SEXP x, int pre, int deep, int pvec,
 			     void (*inspect_subtree)(SEXP, int, int, int))
 {
-    Rboolean ptrOK = MMAP_PTROK(x);
-    Rboolean wrtOK = MMAP_WRTOK(x);
-    Rboolean serOK = MMAP_SEROK(x);
+    Rboolean ptrOK = (Rboolean) MMAP_PTROK(x);
+    Rboolean wrtOK = (Rboolean) MMAP_WRTOK(x);
+    Rboolean serOK = (Rboolean) MMAP_SEROK(x);
     Rprintf(" mmaped %s", R_typeToChar(x));
     Rprintf(" [ptr=%d,wrt=%d,ser=%d]\n", ptrOK, wrtOK, serOK);
     return TRUE;
@@ -1337,8 +1338,8 @@ static SEXP mmap_file(SEXP file, int type, Rboolean ptrOK, Rboolean wrtOK,
 
 static Rboolean asLogicalNA(SEXP x, Rboolean dflt)
 {
-    Rboolean val = asLogical(x);
-    return val == NA_LOGICAL ? dflt : val;
+    int val = asLogical(x);
+    return val == NA_LOGICAL ? dflt : (Rboolean) val;
 }
 
 #ifdef SIMPLEMMAP
@@ -1353,7 +1354,7 @@ attribute_hidden SEXP do_mmap_file(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP stype = CADR(args);
     SEXP sptrOK = CADDR(args);
     SEXP swrtOK = CADDDR(args);
-    SEXP sserOK = CADDDR(CDR(args));
+    SEXP sserOK = CAD4R(args);
 
     int type = REALSXP;
     if (stype != R_NilValue) {
@@ -1507,8 +1508,8 @@ static SEXP wrapper_Duplicate(SEXP x, Rboolean deep)
 static Rboolean wrapper_Inspect(SEXP x, int pre, int deep, int pvec,
 				void (*inspect_subtree)(SEXP, int, int, int))
 {
-    Rboolean srt = WRAPPER_SORTED(x);
-    Rboolean no_na = WRAPPER_NO_NA(x);
+    Rboolean srt = (Rboolean) WRAPPER_SORTED(x);
+    Rboolean no_na = (Rboolean) WRAPPER_NO_NA(x);
     Rprintf(" wrapper [srt=%d,no_na=%d]\n", srt, no_na);
     inspect_subtree(WRAPPER_WRAPPED(x), pre, deep, pvec);
     return TRUE;
@@ -2010,7 +2011,7 @@ attribute_hidden SEXP do_wrap_meta(SEXP call, SEXP op, SEXP args, SEXP env)
     return wrap_meta(x, srt, no_na);
 }
 
-SEXP /*attribute_hidden*/ R_tryWrap(SEXP x)
+/*attribute_hidden*/ SEXP R_tryWrap(SEXP x)
 {
     return wrap_meta(x, UNKNOWN_SORTEDNESS, FALSE);
 }
@@ -2047,7 +2048,9 @@ attribute_hidden SEXP R_tryUnwrap(SEXP x)
 	    /* Clear the fields to drop reference counts and set the
 	       type to LISTSXP to limit errors in case the object is
 	       still live. */
-	    SET_TYPEOF(x, LISTSXP);
+	    void ALTREP_SET_TYPEOF(SEXP, int); /* in memory.c */
+	    ALTREP_SET_TYPEOF(x, LISTSXP);
+	    SETALTREP(x, 0);
 	    SET_ATTRIB(x, R_NilValue);
 	    SETCAR(x, R_NilValue);
 	    SETCDR(x, R_NilValue);

@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2023  The R Core Team
+ *  Copyright (C) 1999-2025  The R Core Team
  *  Copyright (C) 1995-1998  Robert Gentleman and Ross Ihaka
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -215,12 +215,12 @@ attribute_hidden SEXP do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SEXP env, s2;
 	PROTECT_INDEX xp;
 
-	PROTECT_WITH_INDEX(env = findVarInFrame3(R_BaseEnv,
-						 install(".ArgsEnv"), TRUE),
+	PROTECT_WITH_INDEX(env = R_findVarInFrame(R_BaseEnv,
+						  install(".ArgsEnv")),
 			   &xp);
 
 	if (TYPEOF(env) == PROMSXP) REPROTECT(env = eval(env, R_BaseEnv), xp);
-	PROTECT(s2 = findVarInFrame3(env, install(nm), TRUE));
+	PROTECT(s2 = R_findVarInFrame(env, install(nm)));
 	if(s2 != R_UnboundValue) {
 	    s = duplicate(s2);
 	    SET_BODY(s, R_NilValue);
@@ -229,10 +229,10 @@ attribute_hidden SEXP do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    return s;
 	}
 	UNPROTECT(1); /* s2 */
-	REPROTECT(env = findVarInFrame3(R_BaseEnv, install(".GenericArgsEnv"),
-					TRUE), xp);
+	REPROTECT(env = R_findVarInFrame(R_BaseEnv, install(".GenericArgsEnv")),
+		  xp);
 	if (TYPEOF(env) == PROMSXP) REPROTECT(env = eval(env, R_BaseEnv), xp);
-	PROTECT(s2 = findVarInFrame3(env, install(nm), TRUE));
+	PROTECT(s2 = R_findVarInFrame(env, install(nm)));
 	if(s2 != R_UnboundValue) {
 	    s = allocSExp(CLOSXP);
 	    SET_FORMALS(s, FORMALS(s2));
@@ -290,6 +290,7 @@ attribute_hidden SEXP do_bodyCode(SEXP call, SEXP op, SEXP args, SEXP rho)
 #define simple_as_environment(arg) (IS_S4_OBJECT(arg) && (TYPEOF(arg) == OBJSXP) ? R_getS4DataSlot(arg, ENVSXP) : arg)
 
 
+// environment(fun)
 attribute_hidden SEXP do_envir(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
@@ -300,16 +301,15 @@ attribute_hidden SEXP do_envir(SEXP call, SEXP op, SEXP args, SEXP rho)
     else return getAttrib(CAR(args), R_DotEnvSymbol);
 }
 
+// environment(fun) <-  <env>
 attribute_hidden SEXP do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP env, s = CAR(args);
-
     checkArity(op, args);
-    check1arg(args, call, "x");
+    /* check1arg(args, call, "x"); as it had no effect: should be "fun" */
+    SEXP s  = CAR(args),
+	env = CADR(args);
 
-    env = CADR(args);
-
-    if (TYPEOF(CAR(args)) == CLOSXP
+    if (TYPEOF(s) == CLOSXP
 	&& (isEnvironment(env) ||
 	    isEnvironment(env = simple_as_environment(env)) ||
 	    isNull(env))) {
@@ -321,12 +321,17 @@ attribute_hidden SEXP do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    s = duplicate(s);
 	if (TYPEOF(BODY(s)) == BCODESXP)
 	    /* switch to interpreted version if compiled */
-	    SET_BODY(s, R_ClosureExpr(CAR(args)));
+	    SET_BODY(s, R_ClosureExpr(s));
 	SET_CLOENV(s, env);
     }
     else if (isNull(env) || isEnvironment(env) ||
 	isEnvironment(env = simple_as_environment(env)))
-	setAttrib(s, R_DotEnvSymbol, env);
+    {
+	if(!isNull(env) && isPrimitive(s)) // temporary, to become error()
+	    warning(_("setting environment(<primitive function>) is not possible and trying it is deprecated"));
+	else
+	    setAttrib(s, R_DotEnvSymbol, env);
+    }
     else
 	error(_("replacement object is not an environment"));
     return s;
@@ -376,22 +381,22 @@ attribute_hidden SEXP do_parentenv(SEXP call, SEXP op, SEXP args, SEXP rho)
     return( ENCLOS(arg) );
 }
 
-static Rboolean R_IsImportsEnv(SEXP env)
+static bool R_IsImportsEnv(SEXP env)
 {
     if (isNull(env) || !isEnvironment(env))
-	return FALSE;
+	return false;
     if (ENCLOS(env) != R_BaseNamespace)
-	return FALSE;
+	return false;
     SEXP name = getAttrib(env, R_NameSymbol);
     if (!isString(name) || LENGTH(name) != 1)
-	return FALSE;
+	return false;
 
     const char *imports_prefix = "imports:";
     const char *name_string = CHAR(STRING_ELT(name, 0));
     if (!strncmp(name_string, imports_prefix, strlen(imports_prefix)))
 	return TRUE;
     else
-	return FALSE;
+	return false;
 }
 
 attribute_hidden SEXP do_parentenvgets(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -518,7 +523,7 @@ static void cat_printsep(SEXP sep, int ntot)
 }
 
 typedef struct cat_info {
-    Rboolean wasopen;
+    bool wasopen;
     int changedcon;
     Rconnection con;
 #ifdef Win32
@@ -530,7 +535,7 @@ static void cat_cleanup(void *data)
 {
     cat_info *pci = (cat_info *) data;
     Rconnection con = pci->con;
-    Rboolean wasopen = pci->wasopen;
+    bool wasopen = pci->wasopen;
     int changedcon = pci->changedcon;
 
     con->fflush(con);
@@ -969,7 +974,7 @@ static SEXP expandDots(SEXP el, SEXP rho)
 
     while (el != R_NilValue) {
 	if (CAR(el) == R_DotsSymbol) {
-	    SEXP h = PROTECT(findVar(CAR(el), rho));
+	    SEXP h = PROTECT(R_findVar(CAR(el), rho));
 	    if (TYPEOF(h) == DOTSXP || h == R_NilValue) {
 		while (h != R_NilValue) {
 		    SETCDR(tail, CONS(CAR(h), R_NilValue));
@@ -998,8 +1003,8 @@ static SEXP setDflt(SEXP arg, SEXP dflt)
 {
     if (dflt) {
 	SEXP dflt1, dflt2;
-	PROTECT(dflt1 = deparse1line(dflt, TRUE));
-	PROTECT(dflt2 = deparse1line(CAR(arg), TRUE));
+	PROTECT(dflt1 = deparse1line(dflt, true));
+	PROTECT(dflt2 = deparse1line(CAR(arg), true));
 	error(_("duplicate 'switch' defaults: '%s' and '%s'"),
 	      CHAR(STRING_ELT(dflt1, 0)), CHAR(STRING_ELT(dflt2, 0)));
 	UNPROTECT(2); /* won't get here, but just for good form */

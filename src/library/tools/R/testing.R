@@ -396,8 +396,11 @@ testInstalledPackage <-
             cmd <- paste(shQuote(file.path(R.home("bin"), "R")),
                          "CMD BATCH --vanilla --no-timing", Ropts,
                          shQuote(Rfile), shQuote(failfile))
-            if (.Platform$OS.type == "windows") Sys.setenv(R_LIBS="")
-            else cmd <- paste("R_LIBS=", cmd)
+            if (.Platform$OS.type == "windows") {
+                Sys.setenv(R_LIBS="")
+                cmd <- paste(cmd, "LANGUAGE=C")
+            } else
+                cmd <- paste("R_LIBS= LANGUAGE=C", cmd)
             res <- system(cmd)
             if (res) {
                 message(gettextf("Error: running examples in %s failed", sQuote(Rfile)),
@@ -701,9 +704,8 @@ testInstalledBasic <- function(scope = c("basic", "devel", "both", "internet", "
     tests2 <- c("complex", "print-tests", "lapack", "datasets", "datetime",
                 "iec60559")
     ## regression tests (strict specific, too)
-    tests3 <- c("reg-tests-1a", "reg-tests-1b", "reg-tests-1c", "reg-tests-2",
-                "reg-tests-1d",
-                "reg-tests-1e",
+    tests3 <- c("reg-tests-1a", "reg-tests-1b", "reg-tests-1c", "reg-tests-1d",
+                "reg-tests-1e", "reg-tests-2",
                 "reg-examples1", "reg-examples2", "reg-packages",
                 "reg-S4-examples",
                 "classes-methods",
@@ -830,6 +832,7 @@ testInstalledBasic <- function(scope = c("basic", "devel", "both", "internet", "
                 comparePdf(f)
             }
         }
+        runone("reg-encodings", inC=FALSE)
         runone("reg-translation", inC=FALSE)
         runone("reg-tests-3", TRUE)
         runone("reg-examples3", TRUE)
@@ -851,7 +854,7 @@ testInstalledBasic <- function(scope = c("basic", "devel", "both", "internet", "
         runone("isas-tests")
         message("running tests of random deviate generation (should no longer ever fail)")
         runone("p-r-random-tests", TRUE)
-        message("running miscellanous strict devel checks", domain = NA)
+        message("running miscellaneous strict devel checks", domain = NA)
         if (runone("misc-devel")) return(invisible(1L))
         message("running tests demos from base and stats", domain = NA)
         if (runone("demos")) return(invisible(1L))

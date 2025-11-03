@@ -1,7 +1,7 @@
 #  File src/library/tools/R/Rd.R
 #  Part of the R package, https://www.R-project.org
 #
-#  Copyright (C) 1995-2024 The R Core Team
+#  Copyright (C) 1995-2025 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,10 +21,6 @@
 Rd_info <-
 function(file, encoding = "unknown")
 {
-    ## <FIXME>
-    ## This used to work only for a given Rd file.
-    ## now only for a parsed Rd object.
-
     if(inherits(file, "Rd")) {
         Rd <- file
         description <- attr(attr(Rd, "srcref"), "srcfile")$filename
@@ -358,13 +354,16 @@ function(dir = NULL, files = NULL,
     } else
     	db <- list()
 
-    # The built_file is a file of partially processed Rd objects, where build time
-    # \Sexprs have been evaluated.  We'll put the object in place of its
-    # filename to continue processing.
+    ## The built_file is a file of partially processed Rd objects, where
+    ## build time \Sexprs have been evaluated.  We'll put the object in
+    ## place of its filename to continue processing.
+    ## Similarly for later_file.
 
+    basenames <- basename(files)    
     names(files) <- files
+    files <- as.list(files)
+    
     if(!is.null(built_file) && file_test("-f", built_file)) {
-        basenames <- basename(files)
  	built <- readRDS(built_file)
  	names_built <- names(built)
         ## Hmm ... why are we doing this?
@@ -379,22 +378,19 @@ function(dir = NULL, files = NULL,
  	built[names_built %notin% basenames] <- NULL
  	if (length(built)) {
  	    which <- match(names(built), basenames)
- 	    if (all(file_test("-nt", built_file, files[which]))) {
- 	    	files <- as.list(files)
+ 	    if (all(file_test("-nt", built_file, names(files)[which]))) {
 	    	files[which] <- built
 	    }
 	}
     }
     if("later" %in% stages) {
         if(!is.null(later_file) && file_test("-f", later_file)) {
-            basenames <- basename(names(files))
             later <- readRDS(later_file)
             names_later <- names(later)
             later[names_later %notin% basenames] <- NULL
             if (length(later)) {
                 which <- match(names(later), basenames)
                 if (all(file_test("-nt", later_file, names(files)[which]))) {
-                    files <- as.list(files)
                     files[which] <- later
                 }
             }
@@ -479,8 +475,24 @@ function(x, kind)
     x <- x[RdTags(x) == sprintf("\\%s", kind)]
     if(!length(x))
         character()
-    else
+    else {
+        ## <NOTE>
+        ## WRE says that
+        ##   Each @code{\concept} entry should give a @emph{single}
+        ##   index term (word or phrase), and not use any Rd markup.
+        ## but at least for now we use \I{...} for spell checking.
+        if(kind == "concept")
+            x <- lapply(x, function(e) {
+                if((length(e) > 1L) &&
+                   identical(attr(e[[1L]], "Rd_tag"), "USERMACRO") &&
+                   identical(attr(e[[1L]], "macro"), "\\I"))
+                    e[-1L]
+                else
+                    e
+            })
+        ## </NOTE>
         unique(trimws(vapply(x, paste, "", collapse = "\n")))
+    }
 }
 
 ### * .Rd_keywords_auto
@@ -620,7 +632,7 @@ function(x, predicate)
         ## <FIXME>
         ## Should we do f(e) if not is.list(e)?
         e
-        ## <FIXME>
+        ## </FIXME>
     }
     recurse(x)
 }
@@ -630,7 +642,7 @@ function(x, predicate)
 ## Determine whether Rd has \Sexprs which R CMD build needs to handle at
 ## build stage (expand into the partial Rd db), "later" (build
 ## refman.pdf) or "never" (\Sexprs from \PR or \doi can always safely
-## be expanded).
+## be expanded). Needs unprocessed install \Sexprs.
 
 .Rd_get_Sexpr_build_time_info <-
 function(x)
@@ -653,7 +665,7 @@ function(x)
                    function(e) {
                        flags <- getDynamicFlags(e)
                        if(flags["build"])
-                           "build"
+                           return("build")
                        else if(flags["install"]) {
                            s <- trimws(paste(as.character(e),
                                              collapse = ""))
@@ -721,8 +733,9 @@ function(x)
     if(!length(x)) return(character())
 
     ## Need to remove everything inside \dontrun (and drop comments),
-    ## and "undefine" \dontshow and \testonly (which is achieved by
-    ## changing the Rd tag to "Rd").
+    ## and "undefine"
+    ##   \dontdiff \dontshow \donttest \testonly
+    ## (which is achieved by changing the Rd tag to "Rd").
 
     ## <FIXME>
     ## Remove eventually.
@@ -731,8 +744,13 @@ function(x)
 
     recurse <- function(e) {
         if(!is.null(tag <- attr(e, "Rd_tag"))
-           && tag %in% c("\\dontshow", "\\testonly"))
+           && tag %in% c("\\dontdiff", "\\dontshow", "\\donttest",
+                         "\\testonly")) {
+            e <- c(list(tagged("\n", "RCODE")),
+                   e,
+                   list(tagged("\n", "RCODE")))
             attr(e, "Rd_tag") <- "Rd"
+        }
         if(is.list(e)) {
             structure(lapply(e[is.na(match(RdTags(e), "\\dontrun"))],
                              recurse),
@@ -741,7 +759,12 @@ function(x)
         else e
     }
 
-    .Rd_deparse(recurse(x), tag = FALSE)
+    y <- recurse(x)
+    attr(y, "Rd_tag") <- "Rd"
+    y <- as.character.Rd(y)
+    y[y %in% c("\\dots", "\\ldots")] <- "..."
+    y <- psub("(?<!\\\\)\\\\([%{])", "\\1", y)
+    paste(y, collapse = "")
 }
 
 ### * .Rd_get_methods_description_table
@@ -838,7 +861,7 @@ function(x)
         tag <- attr(e, "Rd_tag")
         if(identical(tag, "\\link")) {
             val <- if(length(e)) { # mvbutils has empty links
-                arg <- as.character(e[[1L]])
+                arg <- paste(trimws(unlist(e)), collapse = " ")
                 opt <- attr(e, "Rd_option")
                 c(arg, if(is.null(opt)) "" else as.character(opt))
             } else c("", "")
@@ -1110,6 +1133,121 @@ function(db, eq = NULL, katex = .make_KaTeX_checker()) {
     }
     colnames(out) <- c("path", "pos", "msg")
     out
+}
+
+### * base_Rd_metadata_db
+
+base_Rd_metadata_db <-
+function(kind, verbose = TRUE, Ncpus = getOption("Ncpus", 1L)) 
+{
+    .package_apply(.get_standard_package_names()$base,
+                   function(p) {
+                       lapply(Rd_db(p, lib.loc = .Library),
+                              .Rd_get_metadata, kind)
+                   },
+                   verbose = verbose, Ncpus = Ncpus)
+}
+
+### * base_aliases_db
+
+base_aliases_db <-
+function(verbose = FALSE, Ncpus = getOption("Ncpus", 1L))
+    base_Rd_metadata_db("alias", verbose = verbose, Ncpus = Ncpus)
+    
+### * base_keyword_db
+
+base_keyword_db <-
+function(verbose = FALSE, Ncpus = getOption("Ncpus", 1L))
+    base_Rd_metadata_db("keyword", verbose = verbose, Ncpus = Ncpus)
+
+### * base_rdxrefs_db
+
+base_rdxrefs_db <- 
+function(verbose = FALSE, Ncpus = getOption("Ncpus", 1L))
+{
+    .package_apply(.get_standard_package_names()$base,
+                   function(p) {
+                       db <- Rd_db(p, lib.loc = .Library)
+                       rdxrefs <- lapply(db, .Rd_get_xrefs)
+                       cbind(do.call(rbind, rdxrefs),
+                             Source = rep.int(names(rdxrefs),
+                                              vapply(rdxrefs, NROW,
+                                                     0L)))
+                   },
+                   verbose = verbose, Ncpus = Ncpus)
+}
+
+### * .Rd_xrefs_with_missing_package_anchors
+
+.Rd_xrefs_with_missing_package_anchors <-
+function(dir, level = 1)
+{
+    ## Find the Rd xrefs with non-anchored targets not in the package
+    ## itself or the installed packages with the given new-style levels
+    ## (base: 1, recommended: 2, others: 3)
+    ## Note that we use 'dir' as the path to package sources (and not
+    ## the installed package), and hence use the package Rd db for both
+    ## aliases and rdxrefs.
+
+    db <- Rd_db(dir = dir)
+    if(!length(db)) return()
+    aliases <- lapply(db, .Rd_get_metadata, "alias")
+    rdxrefs <- lapply(db, .Rd_get_xrefs)
+    rdxrefs <- cbind(do.call(rbind, rdxrefs),
+                     Source = rep.int(names(rdxrefs),
+                                      vapply(rdxrefs,
+                                             NROW,
+                                             0L)))
+    anchors <- rdxrefs[, "Anchor"]
+    if(any(ind <- startsWith(anchors, "=")))
+        rdxrefs[ind, 1L : 2L] <- cbind(sub("^=", "", anchors[ind]), "")
+    rdxrefs <- rdxrefs[!nzchar(rdxrefs[, "Anchor"]), , drop = FALSE]
+    aliases <- c(unlist(aliases, use.names = FALSE),
+                 names(findHTMLlinks(level = level)))
+    if(any(ind <- is.na(match(rdxrefs[, "Target"], aliases))))
+        unique(rdxrefs[ind, , drop = FALSE])
+    else NULL
+}
+
+### * .Rd_metadata_db_to_data_frame
+
+.Rd_metadata_db_to_data_frame <- 
+function(x, kind)
+{
+    wrk <- function(a, p) {
+        cbind(unlist(a, use.names = FALSE),
+              rep.int(sprintf("%s::%s", p, names(a)), lengths(a)))
+    }
+    y <- as.data.frame(do.call(rbind,
+                               Map(wrk, x, names(x), USE.NAMES = FALSE)))
+    colnames(y) <- c(kind, "Source")
+    y
+}    
+        
+### * .Rd_aliases_db_to_data_frame
+
+.Rd_aliases_db_to_data_frame <-
+function(x)
+    .Rd_metadata_db_to_data_frame(x, "Alias")
+
+### * .Rd_keyword_db_to_data_frame
+
+.Rd_keyword_db_to_data_frame <-
+function(x)
+    .Rd_metadata_db_to_data_frame(x, "Keyword")
+
+### * .Rd_rdxrefs_db_to_data_frame
+
+.Rd_rdxrefs_db_to_data_frame <-
+function(x)
+{
+    wrk <- function(u, p) {
+        u$Source <- sprintf("%s::%s", p, u$Source)
+        u
+    }
+    do.call(rbind,
+            Map(wrk, lapply(x, as.data.frame), names(x),
+                USE.NAMES = FALSE))
 }
 
 ### Local variables: ***

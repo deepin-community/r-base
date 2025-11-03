@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1997--2023  The R Core Team
+ *  Copyright (C) 1997--2025  The R Core Team
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -56,17 +56,17 @@ static SEXP row_names_gets(SEXP vec, SEXP val)
 	return ans;
     }
     if(isInteger(val)) {
-	Rboolean OK_compact = TRUE;
+	bool OK_compact = TRUE;
 	int i, n = LENGTH(val);
 	if(n == 2 && INTEGER(val)[0] == NA_INTEGER) {
 	    n = INTEGER(val)[1];
 	} else if (n > 2) {
 	    for(i = 0; i < n; i++)
 		if(INTEGER(val)[i] != i+1) {
-		    OK_compact = FALSE;
+		    OK_compact = false;
 		    break;
 		}
-	} else OK_compact = FALSE;
+	} else OK_compact = false;
 	if(OK_compact) {
 	    /* we hide the length in an impossible integer vector */
 	    PROTECT(vec);
@@ -96,14 +96,14 @@ static SEXP stripAttrib(SEXP tag, SEXP lst)
     return lst;
 }
 
-static Rboolean isOneDimensionalArray(SEXP vec)
+static bool isOneDimensionalArray(SEXP vec)
 {
     if(isVector(vec) || isList(vec) || isLanguage(vec)) {
 	SEXP s = getAttrib(vec, R_DimSymbol);
 	if(TYPEOF(s) == INTSXP && LENGTH(s) == 1)
 	    return TRUE;
     }
-    return FALSE;
+    return false;
 }
 
 /* NOTE: For environments serialize.c calls this function to find if
@@ -127,7 +127,7 @@ attribute_hidden SEXP getAttrib0(SEXP vec, SEXP name)
 	    int len = length(vec);
 	    PROTECT(s = allocVector(STRSXP, len));
 	    int i = 0;
-	    Rboolean any = FALSE;
+	    bool any = false;
 	    for ( ; vec != R_NilValue; vec = CDR(vec), i++) {
 		if (TAG(vec) == R_NilValue)
 		{
@@ -320,7 +320,7 @@ void copyMostAttribNoTs(SEXP inp, SEXP ans)
 	} else if (TAG(s) == R_ClassSymbol) {
 	    SEXP cl = CAR(s);
 	    int i;
-	    Rboolean ists = FALSE;
+	    bool ists = false;
 	    for (i = 0; i < LENGTH(cl); i++)
 		if (strcmp(CHAR(STRING_ELT(cl, i)), "ts") == 0) { /* ASCII */
 		    ists = TRUE;
@@ -353,10 +353,20 @@ static SEXP installAttrib(SEXP vec, SEXP name, SEXP val)
 {
     SEXP t = R_NilValue; /* -Wall */
 
-    if(TYPEOF(vec) == CHARSXP)
+    switch(TYPEOF(vec)) {
+    case CHARSXP:
 	error("cannot set attribute on a CHARSXP");
-    if (TYPEOF(vec) == SYMSXP)
-	error(_("cannot set attribute on a symbol"));
+	break;
+    case SYMSXP:
+#ifdef R_future_version
+    case BUILTINSXP:
+    case SPECIALSXP:
+#endif
+	error(_("cannot set attribute on a '%s'"), R_typeToChar(vec));
+    default:
+	break;
+    }
+
     /* this does no allocation */
     for (SEXP s = ATTRIB(vec); s != R_NilValue; s = CDR(s)) {
 	if (TAG(s) == name) {
@@ -529,7 +539,7 @@ SEXP classgets(SEXP vec, SEXP klass)
 
 	    /* HOWEVER, it is the way that the object bit gets set/unset */
 
-	    Rboolean isfactor = FALSE;
+	    bool isfactor = false;
 
 	    if (vec == R_NilValue)
 		error(_("attempt to set an attribute on NULL"));
@@ -712,7 +722,7 @@ static SEXP cache_class(const char *class, SEXP klass)
     return klass;
 }
 
-static SEXP S4_extends(SEXP klass, Rboolean use_tab) {
+static SEXP S4_extends(SEXP klass, bool use_tab) {
     static SEXP s_extends = 0, s_extendsForS3;
     SEXP e, val; const char *class;
     const void *vmax;
@@ -728,7 +738,7 @@ static SEXP S4_extends(SEXP klass, Rboolean use_tab) {
     }
     class = translateChar(STRING_ELT(klass, 0)); /* TODO: include package attr. */
     if(use_tab) {
-	val = findVarInFrame(R_S4_extends_table, install(class));
+	val = R_findVarInFrame(R_S4_extends_table, install(class));
 	vmaxset(vmax);
 	if(val != R_UnboundValue)
 	    return val;
@@ -744,9 +754,9 @@ static SEXP S4_extends(SEXP klass, Rboolean use_tab) {
     return(val);
 }
 
-SEXP R_S4_extends(SEXP klass, SEXP useTable)
+attribute_hidden SEXP R_S4_extends(SEXP klass, SEXP useTable)
 {
-    return S4_extends(klass, asLogical(useTable));
+    return S4_extends(klass, asBool2(useTable, R_NilValue));
 }
 
 
@@ -929,8 +939,7 @@ attribute_hidden SEXP do_namesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP names = CADR(args);
     if (names != R_NilValue &&
 	! (TYPEOF(names) == STRSXP && ATTRIB(names) == R_NilValue)) {
-	PROTECT(call = allocList(2));
-	SET_TYPEOF(call, LANGSXP);
+	PROTECT(call = allocLang(2));
 	SETCAR(call, R_AsCharacterSymbol);
 	SETCADR(call, names);
 	names = eval(call, env);
@@ -1172,8 +1181,11 @@ attribute_hidden SEXP do_dimnames(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP R_dim(SEXP call, SEXP op, SEXP args, SEXP env)
+attribute_hidden SEXP do_dim(SEXP call, SEXP op, SEXP args, SEXP env)
 {
+    checkArity(op, args);
+    check1arg(args, call, "x");
+
     SEXP ans;
     /* DispatchOrEval internal generic: dim */
     if (DispatchOrEval(call, op, "dim", args, env, &ans, 0, /* argsevald: */ 1))
@@ -1182,13 +1194,6 @@ SEXP R_dim(SEXP call, SEXP op, SEXP args, SEXP env)
     ans = getAttrib(CAR(args), R_DimSymbol);
     UNPROTECT(1);
     return ans;
-}
-
-attribute_hidden SEXP do_dim(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    checkArity(op, args);
-    check1arg(args, call, "x");
-    return R_dim(call, op, args, env);
 }
 
 attribute_hidden SEXP do_dimgets(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -1356,6 +1361,8 @@ attribute_hidden SEXP do_attributesgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("attributes must be a list or NULL"));
     int i, nattrs = length(attrs);
     if (nattrs > 0) {
+	if (isPrimitive(object))
+	    warning(_("Setting attributes on primitive functions is deprecated and will be disabled"));// in R 4.6.0
 	names = getAttrib(attrs, R_NamesSymbol);
 	if (names == R_NilValue)
 	    error(_("attributes must be named"));
@@ -1529,9 +1536,13 @@ attribute_hidden SEXP do_attr(SEXP call, SEXP op, SEXP args, SEXP env)
 	       partial match on "names" */
 	    tag = R_NamesSymbol;
 	    PROTECT(t = getAttrib(s, tag));
-	    if(t != R_NilValue && R_warn_partial_match_attr)
-		warningcall(call, _("partial match of '%s' to '%s'"), str,
-			    CHAR(PRINTNAME(tag)));
+	    if(t != R_NilValue && R_warn_partial_match_attr) {
+		SEXP cond =
+		    R_makePartialMatchWarningCondition(call, install(str), tag);
+		PROTECT(cond);
+		R_signalWarningCondition(cond);
+		UNPROTECT(1);
+	    }
 	    UNPROTECT(2);
 	    return t;
 	}
@@ -1552,9 +1563,13 @@ attribute_hidden SEXP do_attr(SEXP call, SEXP op, SEXP args, SEXP env)
 	UNPROTECT(1);
 	return R_NilValue;
     }
-    if (match == PARTIAL && R_warn_partial_match_attr)
-	warningcall(call, _("partial match of '%s' to '%s'"), str,
-		    CHAR(PRINTNAME(tag)));
+    if (match == PARTIAL && R_warn_partial_match_attr) {
+	SEXP cond =
+	    R_makePartialMatchWarningCondition(call, install(str), tag);
+	PROTECT(cond);
+	R_signalWarningCondition(cond);
+	UNPROTECT(1);
+    }
 
     ans =  getAttrib(s, tag);
     UNPROTECT(1);
@@ -1654,6 +1669,8 @@ attribute_hidden SEXP do_attrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	 * ---         if(any_duplicated(val))
 	 *                  error(.....)
 	 */
+	if (isPrimitive(obj) && val != R_NilValue)
+	    warning(_("Setting attributes on primitive functions is deprecated and will be disabled"));// in R 4.6.0
 	setAttrib(obj, name, val);
 	UNPROTECT(2);
 	SETTER_CLEAR_NAMED(obj);
@@ -1757,7 +1774,7 @@ static SEXP set_data_part(SEXP obj,  SEXP rhs) {
     return(val);
 }
 
-SEXP S3Class(SEXP obj)
+attribute_hidden SEXP S3Class(SEXP obj)
 {
     if(!s_dot_S3Class) init_slot_handling();
     return getAttrib(obj, s_dot_S3Class);

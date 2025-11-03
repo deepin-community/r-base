@@ -339,5 +339,24 @@ as.complex(1:10)
 as.raw(1:10)
 options(o)
 
+## print() max.print and max for matrices (w/ many columns)  --  PR#15027
+## whenever the columns are larger than max.print, no values inside the matrix are displayed
+print(matrix(nrow = 100, ncol = 4), max = 5)
+print(matrix(nrow = 100, ncol = 100), max = 40) # omitting rows and columns
+print(matrix(nrow =  10, ncol = 4), max = 3)    #   (ditto)
+print(matrix(nrow =   0, ncol = 4), max = 3)    # omitting 1 column
+print(matrix(nrow =  10, ncol = 2), max = 5)    # omitting rows
+print(matrix(nrow =   1, ncol = 6), max = 5)    # omitting 1 col, at least one row prints
+## ----- "higher" arrays ("rank >= 3"): --------
+print(array(dim = c(2, 2, 2)), max = 4) # omit 1 slice
+print(array(dim = c(2, 2, 2)), max = 5) # omit 1 row + 1 column
+print(array(dim = c(2, 2, 2)), max = 6) # omit 1 row
+print(array(dim = c(2, 2, 2)), max = 7) # omit 1 row
+#
+print(array(dim = c(2, 2, 1)), max = 2) # omit 1 row
+print(array(dim = c(2, 2, 1)), max = 1) # omit 1 row + 1 column
+
+
+
 ## Cleanup
 rm(print.foo, obj, a, b, c, d, o)
