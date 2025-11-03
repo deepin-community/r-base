@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1998-2023   The R Core Team
+ *  Copyright (C) 1998-2025   The R Core Team
  *  Copyright (C) 2002-2005  The R Foundation
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *
@@ -67,6 +67,7 @@ attribute_hidden void nl_Rdummy(void)
  * in separate platform dependent modules.
  */
 
+attribute_hidden
 void Rf_callToplevelHandlers(SEXP expr, SEXP value, Rboolean succeeded,
 			     Rboolean visible);
 
@@ -194,12 +195,12 @@ typedef struct {
  The "cursor" for the input buffer is moved to the next starting
  point, i.e. the end of the first line or after the first ;.
  */
-int
+attribute_hidden int
 Rf_ReplIteration(SEXP rho, int savestack, int browselevel, R_ReplState *state)
 {
     int c, browsevalue;
     SEXP value, thisExpr;
-    Rboolean wasDisplayed = FALSE;
+    bool wasDisplayed = FALSE;
 
     /* clear warnings that might have accumulated during a jump to top level */
     if (R_CollectWarnings)
@@ -213,13 +214,15 @@ Rf_ReplIteration(SEXP rho, int savestack, int browselevel, R_ReplState *state)
 	    state->bufp = state->buf;
     }
 #ifdef SHELL_ESCAPE /* not default */
-    if (*state->bufp == '!') {
+    if (*state->bufp == '!' && state->buf == state->bufp
+        && state->prompt_type == 1) {
 	    R_system(&(state->buf[1]));
 	    state->buf[0] = '\0';
 	    return(0);
     }
 #endif /* SHELL_ESCAPE */
-    while((c = *state->bufp++)) {
+    while((c = *state->bufp)) {
+	    state->bufp++;
 	    R_IoBufferPutc(c, &R_ConsoleIob);
 	    if(c == ';' || c == '\n') break;
     }
@@ -330,7 +333,7 @@ static void check_session_exit(void)
 	   error is signaled from one of the functions called. The
 	   'exiting' variable identifies this and results in
 	   R_Suicide. */
-	static Rboolean exiting = FALSE;
+	static bool exiting = FALSE;
 	if (exiting)
 	    R_Suicide(_("error during cleanup\n"));
 	else {
@@ -365,7 +368,7 @@ int R_ReplDLLdo1(void)
     int c;
     ParseStatus status;
     SEXP rho = R_GlobalEnv, lastExpr;
-    Rboolean wasDisplayed = FALSE;
+    bool wasDisplayed = FALSE;
 
     if(!*DLLbufp) {
 	R_Busy(0);
@@ -924,36 +927,51 @@ void setup_Rmainloop(void)
 	putenv(Rarch);
     }
 #else /* not Win32 */
-    if(!setlocale(LC_CTYPE, ""))
+
+{  /* Avoid annoying warnings if LANG and LC_ALL are unset or empty.
+      This happens e.g. on Mac when primary language clash with region,
+      like English in Denmark or Germany.
+
+      If LANG or LC_ALL has been set to a non-existing locale, we assume
+      that the user wants to ne informed. */
+
+    const char *s;	
+    int quiet;
+
+    quiet = !( ((s = getenv("LANG")) && *s) || ((s = getenv("LC_ALL")) && *s) );
+
+    if(!setlocale(LC_CTYPE, "") && !quiet)
 	snprintf(deferred_warnings[ndeferred_warnings++], 250,
+
 		 "Setting LC_CTYPE failed, using \"C\"\n");
-    if(!setlocale(LC_COLLATE, ""))
+    if(!setlocale(LC_COLLATE, "") && !quiet)
 	snprintf(deferred_warnings[ndeferred_warnings++], 250,
 		 "Setting LC_COLLATE failed, using \"C\"\n");
-    if(!setlocale(LC_TIME, ""))
+    if(!setlocale(LC_TIME, "") && !quiet)
 	snprintf(deferred_warnings[ndeferred_warnings++], 250,
 		 "Setting LC_TIME failed, using \"C\"\n");
 # if defined(ENABLE_NLS) && defined(LC_MESSAGES)
-    if(!setlocale(LC_MESSAGES, ""))
+    if(!setlocale(LC_MESSAGES, "") && !quiet)
 	snprintf(deferred_warnings[ndeferred_warnings++], 250,
 		 "Setting LC_MESSAGES failed, using \"C\"\n");
 # endif
     /* NB: we do not set LC_NUMERIC */
 # ifdef LC_MONETARY
-    if(!setlocale(LC_MONETARY, ""))
+    if(!setlocale(LC_MONETARY, "") && !quiet)
 	snprintf(deferred_warnings[ndeferred_warnings++], 250,
 		 "Setting LC_MONETARY failed, using \"C\"\n");
 # endif
 # ifdef LC_PAPER
-    if(!setlocale(LC_PAPER, ""))
+    if(!setlocale(LC_PAPER, "") && !quiet)
 	snprintf(deferred_warnings[ndeferred_warnings++], 250,
 		 "Setting LC_PAPER failed, using \"C\"\n");
 # endif
 # ifdef LC_MEASUREMENT
-    if(!setlocale(LC_MEASUREMENT, ""))
+    if(!setlocale(LC_MEASUREMENT, "") && !quiet)
 	snprintf(deferred_warnings[ndeferred_warnings++], 250,
 		 "Setting LC_MEASUREMENT failed, using \"C\"\n");
 # endif
+}
 #endif /* not Win32 */
 #endif
 
@@ -1073,7 +1091,7 @@ void setup_Rmainloop(void)
     if (!doneit) {
 	doneit = 1;
 	PROTECT(cmd = install(".OptRequireMethods"));
-	R_CurrentExpr = findVar(cmd, R_GlobalEnv);
+	R_CurrentExpr = R_findVar(cmd, R_GlobalEnv);
 	if (R_CurrentExpr != R_UnboundValue &&
 	    TYPEOF(R_CurrentExpr) == CLOSXP) {
 		PROTECT(R_CurrentExpr = lang1(cmd));
@@ -1140,7 +1158,7 @@ void setup_Rmainloop(void)
     if (!doneit) {
 	doneit = 1;
 	PROTECT(cmd = install(".First"));
-	R_CurrentExpr = findVar(cmd, R_GlobalEnv);
+	R_CurrentExpr = R_findVar(cmd, R_GlobalEnv);
 	if (R_CurrentExpr != R_UnboundValue &&
 	    TYPEOF(R_CurrentExpr) == CLOSXP) {
 		PROTECT(R_CurrentExpr = lang1(cmd));
@@ -1159,7 +1177,7 @@ void setup_Rmainloop(void)
     if (!doneit) {
 	doneit = 1;
 	PROTECT(cmd = install(".First.sys"));
-	R_CurrentExpr = findVar(cmd, baseNSenv);
+	R_CurrentExpr = R_findVar(cmd, baseNSenv);
 	if (R_CurrentExpr != R_UnboundValue &&
 	    TYPEOF(R_CurrentExpr) == CLOSXP) {
 		PROTECT(R_CurrentExpr = lang1(cmd));
@@ -1352,7 +1370,7 @@ static SEXP callBrowserHook(void *data)
     return val;
 }
 
-static void restoreBrowserHookOption(void *data, Rboolean jump)
+static void restoreBrowserHookOption(void *data, bool jump)
 {
     struct callBrowserHookData *bhdata = data;
     SEXP hook = bhdata-> hook;
@@ -1432,7 +1450,7 @@ attribute_hidden SEXP do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(expr) == ENVSXP)
 	rho = expr;
 
-    Rboolean ignoreHook = asLogical(CAR(CDR(CDDDR(argList))));
+    bool ignoreHook = asBool2(CAR(CDR(CDDDR(argList))), call);
     if (ignoreHook) {
         R_browserRepl(rho);
         UNPROTECT(1); /* argList */
@@ -1541,7 +1559,7 @@ void R_dot_Last(void)
 
     R_GlobalContext = R_ToplevelContext = R_SessionContext = &R_Toplevel;
     PROTECT(cmd = install(".Last"));
-    R_CurrentExpr = findVar(cmd, R_GlobalEnv);
+    R_CurrentExpr = R_findVar(cmd, R_GlobalEnv);
     if (R_CurrentExpr != R_UnboundValue && TYPEOF(R_CurrentExpr) == CLOSXP) {
 	PROTECT(R_CurrentExpr = lang1(cmd));
 	R_CurrentExpr = eval(R_CurrentExpr, R_GlobalEnv);
@@ -1549,7 +1567,7 @@ void R_dot_Last(void)
     }
     UNPROTECT(1);
     PROTECT(cmd = install(".Last.sys"));
-    R_CurrentExpr = findVar(cmd, R_BaseNamespace);
+    R_CurrentExpr = R_findVar(cmd, R_BaseNamespace);
     if (R_CurrentExpr != R_UnboundValue && TYPEOF(R_CurrentExpr) == CLOSXP) {
 	PROTECT(R_CurrentExpr = lang1(cmd));
 	R_CurrentExpr = eval(R_CurrentExpr, R_GlobalEnv);
@@ -1629,7 +1647,7 @@ static Rboolean Rf_RunningToplevelHandlers = FALSE;
   since they could be more identified by an invariant (rather than
   position).
  */
-R_ToplevelCallbackEl *
+attribute_hidden R_ToplevelCallbackEl *
 Rf_addTaskCallback(R_ToplevelCallback cb, void *data,
 		   void (*finalizer)(void *), const char *name, int *pos)
 {
@@ -1684,7 +1702,7 @@ static void removeToplevelHandler(R_ToplevelCallbackEl *e)
     }
 }
 
-Rboolean
+attribute_hidden Rboolean
 Rf_removeTaskCallbackByName(const char *name)
 {
     R_ToplevelCallbackEl *el = Rf_ToplevelTaskHandlers, *prev = NULL;
@@ -1718,7 +1736,7 @@ Rf_removeTaskCallbackByName(const char *name)
   Remove the top-level task handler/callback identified by
   its position in the list of callbacks.
  */
-Rboolean
+attribute_hidden Rboolean
 Rf_removeTaskCallbackByIndex(int id)
 {
     R_ToplevelCallbackEl *el = Rf_ToplevelTaskHandlers, *tmp = NULL;
@@ -1761,7 +1779,7 @@ Rf_removeTaskCallbackByIndex(int id)
 
   @see Rf_RemoveToplevelCallbackByIndex(int)
  */
-SEXP
+attribute_hidden SEXP
 R_removeTaskCallback(SEXP which)
 {
     int id;
@@ -1780,7 +1798,7 @@ R_removeTaskCallback(SEXP which)
     return ScalarLogical(val);
 }
 
-SEXP
+attribute_hidden SEXP
 R_getTaskCallbackNames(void)
 {
     SEXP ans;
@@ -1883,7 +1901,7 @@ static void defineVarInc(SEXP sym, SEXP val, SEXP rho)
     INCREMENT_NAMED(val); /* in case this is used in a NAMED build */
 }
 
-Rboolean
+attribute_hidden Rboolean
 R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
 		      Rboolean visible, void *userData)
 {
@@ -1906,7 +1924,7 @@ R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
     SEXP f = (SEXP) userData;
     SEXP e, val, cur, rho;
     int errorOccurred;
-    Rboolean again, useData = LOGICAL(VECTOR_ELT(f, 2))[0];
+    Rboolean again, useData = (Rboolean)LOGICAL(VECTOR_ELT(f, 2))[0];
 
     /* create an environment with bindings for the function and arguments */
     PROTECT(rho = NewEnvironment(R_NilValue, R_NilValue, R_GlobalEnv));
@@ -1945,7 +1963,7 @@ R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
 	    /* It would be nice to identify the function. */
 	    warning(_("top-level task callback did not return a logical value"));
 	}
-	again = asLogical(val);
+	again = (Rboolean) asLogical(val);
     } else {
 	/* warning("error occurred in top-level task callback\n"); */
 	again = FALSE;
@@ -1956,7 +1974,12 @@ R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
     return(again);
 }
 
-SEXP
+static void releaseObjectFinalizer(void *data)
+{
+    R_ReleaseObject((SEXP)data);
+}
+
+attribute_hidden SEXP
 R_addTaskCallback(SEXP f, SEXP data, SEXP useData, SEXP name)
 {
     SEXP internalData;
@@ -1975,7 +1998,7 @@ R_addTaskCallback(SEXP f, SEXP data, SEXP useData, SEXP name)
 
     PROTECT(index = allocVector(INTSXP, 1));
     el = Rf_addTaskCallback(R_taskCallbackRoutine,  internalData,
-			    (void (*)(void*)) R_ReleaseObject, tmpName,
+			    releaseObjectFinalizer, tmpName,
 			    INTEGER(index));
 
     if(length(name) == 0) {
@@ -1997,14 +2020,14 @@ R_addTaskCallback(SEXP f, SEXP data, SEXP useData, SEXP name)
 # include <R_ext/RS.h>
 # if defined FC_LEN_T
 # include <stddef.h>
-void F77_SYMBOL(rwarnc)(char *msg, int *nchar, FC_LEN_T msg_len);
+void F77_SUB(rwarnc)(char *msg, int *nchar, FC_LEN_T msg_len);
 attribute_hidden void dummy54321(void)
 {
     int nc = 5;
     F77_CALL(rwarnc)("dummy", &nc, (FC_LEN_T) 5);
 }
 # else
-void F77_SYMBOL(rwarnc)(char *msg, int *nchar);
+void F77_SUB(rwarnc)(char *msg, int *nchar);
 attribute_hidden void dummy54321(void)
 {
     int nc = 5;

@@ -122,7 +122,7 @@ findFuzzyMatches <- function(pattern, values) {
 
 findMatches <- function(pattern, values, fuzzy, backtick)
 {
-    if (missing(fuzzy)) fuzzy <- isTRUE(.CompletionEnv$settings[["fuzzy"]])
+    if (missing(fuzzy))    fuzzy    <- isTRUE(.CompletionEnv$settings[["fuzzy"]])
     if (missing(backtick)) backtick <- isTRUE(.CompletionEnv$settings[["backtick"]])
     comps <- 
         if (fuzzy)
@@ -1376,7 +1376,7 @@ fileCompletions <- function(token)
         "internet.info", "locatorBell", "mailer", "menu.graphics",
         "na.action", "pkgType", "repos", "show.coef.Pvalues",
         "show.signif.stars", "str", "str.dendrogram.last",
-        "ts.eps", "ts.S.compat", "unzip", "windowsTimeout",
+        "ts.eps", "ts.S.compat", "unzip", "windowsTimeouts",
         ## + options unset by default (or OS-specific)
         "mc.cores", "dvipscmd", "warn.FPU",
         "askYesNo", "BioC_mirror", "ccaddress", "checkPackageLicense",

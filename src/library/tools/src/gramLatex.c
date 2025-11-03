@@ -71,8 +71,8 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2022  The R Core Team
- *  Copyright (C) 2010 Duncan Murdoch
+ *  Copyright (C) 1997--2025  The R Core Team
+ *  Copyright (C) 2010--2025  Duncan Murdoch
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -96,9 +96,6 @@
 #define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Parse.h>
-#ifndef STRICT_R_HEADERS
-# define STRICT_R_HEADERS
-#endif
 #include <R_ext/RS.h>           /* for R_chk_* allocation */
 #include <ctype.h>
 #include <R_ext/Print.h>
@@ -194,16 +191,24 @@ struct ParseState {
     SEXP	xxInVerbEnv;    /* Are we currently in a verbatim environment? If
 				   so, this is the string to end it. If not, 
 				   this is NULL */
-    SEXP	xxVerbatimList;/* A STRSXP containing all the verbatim environment names */
-    SEXP	xxVerbList;    /* A STRSXP containing all the verbatim command names */
+    SEXP	xxVerbatimList;	/* A STRSXP containing all the verbatim environment names */
+    SEXP  xxKwdList;		/* A STRSXP containing all the
+				   verbatim and definition command names */
+    SEXP  xxKwdType;		/* An INTSXP with 1=VERB, 2=DEFCMD, 3=DEFENV */
+    int   xxGetArgs;		/* Collecting args to macro */
+    int   xxIgnoreKeywords;	/* Ignore keywords while getting args */
+    int   xxBraceDepth;		/* Brace depth important while
+				   collecting args */
+    int   xxBracketDepth;	/* So is bracket depth */
 
-    SEXP     SrcFile;  /* parseLatex will *always* supply a srcfile */
-    SEXP mset; /* precious mset for protecting parser semantic values */
+    SEXP     SrcFile;		/* parseLatex will *always* supply a srcfile */
+    SEXP mset;			/* precious mset for protecting parser semantic values */
     ParseState *prevState;
 };
 
-static Rboolean busy = FALSE;
+static bool busy = false;
 static ParseState parseState;
+static char ParseErrorMsg[PARSE_ERROR_SIZE];
 
 #define PRESERVE_SV(x) R_PreserveInMSet((x), parseState.mset)
 #define RELEASE_SV(x)  R_ReleaseFromMSet((x), parseState.mset)
@@ -215,9 +220,15 @@ static SEXP	xxlist(SEXP, SEXP);
 static void	xxsavevalue(SEXP, YYLTYPE *);
 static SEXP	xxtag(SEXP, int, YYLTYPE *);
 static SEXP 	xxenv(SEXP, SEXP, SEXP, YYLTYPE *);
-static SEXP	xxmath(SEXP, YYLTYPE *, Rboolean);
+static SEXP     xxnewdef(SEXP, SEXP, YYLTYPE *);
+static SEXP	xxmath(SEXP, YYLTYPE *, bool);
 static SEXP	xxblock(SEXP, YYLTYPE *);
 static void	xxSetInVerbEnv(SEXP);
+static SEXP	xxpushMode(int, int);
+static void	xxpopMode(SEXP);
+static void	xxArg(void);
+
+#define END_OF_ARGS_CHAR 0xFFFE /* not a legal character */
 
 static int	mkMarkup(int);
 static int	mkText(int);
@@ -227,7 +238,7 @@ static int	mkVerb2(const char *, int);
 static int      mkVerbEnv(void);
 static int	mkDollar(int);
 
-static SEXP R_LatexTagSymbol = NULL;
+static SEXP LatexTagSymbol = NULL;
 
 #define YYSTYPE		SEXP
 
@@ -281,7 +292,12 @@ extern int yydebug;
     END = 264,                     /* END  */
     VERB = 265,                    /* VERB  */
     VERB2 = 266,                   /* VERB2  */
-    TWO_DOLLARS = 267              /* TWO_DOLLARS  */
+    NEWENV = 267,                  /* NEWENV  */
+    NEWCMD = 268,                  /* NEWCMD  */
+    END_OF_ARGS = 269,             /* END_OF_ARGS  */
+    TWO_DOLLARS = 270,             /* TWO_DOLLARS  */
+    LBRACKET = 271,                /* LBRACKET  */
+    RBRACKET = 272                 /* RBRACKET  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -299,7 +315,12 @@ extern int yydebug;
 #define END 264
 #define VERB 265
 #define VERB2 266
-#define TWO_DOLLARS 267
+#define NEWENV 267
+#define NEWCMD 268
+#define END_OF_ARGS 269
+#define TWO_DOLLARS 270
+#define LBRACKET 271
+#define RBRACKET 272
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -346,20 +367,30 @@ enum yysymbol_kind_t
   YYSYMBOL_END = 9,                        /* END  */
   YYSYMBOL_VERB = 10,                      /* VERB  */
   YYSYMBOL_VERB2 = 11,                     /* VERB2  */
-  YYSYMBOL_TWO_DOLLARS = 12,               /* TWO_DOLLARS  */
-  YYSYMBOL_13_ = 13,                       /* '{'  */
-  YYSYMBOL_14_ = 14,                       /* '}'  */
-  YYSYMBOL_15_ = 15,                       /* '$'  */
-  YYSYMBOL_YYACCEPT = 16,                  /* $accept  */
-  YYSYMBOL_Init = 17,                      /* Init  */
-  YYSYMBOL_Items = 18,                     /* Items  */
-  YYSYMBOL_nonMath = 19,                   /* nonMath  */
-  YYSYMBOL_Item = 20,                      /* Item  */
-  YYSYMBOL_environment = 21,               /* environment  */
-  YYSYMBOL_22_1 = 22,                      /* $@1  */
-  YYSYMBOL_math = 23,                      /* math  */
-  YYSYMBOL_displaymath = 24,               /* displaymath  */
-  YYSYMBOL_block = 25                      /* block  */
+  YYSYMBOL_NEWENV = 12,                    /* NEWENV  */
+  YYSYMBOL_NEWCMD = 13,                    /* NEWCMD  */
+  YYSYMBOL_END_OF_ARGS = 14,               /* END_OF_ARGS  */
+  YYSYMBOL_TWO_DOLLARS = 15,               /* TWO_DOLLARS  */
+  YYSYMBOL_LBRACKET = 16,                  /* LBRACKET  */
+  YYSYMBOL_RBRACKET = 17,                  /* RBRACKET  */
+  YYSYMBOL_18_ = 18,                       /* '['  */
+  YYSYMBOL_19_ = 19,                       /* ']'  */
+  YYSYMBOL_20_ = 20,                       /* '{'  */
+  YYSYMBOL_21_ = 21,                       /* '}'  */
+  YYSYMBOL_22_ = 22,                       /* '$'  */
+  YYSYMBOL_YYACCEPT = 23,                  /* $accept  */
+  YYSYMBOL_Init = 24,                      /* Init  */
+  YYSYMBOL_Items = 25,                     /* Items  */
+  YYSYMBOL_nonMath = 26,                   /* nonMath  */
+  YYSYMBOL_Item = 27,                      /* Item  */
+  YYSYMBOL_begin = 28,                     /* begin  */
+  YYSYMBOL_environment = 29,               /* environment  */
+  YYSYMBOL_math = 30,                      /* math  */
+  YYSYMBOL_displaymath = 31,               /* displaymath  */
+  YYSYMBOL_block = 32,                     /* block  */
+  YYSYMBOL_newdefine = 33,                 /* newdefine  */
+  YYSYMBOL_34_1 = 34,                      /* @1  */
+  YYSYMBOL_35_2 = 35                       /* @2  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -688,21 +719,21 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  25
+#define YYFINAL  34
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   122
+#define YYLAST   265
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  16
+#define YYNTOKENS  23
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  10
+#define YYNNTS  13
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  25
+#define YYNRULES  34
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  42
+#define YYNSTATES  58
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   267
+#define YYMAXUTOK   272
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -719,16 +750,16 @@ static const yytype_int8 yytranslate[] =
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,    15,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,    22,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,    18,     2,    19,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,    13,     2,    14,     2,     2,     2,     2,
+       2,     2,     2,    20,     2,    21,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -742,16 +773,18 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
-       5,     6,     7,     8,     9,    10,    11,    12
+       5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
+      15,    16,    17
 };
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,   186,   186,   187,   188,   191,   192,   193,   194,   195,
-     196,   198,   199,   201,   202,   203,   204,   205,   206,   207,
-     209,   209,   213,   215,   217,   218
+       0,   197,   197,   198,   199,   202,   203,   204,   205,   206,
+     207,   209,   210,   212,   213,   214,   215,   216,   218,   219,
+     220,   221,   222,   223,   225,   229,   233,   237,   239,   241,
+     242,   244,   244,   248,   248
 };
 #endif
 
@@ -769,8 +802,10 @@ static const char *const yytname[] =
 {
   "\"end of file\"", "error", "\"invalid token\"", "END_OF_INPUT",
   "ERROR", "MACRO", "TEXT", "COMMENT", "BEGIN", "END", "VERB", "VERB2",
-  "TWO_DOLLARS", "'{'", "'}'", "'$'", "$accept", "Init", "Items",
-  "nonMath", "Item", "environment", "$@1", "math", "displaymath", "block", YY_NULLPTR
+  "NEWENV", "NEWCMD", "END_OF_ARGS", "TWO_DOLLARS", "LBRACKET", "RBRACKET",
+  "'['", "']'", "'{'", "'}'", "'$'", "$accept", "Init", "Items", "nonMath",
+  "Item", "begin", "environment", "math", "displaymath", "block",
+  "newdefine", "@1", "@2", YY_NULLPTR
 };
 
 static const char *
@@ -780,7 +815,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-13)
+#define YYPACT_NINF (-19)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -792,13 +827,14 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
    STATE-NUM.  */
-static const yytype_int8 yypact[] =
+static const yytype_int16 yypact[] =
 {
-      32,   -13,   -13,   -13,   -13,   -13,   -12,   -13,   -13,   109,
-      54,   109,     5,    43,   -13,   -13,   -13,   -13,   -13,     0,
-      14,   -13,   -13,    65,    98,   -13,   -13,   -13,   -13,   -13,
-      -4,   -13,   -13,   -13,   -13,   -13,    87,    76,    -1,     3,
-       2,   -13
+      35,   -19,   -19,   -19,   -19,   -19,   -19,   -18,   -19,   -19,
+     -19,   -19,   243,   -19,   -19,    74,   243,     3,    55,   -19,
+      93,   -19,   -19,   -19,   -19,   -19,    -1,   188,   188,   226,
+     -19,   -19,   112,   207,   -19,   -19,   -19,   -19,   -19,   -13,
+     131,   -10,   150,   169,   -19,   -19,   -19,   -19,     2,   -11,
+     -19,   -19,   -19,    -9,     7,   -19,    -7,   -19
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -806,23 +842,26 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       0,     4,     3,    15,    13,    14,     0,    16,    17,     0,
-       0,     0,     0,     0,     5,    18,     6,     7,    19,     0,
-       0,    11,    25,     0,     0,     1,     2,     8,     9,    10,
-       0,    23,    12,    24,    22,    20,     0,     0,     0,     0,
-       0,    21
+       0,     4,     3,    22,    17,    13,    16,     0,    18,    19,
+      33,    31,     0,    14,    15,     0,     0,     0,     0,     5,
+       0,    20,     6,     7,    21,    23,     0,     0,     0,     0,
+      11,    30,     0,     0,     1,     2,     8,     9,    10,     0,
+       0,     0,     0,     0,    28,    12,    29,    27,     0,     0,
+      24,    34,    32,     0,     0,    26,     0,    25
 };
 
 /* YYPGOTO[NTERM-NUM].  */
-static const yytype_int8 yypgoto[] =
+static const yytype_int16 yypgoto[] =
 {
-     -13,   -13,    -7,    12,    -9,   -13,   -13,    -6,    -5,   -13
+     -19,   -19,   237,     0,   -12,   -19,   -19,   -17,    -8,   -19,
+     -19,   -19,   -19
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,    12,    13,    20,    14,    15,    36,    16,    17,    18
+       0,    17,    18,    29,    19,    20,    21,    22,    23,    24,
+      25,    28,    27
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -830,55 +869,85 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-      21,    19,    21,    23,    27,    25,    30,    28,    29,    40,
-      35,    32,    39,     0,    27,    32,    41,    28,    29,     3,
-       4,     5,     6,    24,     7,     8,    31,    10,    27,    37,
-       0,    28,    29,     1,     0,     2,     0,     3,     4,     5,
-       6,     0,     7,     8,     9,    10,    26,    11,     3,     4,
-       5,     6,     0,     7,     8,     9,    10,     0,    11,     3,
-       4,     5,     6,     0,     7,     8,     9,    10,    22,    11,
-       3,     4,     5,     6,     0,     7,     8,     9,    10,    33,
-      11,     3,     4,     5,     6,    38,     7,     8,     9,    10,
-       0,    11,     3,     4,     5,     6,     0,     7,     8,     9,
-      10,     0,    11,     3,     4,     5,     6,     0,     7,     8,
-       0,    10,     0,    34,     3,     4,     5,     6,     0,     7,
-       8,     0,    10
+      30,    37,    26,    34,    30,    41,    36,    48,    53,    54,
+      38,    50,    55,    56,    57,    37,    33,    45,     0,     0,
+      36,    45,     0,    37,    38,    37,    37,     0,    36,     0,
+      36,    36,    38,     0,    38,    38,     1,     0,     2,     3,
+       4,     5,     6,     7,     0,     8,     9,    10,    11,     0,
+      12,     0,     0,    13,    14,    15,     0,    16,    35,     3,
+       4,     5,     6,     7,     0,     8,     9,    10,    11,     0,
+      12,     0,     0,    13,    14,    15,     0,    16,     3,     4,
+       5,     6,     7,     0,     8,     9,    10,    11,     0,    12,
+       0,     0,    13,    14,    15,    31,    16,     3,     4,     5,
+       6,     7,    39,     8,     9,    10,    11,     0,    12,     0,
+       0,    13,    14,    15,     0,    16,     3,     4,     5,     6,
+       7,     0,     8,     9,    10,    11,     0,    12,     0,     0,
+      13,    14,    15,    46,    16,     3,     4,     5,     6,     7,
+      49,     8,     9,    10,    11,     0,    12,     0,     0,    13,
+      14,    15,     0,    16,     3,     4,     5,     6,     7,     0,
+       8,     9,    10,    11,    51,    12,     0,     0,    13,    14,
+      15,     0,    16,     3,     4,     5,     6,     7,     0,     8,
+       9,    10,    11,    52,    12,     0,     0,    13,    14,    15,
+       0,    16,     3,     4,     5,     6,     7,     0,     8,     9,
+      10,    11,     0,    12,     0,     0,    13,    14,    15,     0,
+      16,     3,     4,     5,     6,     7,     0,     8,     9,    10,
+      11,     0,     0,     0,     0,    13,    14,    15,     0,    47,
+       3,     4,     5,     6,     7,     0,     8,     9,    10,    11,
+       0,    44,     0,     0,    13,    14,    15,     3,     4,     5,
+       6,     7,    32,     8,     9,    10,    11,    40,     0,     0,
+       0,    13,    14,    15,    42,    43
 };
 
 static const yytype_int8 yycheck[] =
 {
-       9,    13,    11,    10,    13,     0,     6,    13,    13,     6,
-      14,    20,    13,    -1,    23,    24,    14,    23,    23,     5,
-       6,     7,     8,    11,    10,    11,    12,    13,    37,    36,
-      -1,    37,    37,     1,    -1,     3,    -1,     5,     6,     7,
-       8,    -1,    10,    11,    12,    13,     3,    15,     5,     6,
-       7,     8,    -1,    10,    11,    12,    13,    -1,    15,     5,
-       6,     7,     8,    -1,    10,    11,    12,    13,    14,    15,
-       5,     6,     7,     8,    -1,    10,    11,    12,    13,    14,
-      15,     5,     6,     7,     8,     9,    10,    11,    12,    13,
-      -1,    15,     5,     6,     7,     8,    -1,    10,    11,    12,
-      13,    -1,    15,     5,     6,     7,     8,    -1,    10,    11,
-      -1,    13,    -1,    15,     5,     6,     7,     8,    -1,    10,
-      11,    -1,    13
+      12,    18,    20,     0,    16,     6,    18,    20,     6,    20,
+      18,    21,    21,     6,    21,    32,    16,    29,    -1,    -1,
+      32,    33,    -1,    40,    32,    42,    43,    -1,    40,    -1,
+      42,    43,    40,    -1,    42,    43,     1,    -1,     3,     4,
+       5,     6,     7,     8,    -1,    10,    11,    12,    13,    -1,
+      15,    -1,    -1,    18,    19,    20,    -1,    22,     3,     4,
+       5,     6,     7,     8,    -1,    10,    11,    12,    13,    -1,
+      15,    -1,    -1,    18,    19,    20,    -1,    22,     4,     5,
+       6,     7,     8,    -1,    10,    11,    12,    13,    -1,    15,
+      -1,    -1,    18,    19,    20,    21,    22,     4,     5,     6,
+       7,     8,     9,    10,    11,    12,    13,    -1,    15,    -1,
+      -1,    18,    19,    20,    -1,    22,     4,     5,     6,     7,
+       8,    -1,    10,    11,    12,    13,    -1,    15,    -1,    -1,
+      18,    19,    20,    21,    22,     4,     5,     6,     7,     8,
+       9,    10,    11,    12,    13,    -1,    15,    -1,    -1,    18,
+      19,    20,    -1,    22,     4,     5,     6,     7,     8,    -1,
+      10,    11,    12,    13,    14,    15,    -1,    -1,    18,    19,
+      20,    -1,    22,     4,     5,     6,     7,     8,    -1,    10,
+      11,    12,    13,    14,    15,    -1,    -1,    18,    19,    20,
+      -1,    22,     4,     5,     6,     7,     8,    -1,    10,    11,
+      12,    13,    -1,    15,    -1,    -1,    18,    19,    20,    -1,
+      22,     4,     5,     6,     7,     8,    -1,    10,    11,    12,
+      13,    -1,    -1,    -1,    -1,    18,    19,    20,    -1,    22,
+       4,     5,     6,     7,     8,    -1,    10,    11,    12,    13,
+      -1,    15,    -1,    -1,    18,    19,    20,     4,     5,     6,
+       7,     8,    15,    10,    11,    12,    13,    20,    -1,    -1,
+      -1,    18,    19,    20,    27,    28
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     1,     3,     5,     6,     7,     8,    10,    11,    12,
-      13,    15,    17,    18,    20,    21,    23,    24,    25,    13,
-      19,    20,    14,    18,    19,     0,     3,    20,    23,    24,
-       6,    12,    20,    14,    15,    14,    22,    18,     9,    13,
-       6,    14
+       0,     1,     3,     4,     5,     6,     7,     8,    10,    11,
+      12,    13,    15,    18,    19,    20,    22,    24,    25,    27,
+      28,    29,    30,    31,    32,    33,    20,    35,    34,    26,
+      27,    21,    25,    26,     0,     3,    27,    30,    31,     9,
+      25,     6,    25,    25,    15,    27,    21,    22,    20,     9,
+      21,    14,    14,     6,    20,    21,     6,    21
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    16,    17,    17,    17,    18,    18,    18,    18,    18,
-      18,    19,    19,    20,    20,    20,    20,    20,    20,    20,
-      22,    21,    23,    24,    25,    25
+       0,    23,    24,    24,    24,    25,    25,    25,    25,    25,
+      25,    26,    26,    27,    27,    27,    27,    27,    27,    27,
+      27,    27,    27,    27,    28,    29,    29,    30,    31,    32,
+      32,    34,    33,    35,    33
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
@@ -886,7 +955,8 @@ static const yytype_int8 yyr2[] =
 {
        0,     2,     2,     1,     1,     1,     1,     1,     2,     2,
        2,     1,     2,     1,     1,     1,     1,     1,     1,     1,
-       0,    10,     3,     3,     3,     2
+       1,     1,     1,     1,     4,     6,     5,     3,     3,     3,
+       2,     0,     4,     0,     4
 };
 
 
@@ -1802,56 +1872,103 @@ yyreduce:
     break;
 
   case 13: /* Item: TEXT  */
-                                                { yyval = xxtag(yyvsp[0], TEXT, &(yyloc)); }
+                                                { xxArg(); yyval = xxtag(yyvsp[0], TEXT, &(yyloc)); }
     break;
 
-  case 14: /* Item: COMMENT  */
+  case 14: /* Item: '['  */
+                                                { yyval = xxtag(mkString("["), TEXT, &(yyloc)); }
+    break;
+
+  case 15: /* Item: ']'  */
+                                                { yyval = xxtag(mkString("]"), TEXT, &(yyloc)); }
+    break;
+
+  case 16: /* Item: COMMENT  */
                                                 { yyval = xxtag(yyvsp[0], COMMENT, &(yyloc)); }
     break;
 
-  case 15: /* Item: MACRO  */
-                                                { yyval = xxtag(yyvsp[0], MACRO, &(yyloc)); }
+  case 17: /* Item: MACRO  */
+                                                { xxArg();
+						  yyval = xxtag(yyvsp[0], MACRO, &(yyloc)); }
     break;
 
-  case 16: /* Item: VERB  */
+  case 18: /* Item: VERB  */
                                                 { yyval = xxtag(yyvsp[0], VERB, &(yyloc)); }
     break;
 
-  case 17: /* Item: VERB2  */
+  case 19: /* Item: VERB2  */
                                                 { yyval = xxtag(yyvsp[0], VERB, &(yyloc)); }
     break;
 
-  case 18: /* Item: environment  */
+  case 20: /* Item: environment  */
                                                 { yyval = yyvsp[0]; }
     break;
 
-  case 19: /* Item: block  */
+  case 21: /* Item: block  */
+                                                { xxArg(); yyval = yyvsp[0]; }
+    break;
+
+  case 22: /* Item: ERROR  */
+                                                { YYABORT; }
+    break;
+
+  case 23: /* Item: newdefine  */
                                                 { yyval = yyvsp[0]; }
     break;
 
-  case 20: /* $@1: %empty  */
-                                   { xxSetInVerbEnv(yyvsp[-1]); }
+  case 24: /* begin: BEGIN '{' TEXT '}'  */
+                                                { xxSetInVerbEnv(yyvsp[-1]); 
+						  yyval = yyvsp[-1];
+						  RELEASE_SV(yyvsp[-3]); }
     break;
 
-  case 21: /* environment: BEGIN '{' TEXT '}' $@1 Items END '{' TEXT '}'  */
-                                        { yyval = xxenv(yyvsp[-7], yyvsp[-4], yyvsp[-1], &(yyloc));
-                                                  RELEASE_SV(yyvsp[-9]); RELEASE_SV(yyvsp[-3]); }
+  case 25: /* environment: begin Items END '{' TEXT '}'  */
+                                                { yyval = xxenv(yyvsp[-5], yyvsp[-4], yyvsp[-1], &(yyloc));
+						  if (!yyval) YYABORT;
+						  RELEASE_SV(yyvsp[-3]);
+						}
     break;
 
-  case 22: /* math: '$' nonMath '$'  */
+  case 26: /* environment: begin END '{' TEXT '}'  */
+                                                { yyval = xxenv(yyvsp[-4], NULL, yyvsp[-1], &(yyloc));
+						  if (!yyval) YYABORT;
+						  RELEASE_SV(yyvsp[-3]);}
+    break;
+
+  case 27: /* math: '$' nonMath '$'  */
                                                 { yyval = xxmath(yyvsp[-1], &(yyloc), FALSE); }
     break;
 
-  case 23: /* displaymath: TWO_DOLLARS nonMath TWO_DOLLARS  */
+  case 28: /* displaymath: TWO_DOLLARS nonMath TWO_DOLLARS  */
                                                 { yyval = xxmath(yyvsp[-1], &(yyloc), TRUE); }
     break;
 
-  case 24: /* block: '{' Items '}'  */
+  case 29: /* block: '{' Items '}'  */
                                                 { yyval = xxblock(yyvsp[-1], &(yyloc)); }
     break;
 
-  case 25: /* block: '{' '}'  */
+  case 30: /* block: '{' '}'  */
                                                 { yyval = xxblock(NULL, &(yyloc)); }
+    break;
+
+  case 31: /* @1: %empty  */
+                                                { yyval = xxpushMode(2, 1); }
+    break;
+
+  case 32: /* newdefine: NEWCMD @1 Items END_OF_ARGS  */
+                                                { xxpopMode(yyvsp[-2]);
+						  yyval = xxnewdef(xxtag(yyvsp[-3], MACRO, &(yylsp[-3])),
+								yyvsp[-1], &(yyloc)); }
+    break;
+
+  case 33: /* @2: %empty  */
+                                                { yyval = xxpushMode(3, 1); }
+    break;
+
+  case 34: /* newdefine: NEWENV @2 Items END_OF_ARGS  */
+                                                { xxpopMode(yyvsp[-2]);
+						  yyval = xxnewdef(xxtag(yyvsp[-3], MACRO, &(yylsp[-3])),
+								yyvsp[-1], &(yyloc)); }
     break;
 
 
@@ -2121,25 +2238,98 @@ static SEXP xxenv(SEXP begin, SEXP body, SEXP end, YYLTYPE *lloc)
 #if DEBUGVALS
     Rprintf("xxenv(begin=%p, body=%p, end=%p)", begin, body, end);    
 #endif
+    if (strcmp(CHAR(STRING_ELT(begin, 0)),
+               CHAR(STRING_ELT(end, 0))) != 0) {
+        char buffer[PARSE_ERROR_SIZE];
+        snprintf(buffer, sizeof(buffer), "\\begin{%s} at %d:%d ended by \\end{%s}",
+          CHAR(STRING_ELT(begin, 0)), lloc->first_line, lloc->first_column,
+          CHAR(STRING_ELT(end, 0)));
+        yyerror(buffer);
+        return NULL;
+    }
+    
+    if (strcmp("document", CHAR(STRING_ELT(end, 0))) == 0) {
+      xxungetc(R_EOF);  /* Stop reading after \end{document} */
+    }
+               
     PRESERVE_SV(ans = allocVector(VECSXP, 2));
     SET_VECTOR_ELT(ans, 0, begin);
     RELEASE_SV(begin);
-    if (!isNull(body)) {
+    if (body && !isNull(body)) {
 	SET_VECTOR_ELT(ans, 1, PairToVectorList(CDR(body)));
 	RELEASE_SV(body);
     }
-    /* FIXME:  check that begin and end match */
     setAttrib(ans, R_SrcrefSymbol, makeSrcref(lloc, parseState.SrcFile));
-    setAttrib(ans, R_LatexTagSymbol, mkString("ENVIRONMENT"));
+    setAttrib(ans, LatexTagSymbol, mkString("ENVIRONMENT"));
     if (!isNull(end)) 
 	RELEASE_SV(end);
 #if DEBUGVALS
     Rprintf(" result: %p\n", ans);    
 #endif
+
     return ans;
 }
 
-static SEXP xxmath(SEXP body, YYLTYPE *lloc, Rboolean display)
+static SEXP xxnewdef(SEXP cmd, SEXP items,
+                     YYLTYPE *lloc)
+{
+    SEXP ans, temp;
+    int n;
+
+    PRESERVE_SV(temp = PairToVectorList(CDR(items)));
+    RELEASE_SV(items);
+    n = length(temp);
+    PRESERVE_SV(ans = allocVector(VECSXP, n + 1));
+    for (int i=0; i < n; i++)
+	SET_VECTOR_ELT(ans, i + 1, VECTOR_ELT(temp, i));
+    RELEASE_SV(temp);
+    SET_VECTOR_ELT(ans, 0, cmd);
+    RELEASE_SV(cmd);
+
+    setAttrib(ans, R_SrcrefSymbol, makeSrcref(lloc, parseState.SrcFile));
+    setAttrib(ans, LatexTagSymbol, mkString("DEFINITION"));
+
+    return ans;
+}
+
+static SEXP xxpushMode(int getArgs,
+                       int ignoreKeywords) {
+    SEXP ans;
+
+    PRESERVE_SV(ans = allocVector(INTSXP, 4));
+    INTEGER(ans)[0] = parseState.xxGetArgs;
+    INTEGER(ans)[1] = parseState.xxIgnoreKeywords;
+    INTEGER(ans)[2] = parseState.xxBraceDepth;
+    INTEGER(ans)[3] = parseState.xxBracketDepth;
+    parseState.xxGetArgs = getArgs;
+    parseState.xxIgnoreKeywords = ignoreKeywords;
+    parseState.xxBraceDepth = 0;
+    parseState.xxBracketDepth = 0;
+    return ans;
+}
+
+static void xxpopMode(SEXP oldmode) {
+    parseState.xxGetArgs = INTEGER(oldmode)[0];
+    parseState.xxIgnoreKeywords = INTEGER(oldmode)[1];
+    parseState.xxBraceDepth = INTEGER(oldmode)[2];
+    parseState.xxBracketDepth = INTEGER(oldmode)[3];
+    RELEASE_SV(oldmode);
+}
+
+static void xxArg(void) {
+    if (parseState.xxGetArgs == 0 ||
+	parseState.xxBraceDepth > 0 ||
+	parseState.xxBracketDepth > 0) return;
+
+    parseState.xxGetArgs--;
+
+    if (parseState.xxGetArgs == 0) {
+	/* We've just completed the final arg we were waiting for */
+	xxungetc(END_OF_ARGS_CHAR);  /* push a non-character to signal the end */
+    }
+}
+
+static SEXP xxmath(SEXP body, YYLTYPE *lloc, bool display)
 {
     SEXP ans;
 #if DEBUGVALS
@@ -2148,7 +2338,7 @@ static SEXP xxmath(SEXP body, YYLTYPE *lloc, Rboolean display)
     PRESERVE_SV(ans = PairToVectorList(CDR(body)));
     RELEASE_SV(body);
     setAttrib(ans, R_SrcrefSymbol, makeSrcref(lloc, parseState.SrcFile));
-    setAttrib(ans, R_LatexTagSymbol, 
+    setAttrib(ans, LatexTagSymbol, 
         mkString(display ? "DISPLAYMATH" : "MATH"));
 #if DEBUGVALS
     Rprintf(" result: %p\n", ans);    
@@ -2169,7 +2359,7 @@ static SEXP xxblock(SEXP body, YYLTYPE *lloc)
 	RELEASE_SV(body);
     }
     setAttrib(ans, R_SrcrefSymbol, makeSrcref(lloc, parseState.SrcFile));
-    setAttrib(ans, R_LatexTagSymbol, mkString("BLOCK"));
+    setAttrib(ans, LatexTagSymbol, mkString("BLOCK"));
 
 #if DEBUGVALS
     Rprintf(" result: %p\n", ans);    
@@ -2204,7 +2394,7 @@ static void xxsavevalue(SEXP items, YYLTYPE *lloc)
     } else {
 	PRESERVE_SV(parseState.Value = allocVector(VECSXP, 1));
     	SET_VECTOR_ELT(parseState.Value, 0, ScalarString(mkChar("")));
-	setAttrib(VECTOR_ELT(parseState.Value, 0), R_LatexTagSymbol, mkString("TEXT"));
+	setAttrib(VECTOR_ELT(parseState.Value, 0), LatexTagSymbol, mkString("TEXT"));
     }	
     if (!isNull(parseState.Value)) {
     	setAttrib(parseState.Value, R_ClassSymbol, mkString("LaTeX"));
@@ -2214,7 +2404,7 @@ static void xxsavevalue(SEXP items, YYLTYPE *lloc)
 
 static SEXP xxtag(SEXP item, int type, YYLTYPE *lloc)
 {
-    setAttrib(item, R_LatexTagSymbol, mkString(yytname[YYTRANSLATE(type)]));
+    setAttrib(item, LatexTagSymbol, mkString(yytname[YYTRANSLATE(type)]));
     setAttrib(item, R_SrcrefSymbol, makeSrcref(lloc, parseState.SrcFile));
     return item;
 }
@@ -2255,10 +2445,7 @@ static int xxgetc(void)
     	prevcols[prevpos] = parseState.xxcolno;
     
     if (c == EOF) return R_EOF;
-    
-    R_ParseContextLast = (R_ParseContextLast + 1) % PARSE_CONTEXT_SIZE;
-    R_ParseContext[R_ParseContextLast] = (char) c;
-    
+
     if (c == '\n') {
     	parseState.xxlineno += 1;
     	parseState.xxcolno = 1;
@@ -2269,8 +2456,6 @@ static int xxgetc(void)
     }
 
     if (c == '\t') parseState.xxcolno = ((parseState.xxcolno + 6) & ~7) + 1;
-    
-    R_ParseContextLine = parseState.xxlineno;
     
     return c;
 }
@@ -2283,12 +2468,6 @@ static int xxungetc(int c)
     parseState.xxcolno  = prevcols[prevpos];
     prevpos = (prevpos + PUSHBACK_BUFSIZE - 1) % PUSHBACK_BUFSIZE;
     
-    R_ParseContextLine = parseState.xxlineno;
-    
-    R_ParseContext[R_ParseContextLast] = '\0';
-    /* macOS requires us to keep this non-negative */
-    R_ParseContextLast = (R_ParseContextLast + PARSE_CONTEXT_SIZE - 1) 
-	% PARSE_CONTEXT_SIZE;
     if(npush >= PUSHBACK_BUFSIZE - 2) return R_EOF;
     pushback[npush++] = c;
     return c;
@@ -2360,7 +2539,8 @@ static void PutState(ParseState *state) {
     state->xxinitvalue = parseState.xxinitvalue;
     state->xxInVerbEnv = parseState.xxInVerbEnv;
     state->xxVerbatimList = parseState.xxVerbatimList;
-    state->xxVerbList = parseState.xxVerbList;
+    state->xxKwdList = parseState.xxKwdList;
+    state->xxKwdType = parseState.xxKwdType;
     state->SrcFile = parseState.SrcFile; 
     state->prevState = parseState.prevState;
 }
@@ -2374,23 +2554,15 @@ static void UseState(ParseState *state) {
     parseState.xxinitvalue = state->xxinitvalue;
     parseState.xxInVerbEnv = state->xxInVerbEnv;
     parseState.xxVerbatimList = state->xxVerbatimList;
-    parseState.xxVerbList = state->xxVerbList;
+    parseState.xxKwdList = state->xxKwdList;
+    parseState.xxKwdType = state->xxKwdType;
     parseState.SrcFile = state->SrcFile; 
     parseState.prevState = state->prevState;
 }
 
-static void InitSymbols(void)
-{
-    if (!R_LatexTagSymbol)
-	R_LatexTagSymbol = install("latex_tag");
-}
-
 static SEXP ParseLatex(ParseStatus *status, SEXP srcfile)
 {
-    InitSymbols();
-
-    R_ParseContextLast = 0;
-    R_ParseContext[0] = '\0';
+    LatexTagSymbol = install("latex_tag");
     	
     parseState.xxInVerbEnv = NULL;
     
@@ -2406,6 +2578,8 @@ static SEXP ParseLatex(ParseStatus *status, SEXP srcfile)
     
     parseState.Value = R_NilValue;
     
+    PRESERVE_SV(yylval = mkString(""));
+    
     if (yyparse()) *status = PARSE_ERROR;
     else *status = PARSE_OK;
 
@@ -2415,6 +2589,9 @@ static SEXP ParseLatex(ParseStatus *status, SEXP srcfile)
 
     RELEASE_SV(parseState.Value);
     UNPROTECT(1); /* parseState.mset */
+    
+    if (*status == PARSE_ERROR)
+	error("%s", ParseErrorMsg);
 
     return parseState.Value;
 }
@@ -2432,14 +2609,6 @@ static int char_getc(void)
     	nextchar_parse--;
     }
     return (c);
-}
-
-static
-SEXP R_ParseLatex(SEXP text, ParseStatus *status, SEXP srcfile)
-{
-    nextchar_parse = translateCharUTF8(STRING_ELT(text, 0));
-    ptr_getc = char_getc;
-    return ParseLatex(status, srcfile);
 }
 
 /*----------------------------------------------------------------------------
@@ -2478,14 +2647,22 @@ static keywords[] = {
 static int KeywordLookup(const char *s)
 {
     int i;
+
+    if (parseState.xxIgnoreKeywords)
+	return MACRO;
+    
     for (i = 0; keywords[i].name; i++) {
 	if (strcmp(keywords[i].name, s) == 0) 
 	    return keywords[i].token;
     }
     
-    for (i = 0; i < length(parseState.xxVerbList); i++) {
-    	if (strcmp(CHAR(STRING_ELT(parseState.xxVerbList, i)), s) == 0)
-    	    return VERB2;
+    for (i = 0; i < length(parseState.xxKwdList); i++) {
+	if (strcmp(CHAR(STRING_ELT(parseState.xxKwdList, i)), s) == 0)
+	    switch(INTEGER(parseState.xxKwdType)[i]) {
+	    case 1: return VERB2;
+	    case 2: return NEWCMD;
+	    case 3: return NEWENV;
+	}
     }
     
     return MACRO;
@@ -2512,10 +2689,7 @@ static void yyerror(const char *s)
     static char const yyshortunexpected[] = "unexpected %s";
     static char const yylongunexpected[] = "unexpected %s '%s'";
     char *expecting;
-    char ParseErrorMsg[PARSE_ERROR_SIZE];
-    SEXP filename;
-    char ParseErrorFilename[PARSE_ERROR_SIZE];
-   
+    char ErrorTranslation[PARSE_ERROR_SIZE];
     if (!strncmp(s, yyunexpected, sizeof yyunexpected -1)) {
 	int i, translated = FALSE;
     	/* Edit the error message */    
@@ -2523,13 +2697,13 @@ static void yyerror(const char *s)
     	if (expecting) *expecting = '\0';
     	for (i = 0; yytname_translations[i]; i += 2) {
     	    if (!strcmp(s + sizeof yyunexpected - 1, yytname_translations[i])) {
-    	    	if (yychar < 256)
-    	    	    snprintf(ParseErrorMsg, PARSE_ERROR_SIZE,
+    	    	if (yychar < 256 || yychar == END_OF_INPUT)
+    	    	    snprintf(ErrorTranslation, sizeof(ErrorTranslation),
 			     _(yyshortunexpected), 
 			     i/2 < YYENGLISH ? _(yytname_translations[i+1])
 			     : yytname_translations[i+1]);
     	    	else
-    	    	    snprintf(ParseErrorMsg, PARSE_ERROR_SIZE,
+    	    	    snprintf(ErrorTranslation, sizeof(ErrorTranslation),
 			     _(yylongunexpected), 
 			     i/2 < YYENGLISH ? _(yytname_translations[i+1])
 			     : yytname_translations[i+1], 
@@ -2539,12 +2713,12 @@ static void yyerror(const char *s)
     	    }
     	}
     	if (!translated) {
-    	    if (yychar < 256) 
-    		snprintf(ParseErrorMsg, PARSE_ERROR_SIZE, 
+    	    if (yychar < 256 || yychar == END_OF_INPUT) 
+    		snprintf(ErrorTranslation, sizeof(ErrorTranslation), 
 			 _(yyshortunexpected),
 			 s + sizeof yyunexpected - 1);
     	    else
-    	    	snprintf(ParseErrorMsg, PARSE_ERROR_SIZE,
+    	    	snprintf(ErrorTranslation, sizeof(ErrorTranslation),
 			 _(yylongunexpected),
 			 s + sizeof yyunexpected - 1, CHAR(STRING_ELT(yylval, 0)));
     	}
@@ -2552,35 +2726,32 @@ static void yyerror(const char *s)
  	    translated = FALSE;
     	    for (i = 0; yytname_translations[i]; i += 2) {
     	    	if (!strcmp(expecting + sizeof yyexpecting - 1, yytname_translations[i])) {
-    	    	    strcat(ParseErrorMsg, _(yyexpecting));
-    	    	    strcat(ParseErrorMsg, i/2 < YYENGLISH ? _(yytname_translations[i+1])
-    	    	                    : yytname_translations[i+1]);
+    	    	    strncat(ErrorTranslation, _(yyexpecting), 
+    	    	            sizeof(ErrorTranslation) - strlen(ErrorTranslation) - 1);
+    	    	    strncat(ErrorTranslation, i/2 < YYENGLISH 
+                              ? _(yytname_translations[i+1]) 
+                              : yytname_translations[i+1],
+    	    	            sizeof(ErrorTranslation) - strlen(ErrorTranslation) - 1);
     	    	    translated = TRUE;
 		    break;
 		}
 	    }
 	    if (!translated) {
-	    	strcat(ParseErrorMsg, _(yyexpecting));
-	    	strcat(ParseErrorMsg, expecting + sizeof yyexpecting - 1);
+	    	strncat(ErrorTranslation, _(yyexpecting), 
+	    	        sizeof(ErrorTranslation) - strlen(ErrorTranslation) - 1);
+	    	strncat(ErrorTranslation, expecting + sizeof yyexpecting - 1, 
+	    	        sizeof(ErrorTranslation) - strlen(ErrorTranslation) - 1);
 	    }
 	}
     } else if (!strncmp(s, yyunknown, sizeof yyunknown-1)) {
-    	snprintf(ParseErrorMsg, PARSE_ERROR_SIZE, 
+    	snprintf(ErrorTranslation, sizeof(ErrorTranslation), 
 		 "%s '%s'", s, CHAR(STRING_ELT(yylval, 0)));
     } else {
-    	snprintf(ParseErrorMsg, PARSE_ERROR_SIZE,"%s", s);
+    	snprintf(ErrorTranslation, sizeof(ErrorTranslation), "%s", s);
     }
-    filename = findVar(install("filename"), parseState.SrcFile);
-    if (isString(filename) && LENGTH(filename))
-    	strncpy(ParseErrorFilename, CHAR(STRING_ELT(filename, 0)), PARSE_ERROR_SIZE - 1);
-    else
-        ParseErrorFilename[0] = '\0';
-    if (yylloc.first_line != yylloc.last_line)
-	warning("%s:%d-%d: %s", 
-		ParseErrorFilename, yylloc.first_line, yylloc.last_line, ParseErrorMsg);
-    else
-	warning("%s:%d: %s", 
-		ParseErrorFilename, yylloc.first_line, ParseErrorMsg);
+    snprintf(ParseErrorMsg, sizeof(ParseErrorMsg),
+             "Parse error at %d:%d: %s", yylloc.first_line, yylloc.first_column,
+             ErrorTranslation);
 }
 
 #define TEXT_PUSH(c) do {		    \
@@ -2637,13 +2808,22 @@ static int token(void)
     	return mkVerbEnv();    
     	
     c = xxgetc();
+
+    if (c == END_OF_ARGS_CHAR)
+	return END_OF_ARGS;    
     
     switch (c) {
     	case '%': return mkComment(c);
 	case '\\':return mkMarkup(c);
         case R_EOF:return END_OF_INPUT; 
-    	case LBRACE:return c;
-    	case RBRACE:return c;
+    	case LBRACE:
+    	    parseState.xxBraceDepth++; return c;
+    	case RBRACE:
+    	    parseState.xxBraceDepth--; return c;
+    	case '[':
+    	    parseState.xxBracketDepth++; return c;
+    	case ']': 
+    	    parseState.xxBracketDepth--; return c;
     	case '$': return mkDollar(c);
     } 	    
     return mkText(c);
@@ -2664,6 +2844,8 @@ static int mkText(int c)
     	case '%':
     	case LBRACE:
     	case RBRACE:
+    	case '[':
+    	case ']':
     	case '$':
     	case R_EOF:
     	    goto stop;
@@ -2764,13 +2946,25 @@ static int mkVerb2(const char *s, int c)
     char *st1 = NULL;
     unsigned int nstext = INITBUFSIZE;
     char *stext = st0, *bp = st0;
-    int delim = '}';
+    int depth = 1;
+    const char *macro = s;
     
     while (*s) TEXT_PUSH(*s++);
     
-    TEXT_PUSH(c);
-    while (((c = xxgetc()) != delim) && c != R_EOF) TEXT_PUSH(c);
-    if (c != R_EOF) TEXT_PUSH(c);
+    do {
+	TEXT_PUSH(c);
+	c = xxgetc();
+	if (c == '{') depth++;
+	else if (c == '}') depth--;
+    } while (depth > 0 && c != R_EOF);
+
+    if (c == R_EOF) {
+	char buffer[256];
+	snprintf(buffer, sizeof(buffer), "unexpected END_OF_INPUT\n'%s' is still open", macro);
+	yyerror(buffer);
+	return ERROR;
+    } else
+	TEXT_PUSH(c);
     
     PRESERVE_SV(yylval = mkString2(stext, bp - stext));
     if(st1) free(st1);
@@ -2828,7 +3022,7 @@ static void PushState(void) {
     	parseState.prevState = prev;
     } else 
         parseState.prevState = NULL;  
-    busy = TRUE;
+    busy = true;
 }
 
 static void PopState(void) {
@@ -2837,10 +3031,10 @@ static void PopState(void) {
     	UseState(prev);
     	free(prev);
     } else
-    	busy = FALSE;
+    	busy = false;
 }
 
-/* "do_parseLatex" 
+/* "parseLatex" 
 
  .External2("parseLatex", text, srcfile, verbose, verbatim, verb)
  If there is text then that is read and the other arguments are ignored.
@@ -2857,8 +3051,7 @@ SEXP parseLatex(SEXP call, SEXP op, SEXP args, SEXP env)
     yydebug = 1;
 #endif 
 
-    R_ParseError = 0;
-    R_ParseErrorMsg[0] = '\0';
+    ParseErrorMsg[0] = '\0';
     
     PushState();
 
@@ -2869,12 +3062,16 @@ SEXP parseLatex(SEXP call, SEXP op, SEXP args, SEXP env)
     	error(_("invalid '%s' value"), "verbose");
     parseState.xxDebugTokens = asInteger(CAR(args));	args = CDR(args);
     parseState.xxVerbatimList = CAR(args); 		args = CDR(args);
-    parseState.xxVerbList = CAR(args);
+    parseState.xxKwdList = CAR(args); args = CDR(args);
+    parseState.xxKwdType = CAR(args);
 
-    s = R_ParseLatex(text, &status, source);
+    nextchar_parse = translateCharUTF8(STRING_ELT(text, 0));
+    ptr_getc = char_getc;
+    s = ParseLatex(&status, source);
     
     PopState();
     	
-    if (status != PARSE_OK) parseError(call, R_ParseError);
+    if (status != PARSE_OK) error("%s", ParseErrorMsg);
+    
     return s;
 }

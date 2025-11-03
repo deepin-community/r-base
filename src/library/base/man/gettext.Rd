@@ -1,6 +1,6 @@
 % File src/library/base/man/gettext.Rd
 % Part of the R package, https://www.R-project.org
-% Copyright 1995-2023 R Core Team
+% Copyright 1995-2025 R Core Team
 % Distributed under GPL 2 or later
 
 \name{gettext}
@@ -27,7 +27,7 @@ ngettext(n, msg1, msg2, domain = NULL)
 
 bindtextdomain(domain, dirname = NULL)
 
-Sys.setLanguage(lang, unset = "en")
+Sys.setLanguage(lang, unset = "en") %, force = FALSE
 }
 \arguments{
   \item{\dots}{one or more character vectors.}
@@ -46,6 +46,11 @@ Sys.setLanguage(lang, unset = "en")
   \item{unset}{a string, specifying the default language assumed to be
     current in the case \code{\link{Sys.getenv}("LANGUAGE")} is unset or
     empty.}
+% \item{force}{logical indicating if in case of a \dQuote{hard} set
+%   \code{"C"} locale, \code{Sys.setLanguage()} should try modifying the
+%   locale (to \code{"en"}) in order to subsequently set the desired language
+%   \code{lang}, currently only when \code{\link{.Platform}[["OS.type"]]}
+%   is \code{"unix"}.}
 }
 \details{
   If \code{domain} is \code{NULL} (the default) in \code{gettext}
@@ -70,7 +75,7 @@ Sys.setLanguage(lang, unset = "en")
 
   The \emph{language} to be used for message translation is determined by
   your OS default and/or the locale setting at \R's startup, see
-  \code{\link{Sys.getlocale}()}, and notably the \env{LANGUAGE} environment 
+  \code{\link{Sys.getlocale}()}, and notably the \env{LANGUAGE} environment
   variable, and also \code{Sys.setLanguage()} here.
 
   Conventionally the domain for \R warning/error messages in package
@@ -82,12 +87,12 @@ Sys.setLanguage(lang, unset = "en")
 
   \code{ngettext} is used where the message needs to vary by a single
   integer.  Translating such messages is subject to very specific rules
-  for different languages: see the GNU \I{Gettext} Manual.  The string
+  for different languages: see the GNU \verb{gettext} manual.  The string
   will often contain a single instance of \code{\%d} to be used in
   \code{\link{sprintf}}.  If English is used, \code{msg1} is returned if
   \code{n == 1} and \code{msg2} in all other cases.
 
-  \code{bindtextdomain} is typically wrapper for the C function of the same
+  \code{bindtextdomain} is typically a wrapper for the C function of the same
   name: your system may have a \command{man} page for it.  With a
   non-\code{NULL} \code{dirname} it specifies where to look for message
   catalogues: with \code{dirname = NULL} it returns the current location.
@@ -119,6 +124,16 @@ Sys.setLanguage(lang, unset = "en")
   Note that currently, using a non-existing language \code{lang} is still
   set and no translation will happen, without any \code{\link{message}}.
 }
+\section{Warning}{
+  These functions were written assuming that environment variable
+  \env{LANGUAGE} is supported by the implementation of \code{libintl}.
+  This is almost universally true and (along with \command{gettext}
+  \abbr{et al.}) became part of the 2024 POSIX specification.
+  In 2025, however, it was still ignored by the
+  implementation in \code{musl} (one of the implementations available on
+  Alpine Linux).
+}
+
 \seealso{
   \code{\link{stop}} and \code{\link{warning}} make use of \code{gettext} to
   translate messages.

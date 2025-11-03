@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1997--2023  The R Core Team
+ *  Copyright (C) 1997--2025  The R Core Team
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -329,7 +329,7 @@ static void RNG_Init(RNGtype kind, Int32 seed)
 
 static SEXP GetSeedsFromVar(void)
 {
-    SEXP seeds = findVarInFrame(R_GlobalEnv, R_SeedsSymbol);
+    SEXP seeds = R_findVarInFrame(R_GlobalEnv, R_SeedsSymbol);
     if (TYPEOF(seeds) == PROMSXP)
 	seeds = eval(R_SeedsSymbol, R_GlobalEnv);
     return seeds;
@@ -341,7 +341,7 @@ static void Randomize(RNGtype kind)
     RNG_Init(kind, TimeToSeed());
 }
 
-static Rboolean GetRNGkind(SEXP seeds)
+static bool GetRNGkind(SEXP seeds)
 {
     /* Load RNG_kind, N01_kind Sample_kind from .Random.seed if present */
     int tmp, *is;
@@ -352,7 +352,7 @@ static Rboolean GetRNGkind(SEXP seeds)
     if (seeds == R_UnboundValue) return TRUE;
     if (!isInteger(seeds)) {
 	if (seeds == R_MissingArg) /* How can this happen? */
-	    error(_("'.Random.seed' is a missing argument with no default"));
+	    R_MissingArgError_c(".Random.seed", R_CurrentExpression, "getRNGError");
 	warning(_("'.Random.seed' is not an integer vector but of type '%s', so ignored"),
 		R_typeToChar(seeds));
 	goto invalid;
@@ -391,13 +391,13 @@ static Rboolean GetRNGkind(SEXP seeds)
 	goto invalid;
     }
     RNG_kind = newRNG; N01_kind = newN01; Sample_kind = newSample;
-    return FALSE;
+    return false;
 invalid:
     RNG_kind = RNG_DEFAULT; N01_kind = N01_DEFAULT; Sample_kind = Sample_DEFAULT;
 
     Randomize(RNG_kind);
     PutRNGstate(); // write out to .Random.seed
-    return TRUE;
+    return true;
 }
 
 static void copy_seeds_in(Int32 *i_seed, SEXP seeds, int len_seed)
@@ -449,7 +449,7 @@ void PutRNGstate(void)
     int len_seed = RNG_Table[RNG_kind].n_seed;
     int kinds = RNG_kind + 100 * N01_kind + 10000 * Sample_kind;
 
-    SEXP seeds = findVarInFrame(R_GlobalEnv, R_SeedsSymbol);
+    SEXP seeds = R_findVarInFrame(R_GlobalEnv, R_SeedsSymbol);
     if (NOT_SHARED(seeds) && ATTRIB(seeds) == R_NilValue &&
 	TYPEOF(seeds) == INTSXP && XLENGTH(seeds) == len_seed + 1) {
 	/* it is safe to resuse the existing .Random.seed vector */
@@ -597,12 +597,15 @@ attribute_hidden SEXP do_setseed (SEXP call, SEXP op, SEXP args, SEXP env)
 
 /* The following entry points provide compatibility with S. */
 /* These entry points should not be used by new R code. */
+/* These entry points are now hidden */
 
+attribute_hidden
 void seed_in(long *ignored)
 {
     GetRNGstate();
 }
 
+attribute_hidden
 void seed_out(long *ignored)
 {
     PutRNGstate();

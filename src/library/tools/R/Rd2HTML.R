@@ -18,19 +18,20 @@
 
 ## also used by Rd2latex, but only 'topic' and 'dest'
 get_link <- function(arg, tag, Rdfile) {
-    ## 'topic' is the name to display, 'dest' is the topic to link to
-    ## optionaly in package 'pkg'.  If 'target' is set it is the file
-    ## to link to in HTML help
+    ## 'topic' is the text to display (used by Rd2latex, also as \index entry),
+    ## 'dest' is the topic to link to (unless for option [pkg:bar]).
+    ## Package-anchored links have non-NULL 'pkg' and 'targetfile',
+    ## where the latter is the topic/file to link to in HTML help.
 
-    ## \link[=bar]{foo} means shows foo but treat this as a link to bar.
-    ## \link[pkg]{bar} means show bar and link to *file* bar in package pkg
-    ## \link{pkg:bar]{foo} means show foo and link to file bar in package pkg.
+    ## \link{foo}: show and link to topic foo.
+    ## \link[=bar]{foo} means shows foo but treat this as a link to *topic* bar.
+    ## \link[pkg]{bar} means show bar and link to topic/file bar in package pkg.
+    ## \link[pkg:bar]{foo} means show foo and link to topic/file bar in package pkg.
     ## As from 2.10.0, look for topic 'bar' if file not found.
     ## As from 4.1.0, prefer topic 'bar' over file 'bar' (in which case 'targetfile' is a misnomer)
+    ## As from 4.5.0, allow markup in link text for variants 2 and 4.
 
-    if (!all(RdTags(arg) == "TEXT"))
-    	stopRd(arg, Rdfile, "Bad \\link text")
-
+    isTEXT <- all(RdTags(arg) == "TEXT")
     option <- attr(arg, "Rd_option")
 
     topic <- dest <- paste(unlist(arg), collapse = "")
@@ -39,16 +40,21 @@ get_link <- function(arg, tag, Rdfile) {
     if (!is.null(option)) {
         if (!identical(attr(option, "Rd_tag"), "TEXT"))
     	    stopRd(option, Rdfile, "Bad \\link option -- must be text")
-    	if (grepl("^=", option, perl = TRUE, useBytes = TRUE))
+        option <- as.character(option)
+        if (startsWith(option, "="))
     	    dest <- psub1("^=", "", option)
-    	else if (grepl(":", option, perl = TRUE, useBytes = TRUE)) {
+        else if (grepl(":", option, fixed = TRUE)) {
     	    targetfile <- psub1("^[^:]*:", "", option)
     	    pkg <- psub1(":.*", "", option)
     	} else {
+            if (!isTEXT)
+                stopRd(arg, Rdfile, "Bad \\link[pkg]{topic} -- argument must be text")
             targetfile <- dest
-    	    pkg <- as.character(option)
+            pkg <- option
     	}
-    }
+    } else if (!isTEXT)
+        stopRd(arg, Rdfile, "Bad \\link topic -- must be text")
+
     if (tag == "\\linkS4class") dest <- paste0(dest, "-class")
     list(topic = topic, dest = dest, pkg = pkg, targetfile = targetfile)
 }
@@ -1005,8 +1011,8 @@ Rd2HTML <-
     	    	leavePara(FALSE)
     	    	if (!inlist) {
     	    	    switch(blocktag,
-                           "\\value" =  of1('<table>\n'),
-                           "\\arguments" = of1('<table>\n'),
+                           "\\value" =  of1('<table role = "presentation">\n'),
+                           "\\arguments" = of1('<table role = "presentation">\n'),
                            "\\itemize" = of1("<ul>\n"),
                            "\\enumerate" = of1("<ol>\n"),
                            "\\describe" = of1("<dl>\n"))
@@ -1320,7 +1326,7 @@ Rd2HTML <-
 	inPara <- FALSE
         if (!standalone) {
             ## create empty spans with aliases as id, so that we can link
-            for (a in trimws(unlist(Rd[ which(sections == "\\alias") ]))) {
+            for (a in unique(trimws(unlist(Rd[ which(sections == "\\alias") ])))) {
                 if (endsWith(a, "-package")) info$pkgsummary <- TRUE
                 of0("<span id='", topic2id(a), "'></span>")
             }
@@ -1362,25 +1368,30 @@ Rd2HTML <-
 ## The following functions return 'relative' links assuming that all
 ## packages are installed in the same virtual library tree.
 
-findHTMLlinks <- function(pkgDir = "", lib.loc = NULL, level = 0:2)
+findHTMLlinks <-
+function(pkgDir, lib.loc = NULL, level = 0 : 3)
 {
-    ## The priority order is
-    ## This package (level 0)
-    ## The standard packages (level 1)
-    ## along lib.loc (level 2)
-
+    ## A variant of the above which splits levels for base and
+    ## recommended packages, such that
+    ##   Level 0: this package (installed in pkgDir)
+    ##   Level 1: base packages
+    ##   Level 2: recommended packages
+    ##   Level 3: all packages installed in lib.loc
     if (is.null(lib.loc)) lib.loc <- .libPaths()
 
     Links <- list()
-    if (2 %in% level)
+    if(3 %in% level)
         Links <- c(Links, lapply(lib.loc, .find_HTML_links_in_library))
-    if (1 %in% level) {
-        base <- unlist(.get_standard_package_names()[c("base", "recommended")],
-                       use.names = FALSE)
-        Links <- c(lapply(file.path(.Library, base),
+    if(2 %in% level)
+        Links <- c(lapply(file.path(.Library,
+                                    .get_standard_package_names()$recommended),
                           .find_HTML_links_in_package),
                    Links)
-    }
+    if(1 %in% level)
+        Links <- c(lapply(file.path(.Library,
+                                    .get_standard_package_names()$base),
+                          .find_HTML_links_in_package),
+                   Links)
     if (0 %in% level && nzchar(pkgDir))
         Links <- c(list(.find_HTML_links_in_package(pkgDir)), Links)
     Links <- unlist(Links)
@@ -1450,7 +1461,7 @@ function(dir)
         if(a) {
             ## URL regexp as in .DESCRIPTION_to_latex().  CRAN uses
             ##   &lt;(URL: *)?((https?|ftp)://[^[:space:]]+)[[:space:]]*&gt;
-            ##   ([^>\"])((https?|ftp)://[[:alnum:]/.:@+\\_~%#?=&;,-]+[[:alnum:]/])
+            ##   ([[:space:]])((https?|ftp)://[[:alnum:]/.:@+\\_~%#?=&;,-]+[[:alnum:]/])
             ## (also used in toRd.citation().
             x <- trfm("&lt;(http://|ftp://|https://)([^[:space:],>]+)&gt;",
                       "<a href=\"\\1%s\">\\1\\2</a>",
@@ -1467,8 +1478,8 @@ function(dir)
                       function(u) utils::URLencode(u, TRUE),
                       ## </FIXME>
                       2L)
-            x <- trfm("&lt;(arXiv|arxiv):([[:alnum:]/.-]+)([[:space:]]*\\[[^]]+\\])?&gt;",
-                      "&lt;<a href=\"https://arxiv.org/abs/%s\">arXiv:\\2</a>\\3&gt;",
+            x <- trfm("&lt;(arXiv|arxiv):(([[:alpha:].-]+/)?[[:digit:].]+)(v[[:digit:]]+)?([[:space:]]*\\[[^]]+\\])?&gt;",
+                      "&lt;<a href=\"https://doi.org/10.48550/arXiv.%s\">doi:10.48550/arXiv.\\2</a>&gt;",
                       x,
                       urlify,
                       2L)
@@ -1614,29 +1625,37 @@ function(dir)
     ## achieve this by adding the canonicalized ORCID id (URL) to the
     ## 'family' element and simultaneously dropping the ORCID id from
     ## the 'comment' element, and then re-format.
-    .format_authors_at_R_field_with_expanded_ORCID_identifier <- function(a) {
+    ## See <https://ror.readme.io/docs/display> for ROR display
+    ## guidelines.
+    .format_authors_at_R_field_with_expanded_identifiers <- function(a) {
         x <- utils:::.read_authors_at_R_field(a)
         format_person1 <- function(e) {
-            comment <- e$comment
-            pos <- which((names(comment) == "ORCID") &
-                         grepl(.ORCID_iD_variants_regexp, comment))
-            if((len <- length(pos)) > 0L) {
+            cmt <- e$comment
+            pos <- which((names(cmt) == "ORCID") &
+                         grepl(.ORCID_iD_variants_regexp, cmt))
+            if(length(pos) == 1L) {
                 e$family <-
                     c(e$family,
-                      paste0("<",
-                             paste0("https://replace.me.by.orcid.org/",
-                                    sub(.ORCID_iD_variants_regexp,
-                                        "\\3",
-                                        comment[pos])),
-                             ">"))
-                e$comment <- if(len < length(comment))
-                                 comment[-pos]
-                             else
-                                 NULL
+                      sprintf("<https://replace.me.by.orcid.org/%s>",
+                              .ORCID_iD_canonicalize(cmt[pos])))
+                cmt <- cmt[-pos]
             }
+            ## Of course, a person should not have both ORCID and ROR
+            ## identifiers: could check for that.
+            pos <- which((names(cmt) == "ROR") &
+                         grepl(.ROR_ID_variants_regexp, cmt))
+            if(length(pos) == 1L) {
+                e$family <-
+                    c(e$family,
+                      sprintf("<https://replace.me.by.ror.org/%s>",
+                              .ROR_ID_canonicalize(cmt[pos])))
+                cmt <- cmt[-pos]
+            }
+            e$comment <- if(length(cmt)) cmt else NULL
             e
         }
-        x[] <- lapply(unclass(x), format_person1)
+        x <- lapply(unclass(x), format_person1)
+        class(x) <- "person"
         utils:::.format_authors_at_R_field_for_author(x)
     }
     
@@ -1665,7 +1684,7 @@ function(dir)
 
     if(!is.na(aatr))
         desc["Author"] <-
-            .format_authors_at_R_field_with_expanded_ORCID_identifier(aatr)
+            .format_authors_at_R_field_with_expanded_identifiers(aatr)
 
     ## Take only Title and Description as *text* fields.
     desc["Title"] <- htmlify_text(desc["Title"])
@@ -1693,7 +1712,7 @@ function(dir)
         ## The above already changed & to &amp; which urlify will
         ## do once more ...
         trafo <- function(s) urlify(gsub("&amp;", "&", s))
-        desc[f] <- trfm("(^|[^>\"])((https?|ftp)://[^[:space:],]*)",
+        desc[f] <- trfm("(^|[^>\"?])((https?|ftp)://[^[:space:],]*)",
                         "\\1<a href=\"%s\">\\2</a>",
                         desc[f],
                         trafo,
@@ -1705,12 +1724,24 @@ function(dir)
             gsub(sprintf("&lt;https://replace.me.by.orcid.org/(%s)&gt;",
                          .ORCID_iD_regexp),
                  paste0("<a href=\"https://orcid.org/\\1\">",
-                        "<img alt=\"ORCID iD\"",
+                        "<img alt=\"ORCID iD\" ",
                         if(dynamic)
-                            "src=\"/doc/html/orcid.svg\" "
+                            " src=\"/doc/html/orcid.svg\" "
                         else
-                            "src=\"https://cloud.R-project.org/web/orcid.svg\" ",
+                            " src=\"https://cloud.R-project.org/web/orcid.svg\" ",
                         "style=\"width:16px; height:16px; margin-left:4px; margin-right:4px; vertical-align:middle\"",
+                        " /></a>"),
+                 desc["Author"])
+        desc["Author"] <-
+            gsub(sprintf("&lt;https://replace.me.by.ror.org/(%s)&gt;",
+                         .ROR_ID_regexp),
+                 paste0("<a href=\"https://ror.org/\\1\">",
+                        "<img alt=\"ROR ID\" ",
+                        if(dynamic)
+                            " src=\"/doc/html/ror.svg\" "
+                        else
+                            " src=\"https://cloud.R-project.org/web/ror.svg\" ",
+                        "style=\"width:20px; height:20px; margin-left:4px; margin-right:4px; vertical-align:middle\"",
                         " /></a>"),
                  desc["Author"])
     }
@@ -1726,7 +1757,7 @@ function(dir)
     ##   AUTHORS COPYRIGHTS
     ## </TODO>
 
-    c("<table>",
+    c("<table role='presentation'>",
       sprintf("<tr>\n<td>%s:</td>\n<td>%s</td>\n</tr>",
               names(desc), desc),
       "</table>")

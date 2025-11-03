@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-2023	The R Core Team.
+ *  Copyright (C) 2000-2025	The R Core Team.
  *  Copyright (C) 1995-1998	Robert Gentleman and Ross Ihaka.
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -29,9 +29,9 @@
  *  do_printdefault
  *	    -> PrintObject (if S4 dispatch needed)
  *	    -> PrintValueRec
- *		-> PrintGenericVector	-> PrintDispatch & PrintValueRec
- *		-> printList		-> PrintDispatch & PrintValueRec
- *		-> printAttributes	-> PrintValueRec  (recursion)
+ *		-> PrintGenericVector	-> PrintDispatch & PrintValueRec & printAttributes
+ *		-> printList		->      "               "               "
+ *		-> printAttributes	-> PrintValueRec  ([Rec]ursion)
  *		-> PrintSpecial
  *		-> PrintExpression
  *		-> PrintClosure         -> PrintLanguage
@@ -76,7 +76,7 @@
 /* Global print parameter struct: */
 R_PrintData R_print;
 
-static void printAttributes(SEXP, R_PrintData *, Rboolean);
+static void printAttributes(SEXP, R_PrintData *, bool);
 static void PrintObject(SEXP, R_PrintData *);
 
 
@@ -84,7 +84,7 @@ static void PrintObject(SEXP, R_PrintData *);
 #define TAGBUFLEN0 (TAGBUFLEN + 6)
 static char tagbuf[TAGBUFLEN0 * 2]; /* over-allocate to allow overflow check */
 
-void PrintInit(R_PrintData *data, SEXP env)
+attribute_hidden void PrintInit(R_PrintData *data, SEXP env)
 {
     data->na_string = NA_STRING;
     data->na_string_noquote = mkChar("<NA>");
@@ -170,13 +170,13 @@ static void PrintLanguage(SEXP s, R_PrintData *data)
 {
     int i;
     SEXP t = getAttrib(s, R_SrcrefSymbol);
-    Rboolean useSrc = data->useSource && isInteger(t);
+    bool useSrc = data->useSource && isInteger(t);
     if (useSrc) {
 	PROTECT(t = lang2(R_AsCharacterSymbol, t));
 	t = eval(t, R_BaseEnv);
 	UNPROTECT(1);
     } else {
-	t = deparse1w(s, 0, data->useSource | DEFAULTDEPARSE);
+	t = deparse1w(s, false, data->useSource | DEFAULTDEPARSE);
 	R_print = *data; /* Deparsing calls PrintDefaults() */
     }
     PROTECT(t);
@@ -341,7 +341,7 @@ static void PrintObjectS4(SEXP s, R_PrintData *data)
     if (methodsNS == R_UnboundValue)
 	error("missing methods namespace: this should not happen");
 
-    SEXP fun = findVarInFrame3(methodsNS, install("show"), TRUE);
+    SEXP fun = R_findVarInFrame(methodsNS, install("show"));
     if (TYPEOF(fun) == PROMSXP) {
 	PROTECT(fun);
 	fun = eval(fun, R_BaseEnv);
@@ -425,7 +425,7 @@ static void PrintGenericVector(SEXP s, R_PrintData *data)
 	    char pbuf[115];
 	    if(isObject(s_i)) {
 		const char *str;
-		Rboolean use_fmt = FALSE;
+		bool use_fmt = false;
 		SEXP fun = PROTECT(findFun(install("format"),
 					   R_BaseNamespace));
 		SEXP call = PROTECT(lang2(fun, s_i));
@@ -433,7 +433,7 @@ static void PrintGenericVector(SEXP s, R_PrintData *data)
 		if(TYPEOF(ans) == STRSXP && LENGTH(ans) == 1) {
 		    str = translateChar(STRING_ELT(ans, 0));
 		    if(strlen(str) < 100)
-			use_fmt = TRUE;
+			use_fmt = true;
 		}
 		if(use_fmt)
 		    snprintf(pbuf, 115, "%s", str);
@@ -612,7 +612,7 @@ static void PrintGenericVector(SEXP s, R_PrintData *data)
 	    }
 	    Rprintf("\n");
 	    if(n_pr < ns)
-		Rprintf(" [ reached getOption(\"max.print\") -- omitted %lld entries ]\n",
+		Rprintf(" [ reached 'max' / getOption(\"max.print\") -- omitted %lld entries ]\n",
 			(long long)ns - n_pr);
 	}
 	else { /* ns = length(s) == 0 */
@@ -627,14 +627,14 @@ static void PrintGenericVector(SEXP s, R_PrintData *data)
 		    const char *ss = translateChar(STRING_ELT(klass, 0));
 		    int res = Rsnprintf_mbcs(str, 200, ".__C__%s", ss);
 		    if(res > 0 && res < 200 &&
-		       findVar(install(str), data->env) != R_UnboundValue)
+		       R_findVar(install(str), data->env) != R_UnboundValue)
 		        className = ss;
 		}
 	    }
 	    if(className) {
 		Rprintf("An object of class \"%s\"\n", className);
 		UNPROTECT(1); /* names */
-		printAttributes(s, data, TRUE);
+		printAttributes(s, data, true);
 		vmaxset(vmax);
 		return;
 	    }
@@ -646,7 +646,7 @@ static void PrintGenericVector(SEXP s, R_PrintData *data)
 	}
 	UNPROTECT(1); /* names */
     }
-    printAttributes(s, data, FALSE);
+    printAttributes(s, data, false);
 } // PrintGenericVector
 
 
@@ -765,7 +765,7 @@ static void printList(SEXP s, R_PrintData *data)
 	}
 	Rprintf("\n");
     }
-    printAttributes(s, data, FALSE);
+    printAttributes(s, data, false);
 }
 
 static void PrintExpression(SEXP s, R_PrintData *data)
@@ -773,7 +773,7 @@ static void PrintExpression(SEXP s, R_PrintData *data)
     SEXP u;
     int i, n;
 
-    u = PROTECT(deparse1w(s, 0, data->useSource | DEFAULTDEPARSE));
+    u = PROTECT(deparse1w(s, false, data->useSource | DEFAULTDEPARSE));
     R_print = *data; /* Deparsing calls PrintDefaults() */
 
     n = LENGTH(u);
@@ -788,23 +788,23 @@ static void PrintSpecial(SEXP s, R_PrintData *data)
     char *nm = PRIMNAME(s);
     SEXP env, s2;
     PROTECT_INDEX xp;
-    PROTECT_WITH_INDEX(env = findVarInFrame3(R_BaseEnv,
-					     install(".ArgsEnv"), TRUE),
+    PROTECT_WITH_INDEX(env = R_findVarInFrame(R_BaseEnv,
+					      install(".ArgsEnv")),
 		       &xp);
     if (TYPEOF(env) == PROMSXP) REPROTECT(env = eval(env, R_BaseEnv), xp);
-    s2 = findVarInFrame3(env, install(nm), TRUE);
+    s2 = R_findVarInFrame(env, install(nm));
     if(s2 == R_UnboundValue) {
-	REPROTECT(env = findVarInFrame3(R_BaseEnv,
-					install(".GenericArgsEnv"), TRUE),
+	REPROTECT(env = R_findVarInFrame(R_BaseEnv,
+					 install(".GenericArgsEnv")),
 		  xp);
 	if (TYPEOF(env) == PROMSXP)
 	    REPROTECT(env = eval(env, R_BaseEnv), xp);
-	s2 = findVarInFrame3(env, install(nm), TRUE);
+	s2 = R_findVarInFrame(env, install(nm));
     }
     if(s2 != R_UnboundValue) {
 	SEXP t;
 	PROTECT(s2);
-	t = deparse1m(s2, 0, DEFAULTDEPARSE); // or deparse1() ?
+	t = deparse1m(s2, false, DEFAULTDEPARSE); // or deparse1() ?
 	R_print = *data; /* Deparsing calls PrintDefaults() */
 
 	Rprintf("%s ", CHAR(STRING_ELT(t, 0))); /* translated */
@@ -818,7 +818,7 @@ static void PrintSpecial(SEXP s, R_PrintData *data)
 #ifdef Win32
 static void print_cleanup(void *data)
 {
-    WinUTF8out = *(Rboolean *)data;
+    WinUTF8out = *(bool *)data;
 }
 #endif
 
@@ -832,7 +832,7 @@ attribute_hidden void PrintValueRec(SEXP s, R_PrintData *data)
 
 #ifdef Win32
     RCNTXT cntxt;
-    Rboolean havecontext = FALSE;
+    Rboolean havecontext = false;
     Rboolean saveWinUTF8out = WinUTF8out;
 
     WinCheckUTF8();
@@ -871,7 +871,7 @@ attribute_hidden void PrintValueRec(SEXP s, R_PrintData *data)
 	break;
     case SYMSXP:
 	/* Use deparse here to handle backtick quotification of "weird names". */
-	t = deparse1(s, 0, SIMPLEDEPARSE); // TODO ? rather deparse1m()
+	t = deparse1(s, false, SIMPLEDEPARSE); // TODO ? rather deparse1m()
 	R_print = *data; /* Deparsing calls PrintDefaults() */
 	Rprintf("%s\n", CHAR(STRING_ELT(t, 0))); /* translated */
 	break;
@@ -981,7 +981,7 @@ attribute_hidden void PrintValueRec(SEXP s, R_PrintData *data)
     default:
 	UNIMPLEMENTED_TYPE("PrintValueRec", s);
     }
-    printAttributes(s, data, FALSE);
+    printAttributes(s, data, false);
 
 done:
 
@@ -997,7 +997,7 @@ done:
    to avoid $a$battr("foo").  Need to save and restore, since
    attributes might be lists with attributes or just have attributes ...
  */
-static void printAttributes(SEXP s, R_PrintData *data, Rboolean useSlots)
+static void printAttributes(SEXP s, R_PrintData *data, bool useSlots)
 {
     SEXP a;
     char *ptag;
@@ -1028,7 +1028,7 @@ static void printAttributes(SEXP s, R_PrintData *data, Rboolean useSlots)
 		if(TAG(a) == R_ClassSymbol)
 		    goto nextattr;
 	    }
-	    if(isFrame(s)) {
+	    if(isDataFrame(s)) {
 		if(TAG(a) == R_RowNamesSymbol)
 		    goto nextattr;
 	    }
@@ -1127,10 +1127,10 @@ attribute_hidden void CustomPrintValue(SEXP s, SEXP env)
 
 attribute_hidden
 #ifdef FC_LEN_T
-void F77_NAME(dblep0) (const char *label, int *nchar, double *data, int *ndata,
+void F77_SUB(dblep0) (const char *label, int *nchar, double *data, int *ndata,
 		       const FC_LEN_T label_len)
 #else
-void F77_NAME(dblep0) (const char *label, int *nchar, double *data, int *ndata)
+void F77_SUB(dblep0) (const char *label, int *nchar, double *data, int *ndata)
 #endif
 {
     int nc = *nchar;
@@ -1147,10 +1147,10 @@ void F77_NAME(dblep0) (const char *label, int *nchar, double *data, int *ndata)
 
 attribute_hidden
 #ifdef FC_LEN_T
-void F77_NAME(intpr0) (const char *label, int *nchar, int *data, int *ndata,
+void F77_SUB(intpr0) (const char *label, int *nchar, int *data, int *ndata,
 		       const FC_LEN_T label_len)
 #else
-void F77_NAME(intpr0) (const char *label, int *nchar, int *data, int *ndata)
+void F77_SUB(intpr0) (const char *label, int *nchar, int *data, int *ndata)
 #endif
 {
     int nc = *nchar;
@@ -1168,10 +1168,10 @@ void F77_NAME(intpr0) (const char *label, int *nchar, int *data, int *ndata)
 
 attribute_hidden
 #ifdef FC_LEN_T
-void F77_NAME(realp0) (const char *label, int *nchar, float *data, int *ndata,
+void F77_SUB(realp0) (const char *label, int *nchar, float *data, int *ndata,
 		      const FC_LEN_T label_len)
 #else
-void F77_NAME(realp0) (const char *label, int *nchar, float *data, int *ndata)
+void F77_SUB(realp0) (const char *label, int *nchar, float *data, int *ndata)
 #endif
 {
     int nc = *nchar, nd = *ndata;
@@ -1198,10 +1198,10 @@ void F77_NAME(realp0) (const char *label, int *nchar, float *data, int *ndata)
 /* Fortran-callable error routine for lapack */
 
 #ifdef FC_LEN_T
-NORET void F77_NAME(xerbla)(const char *srname, int *info,
+NORET void F77_SUB(xerbla)(const char *srname, int *info,
 			    const FC_LEN_T srname_len)
 #else
-NORET void F77_NAME(xerbla)(const char *srname, int *info)
+NORET void F77_SUB(xerbla)(const char *srname, int *info)
 #endif
 {
    /* srname is not null-terminated.  It will be 6 characters for

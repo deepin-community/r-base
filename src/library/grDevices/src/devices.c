@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2013  The R Core Team
+ *  Copyright (C) 1997--2025  The R Core Team
  *  Copyright (C) 2002--2005  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -174,11 +174,12 @@ SEXP devcap(SEXP args)
 
     /* FIXME:  there should be a way for a device to declare its own
                events, and return information on how to set them */
-    PROTECT(events = allocVector(INTSXP, 4));
+    PROTECT(events = allocVector(INTSXP, 5));
     INTEGER(events)[0] = (int)(dd->canGenMouseDown);
     INTEGER(events)[1] = (int)(dd->canGenMouseMove);
     INTEGER(events)[2] = (int)(dd->canGenMouseUp);
     INTEGER(events)[3] = (int)(dd->canGenKeybd);
+    INTEGER(events)[4] = (int)(dd->canGenIdle);
     SET_VECTOR_ELT(capabilities, R_GE_capability_events, events);
     UNPROTECT(1);
 
@@ -226,7 +227,7 @@ SEXP devcap(SEXP args)
     UNPROTECT(1);
 
     /* Further capabilities can be filled in by device */
-    if (dd->deviceVersion >= R_GE_group) {
+    if (dd->deviceVersion >= R_GE_group && dd->capabilities) {
         devcap = dd->capabilities(capabilities);
     } else {
         devcap = capabilities;
@@ -238,14 +239,13 @@ SEXP devcap(SEXP args)
 SEXP devcapture(SEXP args)
 {
     int i, col, row, nrow, ncol, size;
-    Rboolean native;
     pGEDevDesc gdd = GEcurrentDevice();
     int *rint;
     SEXP raster, image, idim;
     
     args = CDR(args);
 
-    native = asLogical(CAR(args));
+    int native = asLogical(CAR(args));
     if (native != TRUE) native = FALSE;
 
     raster = GECap(gdd);
