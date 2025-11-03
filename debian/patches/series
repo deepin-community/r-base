@@ -6,3 +6,4 @@
 set_R_LIBS_USER_and_SITE_in_Renviron.patch
 # r_4_4_x_tar_archive_symlink
 libjvm.so-for-zero-build.patch
+0001-deepin-sw64-support.diff

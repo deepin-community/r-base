@@ -1,3 +1,9 @@
+r-base (4.5.0-3deepin1) unstable; urgency=medium
+
+  * chore: refresh sw64 patch
+
+ -- hudeng <hudeng@deepin.org>  Mon, 03 Nov 2025 11:16:29 +0800
+
 r-base (4.5.0-3) unstable; urgency=medium
 
   * debian/control: Update Breaks: for r-base-core to aid the transition
